@@ -1,0 +1,15 @@
+.gradle/
+build/
+out/
+*.iml
+/config.yml
+/permissions.json
+/alert-subscriptions.json
+logs/
+__pycache__/
+*.pyc
+*.jar
+*.zip
+go.work
+go.work.sum
+
