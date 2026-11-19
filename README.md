@@ -6,7 +6,7 @@ Minecraft Bedrock 反作弊代理。代理转发 Bedrock 流量，并根据已�
 | --- | --- |
 | `src/` | Java 代理源码、资源和回归测试 |
 | `nethernet/` | 可选的 NetherNet 转发和验证工具 |
-| `backend/` | 按服务器核心划分的后端插件 |
+| [`backend/`](backend/) | 按服务器核心划分的后端插件 |
 
 ## 构建代理
 
@@ -23,6 +23,8 @@ build/install/navro-proxy/bin/navro-proxy --listen 0.0.0.0:19132 --backend 127.0
 ## 后端插件
 
 后端插件独立构建、独立发布。每个核心使用 `backend/<core>/`，发布标签使用 `<core>-v<version>`。不要把一个核心的插件安装在另一个核心上。
+
+当前支持 [Nukkit-MOT](backend/nukkit-mot/)；安装包见 [nukkit-mot-v0.2.0](https://github.com/GhostNgEnd/NavroProxy/releases/tag/nukkit-mot-v0.2.0)。
 
 ## NetherNet 工具
 

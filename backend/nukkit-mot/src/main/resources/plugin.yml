@@ -1,0 +1,7 @@
+name: NavroFireworkBridge
+main: ac.navro.bridge.nukkit.NavroFireworkBridge
+version: 0.2.0
+api: ["1.0.14"]
+load: POSTWORLD
+author: NavroProxy
+description: Native firework conversion, negotiated server tick and missing final transaction inventory synchronization for NavroProxy.
