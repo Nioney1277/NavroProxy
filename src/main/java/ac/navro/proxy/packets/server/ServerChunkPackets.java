@@ -99,6 +99,7 @@ public final class ServerChunkPackets {
             }else snapshot=readLevelChunk(chunk,world.minY(dimension),world.maxY(dimension),world.airNetworkId(),error->trace("level_chunk_parse_error","chunk",List.of(x,z),"error",error));
             queueAck(packet,WorldCollisionDiagnostics.fields("dimension",dimension,"chunk",List.of(x,z),"sections",count,"cached",chunk.isCachingEnabled(),"sentRevision",revision),()->{
                 if(dimension!=world.dimension()){trace("world_discard_dimension","dimension",dimension);return;}
+                snapshot.markLoaded(player.tick());
                 cleanupPending();clearPendingColumn(x,z);world.putAcknowledgedChunk(x,z,snapshot,revision);
                 trace("chunk_applied","chunk",List.of(x,z),"sections",count,"sentRevision",revision);
                 for(int i=0;i<Math.max(0,count)&&i<hashes.length;i++){
@@ -181,12 +182,14 @@ public final class ServerChunkPackets {
         removePending(key);
         if(layers==null&&hash!=null){byte[] data=blobs.get(hash);if(data!=null)layers=readBlob(data,key.y());}
         boolean applied=world.applyAcknowledgedSection(key.x(),key.y(),key.z(),layers,revision);
+        if (applied && layers != null) world.getChunk(key.x(), key.z()).markLoaded(player.tick());
         trace("subchunk_applied","section",List.of(key.x(),key.y(),key.z()),"known",layers!=null,"accepted",applied,"blob",hash,"sentRevision",revision);
         if(layers==null&&hash!=null){pending.put(key,new Pending(hash,revision,world.getBlockBreakEpoch()));while(pending.size()>MAX_PENDING){var first=pending.keySet().iterator().next();removePending(first);trace("subchunk_pending_evicted","section",first.toString(),"reason","pending_limit");}}
     }
     private void resolvePending(SectionKey key,Pending waiting,byte[] data){
         int[][] layers=readBlob(data,key.y());if(layers==null){trace("blob_invalid","blob",waiting.hash,"section",key.toString());return;}
-        world.applyAcknowledgedSection(key.x(),key.y(),key.z(),layers,waiting.revision);
+        if (world.applyAcknowledgedSection(key.x(),key.y(),key.z(),layers,waiting.revision))
+            world.getChunk(key.x(), key.z()).markLoaded(player.tick());
         for(var overlay:waiting.overlays.values()){var u=overlay.update();world.applyAcknowledgedBlock(u.x,u.y,u.z,u.layer,u.networkId,overlay.revision());}
         trace("subchunk_blob_resolved","section",List.of(key.x(),key.y(),key.z()),"blob",waiting.hash,"overlays",waiting.overlays.size());removePending(key);
     }

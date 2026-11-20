@@ -5,7 +5,7 @@ Minecraft Bedrock 反作弊代理。代理转发 Bedrock 流量，并根据已�
 | 路径 | 内容 |
 | --- | --- |
 | `src/` | Java 代理源码、资源和回归测试 |
-| `nethernet/` | 可选的 NetherNet 转发和验证工具 |
+| `nethernet/` | NetherNet 代理、中继和验证工具 |
 | [`backend/`](backend/) | 按服务器核心划分的后端插件 |
 
 ## 构建代理
@@ -29,3 +29,5 @@ build/install/navro-proxy/bin/navro-proxy --listen 0.0.0.0:19132 --backend 127.0
 ## NetherNet 工具
 
 在 `nethernet/` 中运行 `python -m unittest test_relay` 检查 Python 中继。Go 工具使用 `go.mod` 固定的 Helix NetherNet 版本；如需使用本地源码，可用 `go work edit -replace` 指向同一版本的 checkout。Android 上构建需加 `-ldflags=-checklinkname=0`。
+
+[原版 Geyser 后端、方块表与命令列表配置](nethernet/README.md)

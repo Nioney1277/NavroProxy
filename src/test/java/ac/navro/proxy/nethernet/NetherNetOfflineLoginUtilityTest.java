@@ -1,6 +1,7 @@
 package ac.navro.proxy.nethernet;
 
 import ac.navro.proxy.protocol.LoginIdentity;
+import ac.navro.proxy.protocol.PrivateBackendLogin;
 import org.cloudburstmc.protocol.bedrock.data.auth.*;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.json.JsonUtil;
@@ -23,7 +24,7 @@ class NetherNetOfflineLoginUtilityTest {
         var key=keys();var originalKey=keys();
         String data="{\"DeviceOS\":1,\"SkinId\":\"fixture\",\"ClientRandomId\":123}";
         var who=new LoginIdentity(UUID.fromString("11111111-2222-3333-8444-555555555555"),"BridgeTest");
-        var result=NetherNetOfflineLogin.encode(2225,who,Map.of("xid","1234567890123456","mid","recorded-mid"),data.getBytes(StandardCharsets.UTF_8),key);
+        var result=PrivateBackendLogin.encode(2225,who,Map.of("xid","1234567890123456","mid","recorded-mid"),data.getBytes(StandardCharsets.UTF_8),key);
         assertEquals(AuthType.SELF_SIGNED,result.getAuthPayload().getAuthType());
         var payload=(TokenPayload)result.getAuthPayload();var token=new JsonWebSignature();token.setCompactSerialization(payload.getToken());token.setKey(key.getPublic());
         assertEquals("ES384",token.getAlgorithmHeaderValue());assertTrue(token.verifySignature());

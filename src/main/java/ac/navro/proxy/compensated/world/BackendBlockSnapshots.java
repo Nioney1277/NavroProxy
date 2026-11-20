@@ -1,6 +1,7 @@
 package ac.navro.proxy.compensated.world;
 
 import ac.navro.proxy.compensated.world.base.CompensatedWorld;
+import ac.navro.proxy.data.block.NetworkBlockStateRegistry.RuntimePalette;
 import ac.navro.proxy.packets.server.ServerChunkPackets;
 import ac.navro.proxy.state.WirePlayerState;
 import org.cloudburstmc.math.vector.Vector3i;
@@ -17,6 +18,7 @@ public final class BackendBlockSnapshots {
     private long generation;
 
     public void setProtocolVersion(int protocol) { world.setProtocolVersion(protocol); }
+    public void setRuntimeBlockPalette(RuntimePalette palette) { world.setRuntimeBlockPalette(palette); }
     public long generation() { return generation; }
 
     public void observe(BedrockPacket packet) {

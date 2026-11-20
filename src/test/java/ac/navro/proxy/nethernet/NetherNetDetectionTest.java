@@ -38,6 +38,56 @@ class NetherNetDetectionTest {
             assertTrue(result.backendbound().isEmpty());
         }
     }
+    @Test void commandTableWaitsForLocalOperatorAndClearsOnRevocation() throws Exception {
+        try (var s = session(); var recorded = new java.util.zip.GZIPInputStream(
+                getClass().getResourceAsStream("/nethernet-bds-2225-commands.batch.gz"))) {
+            s.setOperatorCommandTable(true);
+            byte[] table = recorded.readAllBytes();
+            assertNull(s.process(true, table).forwarded());
+
+            var abilities = new UpdateAbilitiesPacket();
+            abilities.setUniqueEntityId(71);
+            abilities.setCommandPermission(org.cloudburstmc.protocol.bedrock.data.command.CommandPermission.GAME_DIRECTORS);
+            abilities.setPlayerPermission(PlayerPermission.OPERATOR);
+            assertEquals(1, decodeBatch(s.process(true, s.encode(abilities)).forwarded()).size());
+            assertNull(s.process(true, table).forwarded());
+
+            abilities.setUniqueEntityId(s.state().player().uniqueId());
+            var promoted = decodeBatch(s.process(true, s.encode(abilities)).forwarded());
+            assertInstanceOf(UpdateAbilitiesPacket.class, promoted.getFirst());
+            var delivered = assertInstanceOf(AvailableCommandsPacket.class, promoted.get(1));
+            assertTrue(delivered.getCommands().stream().anyMatch(command -> command.getName().equals("navro")));
+            assertInstanceOf(AvailableCommandsPacket.class, decode(s.process(true, table).forwarded()));
+
+            abilities.setCommandPermission(org.cloudburstmc.protocol.bedrock.data.command.CommandPermission.ANY);
+            abilities.setPlayerPermission(PlayerPermission.MEMBER);
+            var demoted = decodeBatch(s.process(true, s.encode(abilities)).forwarded());
+            assertInstanceOf(UpdateAbilitiesPacket.class, demoted.getFirst());
+            assertTrue(assertInstanceOf(AvailableCommandsPacket.class, demoted.get(1)).getCommands().isEmpty());
+            assertEquals(1, decodeBatch(s.process(true, s.encode(abilities)).forwarded()).size());
+            assertNull(s.process(true, table).forwarded());
+        }
+    }
+
+    private static List<BedrockPacket> decodeBatch(byte[] batch) throws Exception {
+        assertEquals(255, Byte.toUnsignedInt(batch[0]));
+        var bytes = Unpooled.wrappedBuffer(batch, 1, batch.length - 1);
+        try {
+            var codec = SupportedCodecs.forProtocol(2225);
+            var helper = codec.createHelper();
+            new ac.navro.proxy.ProtocolDefinitions().configure(helper, true);
+            var decoded = new ArrayList<BedrockPacket>();
+            while (bytes.isReadable()) {
+                var frame = bytes.readSlice(VarInts.readUnsignedInt(bytes));
+                int header = VarInts.readUnsignedInt(frame);
+                decoded.add(codec.tryDecode(helper, frame, header & 1023));
+            }
+            return decoded;
+        } finally {
+            bytes.release();
+        }
+    }
+
     @Test void nativeClosingMarkerAcknowledgesAndReplaysBackendPredictionCorrection()throws Exception{
         try(var s=session()){
             for(int tick=0;tick<=10;tick++)assertEquals(1,s.process(false,s.encode(input(tick))).backendbound().size());

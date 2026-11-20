@@ -1,0 +1,74 @@
+--- a/core/src/main/java/org/geysermc/geyser/util/LoginEncryptionUtils.java
++++ b/core/src/main/java/org/geysermc/geyser/util/LoginEncryptionUtils.java
+@@ -69,6 +69,11 @@
+     private static boolean encryptConnectionWithCert(GeyserSession session, AuthPayload authPayload, String jwt) {
+         try {
+             GeyserImpl geyser = session.getGeyser();
++            var forwarding = NavroForwardedLogin.configured();
++
++            if (forwarding != null && authPayload.getAuthType() == AuthType.SELF_SIGNED) {
++                return encryptNavroConnection(session, forwarding, authPayload, jwt);
++            }
+ 
+             // Regardless of auth type, we don't support guest type accounts used for splitscreen
+             if (authPayload.getAuthType() == AuthType.GUEST) {
+@@ -79,7 +84,7 @@
+             ChainValidationResult result = EncryptionUtils.validatePayload(authPayload);
+ 
+             geyser.getLogger().debug("Is player data signed? %s", result.signed());
+-            if (!result.signed() && session.getGeyser().config().advanced().bedrock().validateBedrockLogin()) {
++            if (!result.signed() && (forwarding != null || geyser.config().advanced().bedrock().validateBedrockLogin())) {
+                 session.disconnect(GeyserLocale.getLocaleStringLog("geyser.network.remote.invalid_xbox_account"));
+                 return false;
+             }
+@@ -160,6 +165,39 @@
+         }
+     }
+ 
++    private static boolean encryptNavroConnection(GeyserSession session, NavroForwardedLogin forwarding,
++                                                  AuthPayload payload, String jwt) {
++        var config = session.getGeyser().config();
++        var upstream = session.getUpstream().getSession();
++        if (!"127.0.0.1".equals(config.bedrock().address())
++                || !config.advanced().bedrock().validateBedrockLogin()
++                || config.advanced().bedrock().useWaterdogpeForwarding()
++                || !config.advanced().bedrock().haproxyProtocolWhitelistedIps().isEmpty()
++                || config.java().authType() != org.geysermc.geyser.api.network.AuthType.FLOODGATE
++                || upstream.getPeer() instanceof NetherNetPeer) {
++            session.disconnect("Navro forwarding requires private RakNet with Floodgate and Xbox validation enabled");
++            return false;
++        }
++
++        try {
++            var identity = forwarding.verify(payload, upstream.getSocketAddress());
++            byte[] clientData = EncryptionUtils.verifyClientData(jwt, identity.sessionKey());
++            if (clientData == null) {
++                throw new IllegalArgumentException("Invalid forwarded client data signature");
++            }
++            BedrockClientData data = JsonUtils.fromJson(clientData, BedrockClientData.class);
++            session.setClientData(data);
++            session.getUpstream().setInetAddress(identity.address());
++            session.setAuthData(new AuthData(identity.username(), identity.uuid(), identity.xuid(),
++                    identity.issuedAt(), identity.minecraftId()));
++            CodecProcessor.updateCodec(session.getUpstream(), data.getGameVersion());
++            return startEncryptionHandshake(session, identity.sessionKey());
++        } catch (Exception ex) {
++            session.disconnect("Invalid Navro forwarded login");
++            return false;
++        }
++    }
++
+     /**
+      * @return whether a handshake was sent that the client has to answer
+      */
+--- a/core/src/main/java/org/geysermc/geyser/session/GeyserSessionAdapter.java
++++ b/core/src/main/java/org/geysermc/geyser/session/GeyserSessionAdapter.java
+@@ -76,7 +76,7 @@
+                 byte[] encryptedData;
+ 
+                 try {
+-                    FloodgateSkinUploader skinUploader = geyser.getSkinUploader();
++                    FloodgateSkinUploader skinUploader = clientData.getOriginalString() == null ? null : geyser.getSkinUploader();
+                     FloodgateCipher cipher = geyser.getCipher();
+ 
+                     String bedrockAddress = session.getUpstream().getAddress().getAddress().getHostAddress();

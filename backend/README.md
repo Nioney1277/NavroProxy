@@ -7,3 +7,5 @@
 | Nukkit-MOT | [nukkit-mot/](nukkit-mot/) | [nukkit-mot-v0.2.0](https://github.com/GhostNgEnd/NavroProxy/releases/tag/nukkit-mot-v0.2.0) |
 
 新增核心时，创建 `backend/<core>/` 并使用 `<core>-v<version>` 发布对应产物。其他核心尚未适配。
+
+[Geyser 适配](geyser/)提供可选的 Floodgate 签名转发和 Geyser 侧 NetherNet 接入。使用代理侧 NetherNet 时可直接连接[原版 Geyser](../nethernet/README.md)。

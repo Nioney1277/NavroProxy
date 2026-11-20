@@ -4,10 +4,13 @@ import ac.navro.proxy.util.Hash;
 import ac.navro.proxy.util.ItemUtil;
 import org.cloudburstmc.nbt.NbtList;
 import org.cloudburstmc.nbt.NbtMap;
+import org.cloudburstmc.nbt.NbtType;
 import org.cloudburstmc.nbt.NbtUtils;
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,10 +40,62 @@ public final class NetworkBlockStateRegistry {
     }
 
     public static NetworkBlockStateRegistry fromStartGame(int protocol, StartGamePacket packet) {
+        return fromStartGame(protocol, packet, null);
+    }
+
+    public static NetworkBlockStateRegistry fromStartGame(int protocol, StartGamePacket packet, RuntimePalette supplied) {
         boolean hashed = packet.isBlockNetworkIdsHashed();
         NbtList<NbtMap> definitions = packet.getBlockPalette();
-        if (definitions == null || definitions.isEmpty()) return forProtocol(protocol, hashed);
+        if (definitions != null && !definitions.isEmpty())
+            return new NetworkBlockStateRegistry(orderedTables(definitions, Map.of()), hashed);
+        if (supplied != null && supplied.protocol() == protocol)
+            return new NetworkBlockStateRegistry(supplied.tables, hashed);
+        return forProtocol(protocol, hashed);
+    }
 
+
+    public static RuntimePalette readRuntimePalette(Path path) throws IOException {
+        try (var input = NbtUtils.createGZIPReader(new BufferedInputStream(Files.newInputStream(path)))) {
+            if (!(input.readTag() instanceof NbtMap root))
+                throw new IOException("Expected a palette compound in " + path);
+            int protocol = root.getInt("protocol", -1);
+            var states = root.getList("states", NbtType.COMPOUND);
+            if (protocol <= 0 || states.isEmpty() || states.size() > 131072)
+                throw new IOException("Invalid protocol or state count in " + path);
+            if (states.stream().anyMatch(state -> state.getString("name").isBlank()))
+                throw new IOException("Unnamed block state in " + path);
+            Map<StateKey, Integer> legacy = new HashMap<>();
+            forProtocol(protocol, false).tables.runtimeStates.values().stream()
+                    .filter(state -> state.legacyFullId() >= 0)
+                    .sorted(java.util.Comparator.comparingInt(NetworkBlockState::networkId))
+                    .forEach(state -> legacy.putIfAbsent(StateKey.of(state.stateTag()), state.legacyFullId()));
+            var tables = orderedTables(states, legacy);
+            if (tables.airRuntime == Integer.MIN_VALUE)
+                throw new IOException("Missing air entry in " + path);
+            return new RuntimePalette(protocol, tables);
+        }
+    }
+
+    public static final class RuntimePalette {
+        private final int protocol;
+        private final Tables tables;
+
+        private RuntimePalette(int protocol, Tables tables) {
+            this.protocol = protocol;
+            this.tables = tables;
+        }
+
+        public int protocol() { return protocol; }
+        public int size() { return tables.runtimeStates.size(); }
+    }
+
+    private record StateKey(String name, NbtMap properties) {
+        static StateKey of(NbtMap tag) {
+            return new StateKey(tag.getString("name"), tag.getCompound("states"));
+        }
+    }
+
+    private static Tables orderedTables(Iterable<NbtMap> definitions, Map<StateKey, Integer> knownLegacy) {
         Map<Integer, NetworkBlockState> runtime = new HashMap<>(), hashes = new HashMap<>();
         Map<Integer, Integer> legacyRuntime = new HashMap<>(), legacyHashes = new HashMap<>();
         var overloads = new java.util.ArrayList<ForwardState>();
@@ -49,7 +104,7 @@ public final class NetworkBlockStateRegistry {
         for (NbtMap source : definitions) {
             NbtMap state = networkTag(source);
             int hash = Hash.hashBlock(state);
-            int legacy = source.containsKey("id") ? legacyId(source) : -1;
+            int legacy = source.containsKey("id") ? legacyId(source) : knownLegacy.getOrDefault(StateKey.of(state), -1);
             runtime.putIfAbsent(runtimeId, new NetworkBlockState(runtimeId, legacy, state));
             hashes.putIfAbsent(hash, new NetworkBlockState(hash, legacy, state));
             if (legacy >= 0) registerForward(source, legacy, runtimeId, hash, legacyRuntime, legacyHashes, overloads);
@@ -57,8 +112,8 @@ public final class NetworkBlockStateRegistry {
             runtimeId++;
         }
         finishOverloads(overloads, legacyRuntime, legacyHashes);
-        return new NetworkBlockStateRegistry(new Tables(Map.copyOf(runtime), Map.copyOf(hashes), airRuntime, airHash,
-                Map.copyOf(legacyRuntime), Map.copyOf(legacyHashes)), hashed);
+        return new Tables(Map.copyOf(runtime), Map.copyOf(hashes), airRuntime, airHash,
+                Map.copyOf(legacyRuntime), Map.copyOf(legacyHashes));
     }
 
     public NetworkBlockState resolve(int networkId) {

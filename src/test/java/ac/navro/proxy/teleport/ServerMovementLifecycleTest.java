@@ -2,15 +2,12 @@ package ac.navro.proxy.teleport;
 
 import ac.navro.anticheat.util.math.Vec3;
 import ac.navro.proxy.listener.PacketListener;
+import ac.navro.proxy.packets.input.AuthInputPacketsTest;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-
-
-
 
 class ServerMovementLifecycleTest {
     private static MovePlayerPacket move(long entity, MovePlayerPacket.Mode mode) {
@@ -22,6 +19,22 @@ class ServerMovementLifecycleTest {
         packet.setOnGround(true);
         packet.setTick(500);
         return packet;
+    }
+
+    @Test void normalMoveUsesThreeInterpolationStepsInLoadedTerrain() {
+        var state = AuthInputPacketsTest.session();
+        state.setDetectionEnabled(false);
+        try (var fixture = new TeleportSenderTest.Fixture(state)) {
+            var packet = move(7, MovePlayerPacket.Mode.NORMAL);
+            packet.setPosition(Vector3f.from(11, 65.62001F, 8));
+            backend(fixture, packet);
+            fixture.ack(fixture.flush());
+            for (int tick = 1; tick <= 3; tick++) {
+                fixture.input(tick, packet.getPosition(), false);
+                assertEquals(8 + tick, state.player().position().x);
+                assertEquals(tick < 3, state.teleports().isTeleporting());
+            }
+        }
     }
 
     private static void backend(TeleportSenderTest.Fixture f, BedrockPacket packet) {
@@ -37,7 +50,7 @@ class ServerMovementLifecycleTest {
         assertEquals(z, actual.z);
     }
 
-    @Test void localMovesPreserveMovementUntilClosingAckAndClientConfirmation() {
+    @Test void localMovesPreserveTheirModeAndUseClosingAck() {
         for (var mode : new MovePlayerPacket.Mode[]{MovePlayerPacket.Mode.NORMAL,
                 MovePlayerPacket.Mode.RESPAWN, MovePlayerPacket.Mode.TELEPORT}) {
             try (var f = new TeleportSenderTest.Fixture()) {
@@ -54,8 +67,7 @@ class ServerMovementLifecycleTest {
                 var wire = f.flush();
                 assertEquals(2, wire.size());
                 var encoded = assertInstanceOf(MovePlayerPacket.class, wire.get(0));
-                assertEquals(mode == MovePlayerPacket.Mode.NORMAL ? MovePlayerPacket.Mode.TELEPORT : mode,
-                        encoded.getMode());
+                assertEquals(mode, encoded.getMode());
                 assertEquals(packet.getPosition(), encoded.getPosition());
                 assertTrue(encoded.isOnGround());
 
@@ -70,13 +82,13 @@ class ServerMovementLifecycleTest {
                 vector(.2F, .3F, .4F, player.velocity());
                 assertFalse(player.onGround());
 
-                boolean reset = mode == MovePlayerPacket.Mode.RESPAWN;
-                f.input(2, reset ? packet.getPosition().add(.125F, 0, 0) : packet.getPosition(), !reset);
+                f.input(2, packet.getPosition().add(.125F, 0, 0), false);
                 assertFalse(f.state.teleports().isTeleporting());
-                vector(reset ? 10.125F : 10, 70, 12, player.position());
-                vector(0, 0, 0, player.velocity());
+                vector(10, 70, 12, player.position());
+                if (mode == MovePlayerPacket.Mode.NORMAL) vector(2, 6, 4, player.velocity());
+                else vector(0, 0, 0, player.velocity());
                 assertTrue(player.onGround());
-                vector(reset ? 10.125F : 10, 71.62001F, 12, f.state.teleports().getLastKnowValid());
+                vector(10, 71.62001F, 12, f.state.teleports().getLastKnowValid());
             }
         }
     }

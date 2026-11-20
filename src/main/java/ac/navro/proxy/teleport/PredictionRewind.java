@@ -8,6 +8,7 @@ import ac.navro.proxy.data.input.TickData;
 import ac.navro.proxy.diagnostics.WorldCollisionDiagnostics;
 import ac.navro.proxy.prediction.PredictionRunner;
 import ac.navro.proxy.prediction.RiptidePhysics;
+import ac.navro.proxy.protocol.BackendType;
 import ac.navro.proxy.teleport.data.RewindData;
 
 
@@ -16,9 +17,13 @@ public final class PredictionRewind {
 
     public static void process(SessionState session, RewindData correction) {
         var wire = session.player();
-        if (session.teleports().isTeleporting() || wire.isMovementExempted() || wire.vehicleData != null) return;
+        if (session.teleports().isTeleporting() || wire.vehicleData != null) return;
         long liveTick = wire.tick();
         if (correction.tick() >= liveTick) return;
+        if (wire.isMovementExempted()) {
+            session.authInputPackets().processExemptedMovement();
+            return;
+        }
         var history = session.teleports().getAuthInputHistory();
         TickData source = history.get(correction.tick());
         long distance = liveTick - correction.tick();
@@ -64,6 +69,7 @@ public final class PredictionRewind {
             prediction.itemUse().getItemUseTracker().restore(liveItemUse);
             RiptidePhysics.restore(context, liveRiptide);
         }
+        if (session.backendType() == BackendType.BDS) session.teleports().startCorrectionCooldown();
 
         trace(session, "prediction_rewind_applied", correction, replayed);
     }

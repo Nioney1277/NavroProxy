@@ -41,25 +41,34 @@ class TeleportSenderTest {
         void input(long tick,Vector3f wire,boolean handled){var p=new PlayerAuthInputPacket();p.setTick(tick);p.setPosition(wire);p.setRotation(Vector3f.ZERO);p.setDelta(Vector3f.ZERO);if(handled)p.getInputData().add(org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.HANDLE_TELEPORT);state.observeClient(p);}
         @Override public void close(){encoder.close();channel.finishAndReleaseAll();}
     }
-    @Test void timerHookSendsOneOriginalTeleportAndWaitsForClosingAckThenClientConfirmation(){
+    @Test void timerHookSendsOneOrdinaryTeleportAndUsesClosingAckWithoutClientConfirmation(){
         try(var f=new Fixture()){
             f.state.player().requestTeleportToLastValid();assertTrue(f.state.teleports().isTeleporting());assertFalse(f.state.teleports().getQueuedTeleports().peek().isAccepted());
             f.state.player().requestTeleportToLastValid();var packets=f.flush();assertEquals(2,packets.size());var move=(MovePlayerPacket)packets.get(0);assertEquals(7,move.getRuntimeEntityId());assertEquals(MovePlayerPacket.Mode.TELEPORT,move.getMode());assertEquals(MovePlayerPacket.TeleportationCause.BEHAVIOR,move.getTeleportationCause());assertFalse(move.isOnGround());assertEquals(64+1.62001F,move.getPosition().getY());
             f.input(1,move.getPosition(),true);assertTrue(f.state.teleports().isTeleporting());f.ack(packets);assertTrue(f.state.teleports().getQueuedTeleports().peek().isAccepted());assertTrue(f.state.teleports().isTeleporting());
-            f.input(2,move.getPosition(),true);assertFalse(f.state.teleports().isTeleporting());assertEquals(64,f.state.player().position().y);assertEquals(Vec3.ZERO.x,f.state.player().velocity().x);assertEquals(0,f.state.player().velocity().y);
+            f.input(2,Vector3f.from(99,99,99),false);assertFalse(f.state.teleports().isTeleporting());assertEquals(64,f.state.player().position().y);assertEquals(Vec3.ZERO.x,f.state.player().velocity().x);assertEquals(0,f.state.player().velocity().y);
         }
     }
-    @Test void acknowledgedMismatchResetsToTargetAndReissuesOnlyTheLastOutstandingTeleport(){
-        try(var f=new Fixture()){
-            f.state.player().requestTeleportToLastValid();var first=f.flush();var target=((MovePlayerPacket)first.get(0)).getPosition();f.ack(first);f.input(1,Vector3f.from(99,99,99),false);
-            assertEquals(1,f.state.teleports().getQueuedTeleports().size());assertFalse(f.state.teleports().getQueuedTeleports().peek().isAccepted());var again=f.flush();assertEquals(target,((MovePlayerPacket)again.get(0)).getPosition());assertEquals(64,f.state.player().position().y);
-            f.ack(again);f.input(2,target,true);assertFalse(f.state.teleports().isTeleporting());
+    @Test void pendingOrdinaryTeleportForwardsTheTargetUntilAck(){
+        try(var f=new Fixture(ac.navro.proxy.packets.input.AuthInputPacketsTest.session())){
+            f.state.teleports().teleport(new Vec3(12,65.62001F,8));
+            var outbound=f.flush();var target=((MovePlayerPacket)outbound.getFirst()).getPosition();
+            var pending=ac.navro.proxy.packets.input.AuthInputPacketsTest.input(1,8,64,8,Vec3.ZERO);
+            f.state.player().sinceAuthInput=System.currentTimeMillis()-1000;
+            assertTrue(f.state.receiveClient(pending,8500));
+            assertEquals(target,pending.getPosition());
+            assertTrue(f.state.teleports().isTeleporting());
+            assertFalse(f.state.teleports().isHardTeleporting());
+            f.ack(outbound);
+            f.input(2,Vector3f.from(90,90,90),false);
+            assertFalse(f.state.teleports().isTeleporting());
+            assertEquals(12,f.state.player().position().x);
         }
     }
-    @Test void normalMoveIsReencodedAsTeleportAndResetUsesNearTargetWithoutHandleFlag(){
+    @Test void normalMoveKeepsItsModeAndRespawnUsesTheServerTarget(){
         try(var f=new Fixture()){
-            var normal=new MovePlayerPacket();normal.setRuntimeEntityId(7);normal.setMode(MovePlayerPacket.Mode.NORMAL);normal.setPosition(Vector3f.from(8,65.62001F,8));normal.setRotation(Vector3f.ZERO);f.state.observeBackend(normal);assertEquals(MovePlayerPacket.Mode.TELEPORT,normal.getMode());f.client.sendPacket(normal);var packets=f.flush();f.ack(packets);f.input(1,normal.getPosition(),true);assertFalse(f.state.teleports().isTeleporting());
-            var reset=new MovePlayerPacket();reset.setRuntimeEntityId(7);reset.setMode(MovePlayerPacket.Mode.RESPAWN);reset.setPosition(Vector3f.from(10,65.62001F,10));reset.setRotation(Vector3f.ZERO);f.state.observeBackend(reset);f.client.sendPacket(reset);var second=f.flush();f.ack(second);f.input(2,reset.getPosition().add(0.125F,0,0),false);assertFalse(f.state.teleports().isTeleporting());assertEquals(10.125F,f.state.player().position().x);
+            var normal=new MovePlayerPacket();normal.setRuntimeEntityId(7);normal.setMode(MovePlayerPacket.Mode.NORMAL);normal.setPosition(Vector3f.from(8,65.62001F,8));normal.setRotation(Vector3f.ZERO);f.state.observeBackend(normal);assertEquals(MovePlayerPacket.Mode.NORMAL,normal.getMode());f.client.sendPacket(normal);var packets=f.flush();f.ack(packets);f.input(1,normal.getPosition(),true);assertFalse(f.state.teleports().isTeleporting());
+            var reset=new MovePlayerPacket();reset.setRuntimeEntityId(7);reset.setMode(MovePlayerPacket.Mode.RESPAWN);reset.setPosition(Vector3f.from(10,65.62001F,10));reset.setRotation(Vector3f.ZERO);f.state.observeBackend(reset);f.client.sendPacket(reset);var second=f.flush();f.ack(second);f.input(2,reset.getPosition().add(0.125F,0,0),false);assertFalse(f.state.teleports().isTeleporting());assertEquals(10,f.state.player().position().x);
         }
     }
     @Test void rawInputCannotReplaceTheValidatedAnchorAndUnavailableTransportDoesNotQueue(){

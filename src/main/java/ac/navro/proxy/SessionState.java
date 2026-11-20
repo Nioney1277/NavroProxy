@@ -110,6 +110,8 @@ public final class SessionState {
     private final Map<Long, EntityCache> entities = new HashMap<>();
     private final Map<Long, Long> uniqueIdToRuntimeId = new HashMap<>();
     private final WirePlayerState player = new WirePlayerState();
+    private final ac.navro.proxy.packets.input.teleport.TeleportHandler teleportHandler =
+            new ac.navro.proxy.packets.input.teleport.TeleportHandler(this);
     private final CompensatedWorld world = new CompensatedWorld(player.collisionPhysics);
     private final ac.navro.proxy.compensated.world.BackendBlockSnapshots backendBlocks =
             new ac.navro.proxy.compensated.world.BackendBlockSnapshots();
@@ -172,6 +174,8 @@ public final class SessionState {
             new ac.navro.proxy.packets.server.ServerChunkPackets(player, world);
     private final ac.navro.proxy.packets.server.ServerEntityPackets serverEntityPackets =
             new ac.navro.proxy.packets.server.ServerEntityPackets(player, world, entities, uniqueIdToRuntimeId);
+    private final ac.navro.proxy.packets.server.ServerRewindPackets serverRewindPackets =
+            new ac.navro.proxy.packets.server.ServerRewindPackets();
 
     public void onBackendPacketQueued(BedrockPacket packet) { serverEntityPackets.afterSend(packet); }
     private final ac.navro.proxy.backend.BackendStateSync backendSync=new ac.navro.proxy.backend.BackendStateSync(this);
@@ -230,20 +234,24 @@ public final class SessionState {
         teleportTransport=java.util.Objects.requireNonNull(transport);
     }
     public ac.navro.proxy.teleport.data.TeleportData onProxyTeleport(MovePlayerPacket packet){
-        var data=queueMovementTeleport(packet);
+        var data=queueMovementTeleport(packet, false);
         recordEvent(WireEvent.Direction.PROXY,packet);
         packetCounts.merge("proxy:MovePlayerPacket",1,Integer::sum);
         return data;
     }
-    private ac.navro.proxy.teleport.data.TeleportData queueMovementTeleport(MovePlayerPacket packet){
+    private ac.navro.proxy.teleport.data.TeleportData queueMovementTeleport(MovePlayerPacket packet, boolean fromBackend){
         if(packet.getRuntimeEntityId()!=player.runtimeId()||packet.getMode()==MovePlayerPacket.Mode.HEAD_ROTATION)return null;
-        if(packet.getMode()==null||packet.getMode()==MovePlayerPacket.Mode.NORMAL)packet.setMode(MovePlayerPacket.Mode.TELEPORT);
-
+        if(packet.getMode()==null)packet.setMode(MovePlayerPacket.Mode.NORMAL);
         if(packet.getTeleportationCause()==null)packet.setTeleportationCause(MovePlayerPacket.TeleportationCause.UNKNOWN);
         var p=packet.getPosition();
         ac.navro.proxy.teleport.data.TeleportData data=predictionResetPackets.remove(packet);
         if(data==null){if(authInputPackets!=null)authInputPackets.velocityPackets().clearExternalMotion();data=new ac.navro.proxy.teleport.data.TeleportData(new Vec3(p),packet.isOnGround(),packet.getMode().ordinal());}
-        teleports.queue(data,task->player.queueAcknowledgment(packet,task));
+        var queued = data;
+        boolean backendTeleport = fromBackend && packet.getMode() == MovePlayerPacket.Mode.TELEPORT;
+        teleports.queue(queued, accept -> player.queueAcknowledgment(packet, () -> {
+            accept.run();
+            if (backendTeleport) teleports.supersedeHardCorrection(queued);
+        }));
         return data;
     }
     private final Deque<ProtocolTeleportMotion> teleportMotionSeeds = new ArrayDeque<>();
@@ -254,6 +262,11 @@ public final class SessionState {
     public void setProtocolVersion(int protocolVersion) {
         world.setProtocolVersion(protocolVersion);
         backendBlocks.setProtocolVersion(protocolVersion);
+    }
+
+    public void setRuntimeBlockPalette(ac.navro.proxy.data.block.NetworkBlockStateRegistry.RuntimePalette palette) {
+        world.setRuntimeBlockPalette(palette);
+        backendBlocks.setRuntimeBlockPalette(palette);
     }
 
     private boolean detectionEnabled;
@@ -301,11 +314,21 @@ public final class SessionState {
     public void setSoftCorrectionTransport(java.util.function.Function<CorrectPlayerMovePredictionPacket, Boolean> transport) {
         softCorrectionTransport = java.util.Objects.requireNonNull(transport);
     }
-    public ac.navro.proxy.teleport.data.RewindData onProxyPredictionCorrection(CorrectPlayerMovePredictionPacket packet) {
-        var data = queuePredictionCorrection(packet, false);
+    public ac.navro.proxy.ack.types.MovementCorrectionAck onProxyPredictionCorrection(CorrectPlayerMovePredictionPacket packet) {
+        teleports.syncBlocks(world, player.position(), player.tick(), this::restoreCorrectBlock);
+        serverRewindPackets.syncCorrection(player, packet.getTick(), clientStateCorrection);
+        var acknowledgment = teleports.addPendingCorrection(packet.getTick());
+        player.queueAcknowledgment(packet, () -> {
+            if (!teleports.removePendingCorrection(acknowledgment)) return;
+            var diagnostics = player.worldDiagnostics();
+            if (diagnostics != null) diagnostics.event("proxy_prediction_correction_acknowledged",
+                    ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
+                            "sourceTick", acknowledgment.tick(), "ackId", player.getLatencyUtil().currentAcknowledgmentId(),
+                            "backendType", backendType.name()));
+        });
         recordEvent(WireEvent.Direction.PROXY, packet);
         packetCounts.merge("proxy:CorrectPlayerMovePredictionPacket", 1, Integer::sum);
-        return data;
+        return acknowledgment;
     }
     public float playerYOffset(){return playerYOffsetInternal();}
     private final java.util.NavigableMap<Long,ac.navro.proxy.teleport.data.RewindHistory> predictionHistory=new java.util.TreeMap<>();
@@ -326,19 +349,17 @@ public final class SessionState {
         teleports.setLastKnowValid(frame.position());
     }
     public void rewindPrediction(long tick){
-        if(teleports.isTeleporting())return;
+        if(teleports.isTeleporting() || teleports.hasPendingCorrection() || player.isMovementExempted())return;
         var frame=predictionHistory.get(tick);
         if(frame==null)return;
         if(smoothSetback || player.vehicleData != null) {
-            softCorrectionTransport.apply(frame.createPacket(player.vehicleData != null));
+            teleports.correct(frame, player.vehicleData != null && player.vehicleData.canWeControlThisVehicle, softCorrectionTransport);
             return;
         }
         var prediction=authInputPackets();
         var reset=new ac.navro.proxy.teleport.data.CorrectionResetData(frame,player.flying()?null:prediction.velocityPackets().setbackVelocity(frame));
         reset.bindExternalMotion(prediction.velocityPackets().externalMotionSequence(),prediction.context().certainVelocity);
-        var packet=new MovePlayerPacket();packet.setRuntimeEntityId(player.runtimeId());packet.setPosition(frame.position().toVector3f());
-        var rotation=player.rawInputRotation();packet.setRotation(rotation==null?org.cloudburstmc.math.vector.Vector3f.ZERO:org.cloudburstmc.math.vector.Vector3f.from(rotation.x(),rotation.y(),rotation.z()));
-        packet.setOnGround(frame.onGround());packet.setMode(MovePlayerPacket.Mode.TELEPORT);packet.setTeleportationCause(MovePlayerPacket.TeleportationCause.BEHAVIOR);
+        var packet=teleports.hardCorrectionPacket(reset);
         predictionResetPackets.put(packet,reset);
         boolean sent;
         try{sent=teleportTransport.apply(packet);}finally{predictionResetPackets.remove(packet);}
@@ -359,9 +380,20 @@ public final class SessionState {
 
     public boolean detectionEnabled() { return detectionEnabled; }
 
+    private java.util.function.BooleanSupplier exemptionPermission;
+
+    public void setExemptionPermission(java.util.function.BooleanSupplier permission) {
+        exemptionPermission = java.util.Objects.requireNonNull(permission);
+    }
+
+    private void refreshExemptionPermission() {
+        if (detectionEnabled && exemptionPermission != null) player.setExempted(exemptionPermission.getAsBoolean());
+    }
+
 
     public boolean receiveClient(BedrockPacket packet, long maxBalanceAdvantageMs) {
         if(ac.navro.proxy.backend.BackendStateSync.privatePacket(packet))return false;
+        refreshExemptionPermission();
         applyCheckConfig();
         if(commandRuntime!=null)maxBalanceAdvantageMs=commandRuntime.config().maxBalanceAdvantage();
         ac.navro.proxy.packets.input.PacketEvent event=null;
@@ -376,8 +408,10 @@ public final class SessionState {
         final boolean checked = detectionEnabled && !player.isExempted();
         if (detectionEnabled && !ac.navro.proxy.listener.PacketListener.onPacketReceived(
                 this, packet, maxBalanceAdvantageMs)) {
-            if (packet instanceof PlayerAuthInputPacket input)
-                ac.navro.proxy.packets.input.PostAuthInputPackets.onPacket(this, input, true);
+            if (packet instanceof PlayerAuthInputPacket input) {
+                if (teleportHandler.processRejectedInput(input)) player.finishInput();
+                else ac.navro.proxy.packets.input.PostAuthInputPackets.onPacket(this, input, true);
+            }
             return event==null?false:placementPipeline().finish(event,false);
         }
         if(event==null&&detectionEnabled&&!player.isExempted()) {
@@ -403,6 +437,7 @@ public final class SessionState {
     }
 
     public void observeClient(BedrockPacket packet) {
+        refreshExemptionPermission();
         ac.navro.proxy.packets.other.VehiclePackets.onPacketReceive(player, packet);
         observeClient(packet, false);
     }
@@ -422,9 +457,11 @@ public final class SessionState {
         packetCounts.merge("client:" + packet.getClass().getSimpleName(), 1, Integer::sum);
         long sequence = recordEvent(WireEvent.Direction.CLIENT, packet);
         if (packet instanceof PlayerAuthInputPacket input) {
-            if(detectionEnabled)inventoryResponseSync.receive(input);
-            if (detectionEnabled && !player.isExempted() && !awaitingBackendSpawnPosition) authInputPackets().beforeInput(input);
             clientInputPackets++;
+            clientPosition = input.getPosition();
+            if(detectionEnabled)inventoryResponseSync.receive(input);
+            if (detectionEnabled && player.isExempted()) return true;
+            if (detectionEnabled && !awaitingBackendSpawnPosition) authInputPackets().beforeInput(input);
 
             if (!checked) {
                 long arrivalMs = System.currentTimeMillis();
@@ -438,7 +475,6 @@ public final class SessionState {
                 recordAnomaly(WireEvent.Direction.CLIENT, sequence, "nonIncreasingInputTick", input.getTick() + " <= " + lastInputTick);
             }
             lastInputTick = Math.max(lastInputTick, input.getTick());
-            clientPosition = input.getPosition();
             boolean movementCoordinates = ac.navro.proxy.packets.input.legacy.InputPositionDecoder
                     .usesMovementCoordinates(spawned, input.getInputData().contains(
                             org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.HANDLE_TELEPORT));
@@ -448,14 +484,15 @@ public final class SessionState {
             player.apply(input, world, detectionEnabled ? null : fluidState, movementCoordinates ? playerYOffset() : 0);
             if (spawned) {
                 world.tickCollisionBlockActors();
-                if(detectionEnabled && !player.isExempted())player.tickPredictionEffects();
+                if(detectionEnabled)player.tickPredictionEffects();
                 for (EntityCache entity : entities.values()) if (entity.getCurrent() != null) entity.getCurrent().tick();
             }
-            boolean wasTeleporting=teleports.isHardTeleporting();
-            confirmTeleport(input);
+            boolean wasHardTeleporting=teleports.isHardTeleporting();
+            boolean wasTeleporting=teleports.isTeleporting();
+            boolean skipTravel=teleportHandler.processTeleport(input);
             if (spawned && !detectionEnabled) player.collisionPhysics.begin(world, entities, input.getTick(), null);
-            if(detectionEnabled && !teleports.isTeleporting()) {
-                if(wasTeleporting) authInputPackets().finishTeleportConfirmation(input);
+            if(detectionEnabled && !teleports.isHardTeleporting()) {
+                if(skipTravel || wasHardTeleporting || (wasTeleporting && player.isMovementExempted())) authInputPackets().finishTeleportConfirmation(input);
                 else authInputPackets().run(input);
             }
             tickSnapshots.addLast(player.snapshot(fluidState));
@@ -549,12 +586,14 @@ public final class SessionState {
 
     public void observeBackend(BedrockPacket packet) {
         if(consumeBackendSync(packet))return;
+        serverRewindPackets.capture(player, packet);
         backendBlocks.observe(packet);
         backendInventories.observe(packet);
         inventoryResponseSync.backend(packet);
         if(placementPipeline!=null)placementPipeline.observeBackend(packet);
         if(detectionEnabled){authInputPackets().itemUse().observeInventory(packet);if(packet instanceof SetEntityDataPacket data)authInputPackets().itemUse().observeMetadata(data);}
-        ac.navro.proxy.packets.server.ServerDataPackets.onPacket(player, packet);
+        ac.navro.proxy.packets.server.ServerDataPackets.onPacket(player, packet,
+                backendType == ac.navro.proxy.protocol.BackendType.BDS);
         serverChunkPackets.onPacket(packet);
         serverEntityPackets.onPacket(packet);
         ac.navro.proxy.packets.other.VehiclePackets.onPacketSend(this, packet);
@@ -592,6 +631,8 @@ public final class SessionState {
 
 
                     teleports.getQueuedTeleports().removeAll(supersededTeleports);
+                    teleports.clearInterpolation();
+                    teleports.resetCorrection();
                     teleports.getAuthInputHistory().clear();
                     predictionHistory.clear();tickSnapshots.clear();motionSeeds.clear();teleportMotionSeeds.clear();
                     teleports.setLastKnowValid(foot.up(playerYOffset()));
@@ -615,6 +656,8 @@ public final class SessionState {
                 player.resetFlying();
                 fluidState.reset();
                 teleports.getQueuedTeleports().clear();
+                teleports.clearInterpolation();
+                teleports.resetCorrection();
                 teleportMotionSeeds.clear();
                 tickSnapshots.clear();
                 motionSeeds.clear();
@@ -653,18 +696,17 @@ public final class SessionState {
         }
 
 
-
         if (packet instanceof MovePlayerPacket move
                 && move.getRuntimeEntityId() == player.runtimeId()
                 && move.getMode() != MovePlayerPacket.Mode.HEAD_ROTATION) {
             serverPosition = move.getPosition();
             player.apply(move);
-            queueMovementTeleport(move);
+            queueMovementTeleport(move, true);
         } else if (packet instanceof CorrectPlayerMovePredictionPacket correction) {
             backendCorrectionPackets++;
             lastCorrectionTick = correction.getTick();
             serverPosition = correction.getPosition();
-            queuePredictionCorrection(correction, true);
+            queueBackendPredictionCorrection(correction);
             var trace=player.worldDiagnostics();
             if(trace!=null){trace.beginMotionTrace();trace.event("backend_prediction_correction",ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
                     "sourceTick",correction.getTick(),"position",String.valueOf(correction.getPosition()),
@@ -717,14 +759,14 @@ public final class SessionState {
                 effect.setTick(Integer.MIN_VALUE);var snapshot=effect.clone();player.queueAcknowledgment(packet,()->player.apply(snapshot));
             }else player.apply(effect);
         }
+        if (detectionEnabled && smoothSetback) serverRewindPackets.onPacketSend(packet);
     }
 
-
-    private ac.navro.proxy.teleport.data.RewindData queuePredictionCorrection(
-            CorrectPlayerMovePredictionPacket packet, boolean backendAuthority) {
+    private ac.navro.proxy.teleport.data.RewindData queueBackendPredictionCorrection(
+            CorrectPlayerMovePredictionPacket packet) {
         if (!detectionEnabled || packet.getPredictionType() == org.cloudburstmc.protocol.bedrock.data.PredictionType.VEHICLE)
             return null;
-        long includedMotion = backendAuthority && backendType == ac.navro.proxy.protocol.BackendType.BDS
+        long includedMotion = backendType == ac.navro.proxy.protocol.BackendType.BDS
                 ? authInputPackets().velocityPackets().externalMotionSequence() : -1;
         var rewind = new ac.navro.proxy.teleport.data.RewindData(packet.getTick(),
                 new Vec3(packet.getPosition()), new Vec3(packet.getDelta()), packet.isOnGround(),
@@ -733,9 +775,10 @@ public final class SessionState {
             Long ackId = player.getLatencyUtil().currentAcknowledgmentId();
             Runnable complete = () -> {
                 accept.run();
+                if (backendType == ac.navro.proxy.protocol.BackendType.BDS) teleports.supersedeHardCorrection(rewind);
                 var diagnostics = player.worldDiagnostics();
                 if (diagnostics != null) diagnostics.event(
-                        backendAuthority ? "backend_prediction_correction_acknowledged" : "proxy_prediction_correction_acknowledged",
+                        "backend_prediction_correction_acknowledged",
                         ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
                                 "sourceTick", rewind.tick(), "ackId", ackId, "backendType", backendType.name()));
             };
@@ -938,56 +981,17 @@ public final class SessionState {
     public Vector3i publisherPosition() { return world.getRadiusCenter(); }
     public int publisherRadius() { return world.getRadius(); }
 
-    private void confirmTeleport(PlayerAuthInputPacket input) {
-        var log=player.worldDiagnostics();
-        if(log!=null && teleports.isTeleporting()) {
-            var head=teleports.getQueuedTeleports().peek();
-            log.event("pendingTeleportInput",ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
-                    "inputTick",input.getTick(),"handleTeleport",input.getInputData().contains(
-                            org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.HANDLE_TELEPORT),
-                    "wirePosition",String.valueOf(input.getPosition()),"pendingTeleports",teleports.getQueuedTeleports().size(),
-                    "headType",head==null?null:head.getClass().getSimpleName(),
-                    "headAccepted",head!=null&&head.isAccepted(),"headTarget",head==null?null:head.getPosition().toVector3f()));
-        }
-        teleports.drainReadyTeleports(input,data -> {
-            if (data instanceof ac.navro.proxy.teleport.data.RewindData rewind) {
-                ac.navro.proxy.teleport.PredictionRewind.process(this, rewind);
-                return;
-            }
-            boolean handled=input.getInputData().contains(org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.HANDLE_TELEPORT);
-            Vec3 wire=new Vec3(input.getPosition());
-            boolean accepted=data.matchesConfirmation(wire,handled);
-            float offset=playerYOffset();
-            Vec3 foot=accepted&&data.getMode()==1?wire.down(offset):data.getPosition().down(offset);
-            if(data instanceof ac.navro.proxy.teleport.data.CorrectionResetData reset){
-                var external=authInputPackets().context().certainVelocity;
-                if(external==reset.includedExternalImpulse())external=null;
-                player.acceptTeleport(reset.nativeTargetFoot(),reset.isOnGround());
-                if(reset.deliveredVelocity()!=null)player.setVelocity(reset.deliveredVelocity());
-                player.acceptInputPosition(reset.confirmedFoot(input),java.util.List.of());
-                player.resetCorrectionObservation();
-                foot=player.position().clone();
-                authInputPackets().reset();authInputPackets().context().certainVelocity=external;
-                authInputPackets().velocityPackets().consumeSetbackExternalMotion(reset);
-            }else{
-                player.acceptTeleport(foot,data.isOnGround());
-                if(authInputPackets!=null)authInputPackets.reset();
-            }
-            predictionHistory.clear();
-            teleports.getAuthInputHistory().clear();
-            fluidState.resetMovement();
-            tickSnapshots.clear();motionSeeds.clear();teleportMotionSeeds.clear();
-            teleports.setLastKnowValid(foot.up(offset));
-            if(accepted&&!teleports.isTeleporting() && !(data instanceof ac.navro.proxy.teleport.data.CorrectionResetData reset && reset.deliveredVelocity()!=null)){
-                Vec3 expected=data.isOnGround()
-                        &&input.getInputData().contains(org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.START_JUMPING)
-                        &&player.predictionSprinting()&&!player.flying()
-                        ?ProtocolTeleportMotion.sprintJumpImpulse(input.getRotation().getY()):null;
-                var seed=ProtocolTeleportMotion.fromConfirmation(input.getTick(),new Vec3(input.getDelta()),expected);
-                if(seed!=null)teleportMotionSeeds.addLast(seed);
-            }
-            if(!accepted&&!teleports.isTeleporting())teleports.teleport(data.getPosition());
-        });
+    public void resetMovementHistory() {
+        predictionHistory.clear();
+        teleports.getAuthInputHistory().clear();
+        fluidState.resetMovement();
+        tickSnapshots.clear();
+        motionSeeds.clear();
+        teleportMotionSeeds.clear();
+    }
+
+    public void rememberTeleportMotion(ProtocolTeleportMotion seed) {
+        teleportMotionSeeds.addLast(seed);
     }
 
 

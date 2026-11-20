@@ -28,7 +28,9 @@ public final class PostAuthInputPackets {
         player.doingInventoryAction = false;
         context.hasDepthStrider = false;
 
-        packet.setPosition(player.position().up(session.playerYOffset()).toVector3f());
+        var pendingTarget = player.vehicleData == null ? session.teleports().pendingTeleportPosition() : null;
+        packet.setPosition(pendingTarget != null ? pendingTarget.toVector3f()
+                : player.position().up(session.playerYOffset()).toVector3f());
         LegacyAuthInputPackets.correctInputData(player, packet);
         if (session.teleports().isHardTeleporting()) return trace(session, packet, false, "hard_teleport");
         if (session.teleports().isTeleporting()) return !cancelled;

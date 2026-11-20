@@ -4,7 +4,8 @@ import ac.navro.anticheat.util.math.Vec3;
 import ac.navro.proxy.SessionState;
 import ac.navro.proxy.data.input.TickData;
 import ac.navro.proxy.prediction.RiptidePhysics;
-import ac.navro.proxy.teleport.data.TeleportData;
+import ac.navro.proxy.teleport.data.CorrectionResetData;
+import ac.navro.proxy.teleport.data.RewindHistory;
 import org.cloudburstmc.math.vector.*;
 import org.cloudburstmc.protocol.bedrock.data.*;
 import org.cloudburstmc.protocol.bedrock.packet.*;
@@ -43,7 +44,7 @@ class PostAuthInputPacketsTest {
         s.observeClient(input(16,80,64));assertFalse(alerts.isEmpty());assertEquals(0,s.player().tickSinceBlockResync);
     }
     @Test void hardTeleportBlocksForwardingUntilItsActualConfirmationAndPausesResync() {
-        var s=session();var moves=AuthInputPacketsTest.transport(s);s.player().tickSinceBlockResync=5;s.player().requestTeleportToLastValid();
+        var s=session();var moves=AuthInputPacketsTest.transport(s);s.player().tickSinceBlockResync=5;s.rewindPrediction(10);
         var wrong=input(11,80,64);assertFalse(s.receiveClient(wrong,8500));assertEquals(5,s.player().tickSinceBlockResync);
         assertEquals(8,wrong.getPosition().getX());assertTrue(s.teleports().isHardTeleporting());
         assertTrue(s.player().getLatencyUtil().onResponse(1000));
@@ -90,7 +91,8 @@ class PostAuthInputPacketsTest {
     @Test void historyUsesNativeSortedTrimmingAndDoesNotTrimDuringPendingTeleport() {
         var s=session();for(int tick=11;tick<=40;tick++)PostAuthInputPackets.onPacket(s,input(tick,8,64),false);
         assertEquals(20,s.teleports().getAuthInputHistory().size());assertEquals(21L,s.teleports().getAuthInputHistory().firstKey());
-        s.teleports().getQueuedTeleports().add(new TeleportData(new Vec3(8,65.62001F,8)));
+        var frame=RewindHistory.capture(s.authInputPackets().context(),10,s.playerYOffset());
+        s.teleports().getQueuedTeleports().add(new CorrectionResetData(frame));
         for(int tick=41;tick<=45;tick++)assertFalse(PostAuthInputPackets.onPacket(s,input(tick,8,64),false));
         assertEquals(25,s.teleports().getAuthInputHistory().size());
         s.teleports().getQueuedTeleports().clear();PostAuthInputPackets.onPacket(s,input(46,8,64),false);

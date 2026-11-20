@@ -26,6 +26,7 @@ public final class NavroProxy {
     private final java.util.Map<java.util.UUID, java.util.function.Consumer<String>> onlineAlerts =
             new java.util.concurrent.ConcurrentHashMap<>();
     private final ProxyConfig config;
+    private ac.navro.proxy.protocol.FloodgateForwarding floodgateForwarding;
     private final ac.navro.proxy.command.CommandRuntime commands;
     public ac.navro.proxy.command.CommandRuntime commands(){return commands;}
     private final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -81,11 +82,18 @@ public final class NavroProxy {
         return config;
     }
 
+    ac.navro.proxy.protocol.FloodgateForwarding floodgateForwarding() {
+        return floodgateForwarding;
+    }
+
     EventLoopGroup backendGroup() {
         return backendGroup;
     }
 
-    public void start() throws InterruptedException {
+    public void start() throws InterruptedException, java.io.IOException, java.security.GeneralSecurityException {
+        if (config.floodgateForwardingKey() != null) {
+            floodgateForwarding = ac.navro.proxy.protocol.FloodgateForwarding.load(config.floodgateForwardingKey());
+        }
         if(config.mode()==ProxyConfig.Mode.DETECT)ac.navro.proxy.data.inventory.NativePredictionItems.initialize();
         var latestCodec = SupportedCodecs.fallback(2225);
         long guid = ThreadLocalRandom.current().nextLong();

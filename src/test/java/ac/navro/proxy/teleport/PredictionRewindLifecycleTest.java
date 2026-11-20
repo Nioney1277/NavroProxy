@@ -62,6 +62,84 @@ class PredictionRewindLifecycleTest {
             assertFalse(s.teleports().isTeleporting());
         }
     }
+
+    @Test void acknowledgedBdsRewindSupersedesAnEarlierHardCorrectionInWireOrder() {
+        var state = bdsSession();
+        var deferred = new ArrayList<Runnable>();
+        state.setBdsCorrectionAcknowledgmentDispatcher(deferred::add);
+        var moves = AuthInputPacketsTest.transport(state);
+        state.observeClient(AuthInputPacketsTest.input(10, 8, 64, 8, new Vec3(0, -.0784F, 0)));
+        state.observeClient(AuthInputPacketsTest.input(11, 80, 64, 8, Vec3.ZERO));
+        assertEquals(1, moves.size());
+        assertTrue(state.teleports().isHardTeleporting());
+        state.player().getLatencyUtil().queue(96, true);
+        state.observeBackend(correction(10, 10, new Vec3(0, -.0784F, 0)));
+        state.player().getLatencyUtil().onResponse(96);
+        var mismatched = AuthInputPacketsTest.input(12, 10, 64, 8, new Vec3(0, -.0784F, 0));
+        mismatched.getInputData().add(org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.HANDLE_TELEPORT);
+        state.observeClient(mismatched);
+        assertTrue(state.teleports().isHardTeleporting());
+        assertEquals(1, deferred.size());
+        deferred.getFirst().run();
+        assertFalse(state.teleports().isHardTeleporting());
+        assertInstanceOf(RewindData.class, state.teleports().getQueuedTeleports().peek());
+        state.observeClient(AuthInputPacketsTest.input(13, 10, 64, 8, new Vec3(0, -.0784F, 0)));
+        assertFalse(state.teleports().isTeleporting());
+        assertEquals(10, state.player().position().x);
+        assertEquals(1, moves.size());
+    }
+
+    @Test void acknowledgedBackendTeleportSupersedesOlderHardCorrection() {
+        var state = AuthInputPacketsTest.session();
+        var moves = AuthInputPacketsTest.transport(state);
+        state.observeClient(AuthInputPacketsTest.input(10, 8, 64, 8, new Vec3(0, -.0784F, 0)));
+        state.observeClient(AuthInputPacketsTest.input(11, 80, 64, 8, Vec3.ZERO));
+        assertEquals(1, moves.size());
+        state.player().getLatencyUtil().onResponse(1000);
+        assertTrue(state.teleports().isHardTeleporting());
+
+        var teleport = new MovePlayerPacket();
+        teleport.setRuntimeEntityId(7);
+        teleport.setMode(MovePlayerPacket.Mode.TELEPORT);
+        teleport.setPosition(Vector3f.from(10, 65.62001F, 8));
+        teleport.setRotation(Vector3f.ZERO);
+        state.player().getLatencyUtil().queue(1100, true);
+        state.observeBackend(teleport);
+        assertTrue(state.teleports().isHardTeleporting());
+        state.observeClient(AuthInputPacketsTest.input(12, 10, 64, 8, Vec3.ZERO));
+        assertTrue(state.teleports().isHardTeleporting());
+
+        state.player().getLatencyUtil().onResponse(1100);
+        assertFalse(state.teleports().isHardTeleporting());
+        assertTrue(state.teleports().isTeleporting());
+        var next = AuthInputPacketsTest.input(13, 10, 64, 8, Vec3.ZERO);
+        state.observeClient(next);
+        assertFalse(state.teleports().isTeleporting());
+        assertEquals(10, state.player().position().x);
+        assertEquals(1, moves.size());
+    }
+
+    @Test void bdsRewindDoesNotSendAnotherCorrectionOnTheFrameThatAppliesIt() {
+        var state = bdsSession();
+        var moves = AuthInputPacketsTest.transport(state);
+        state.observeClient(AuthInputPacketsTest.input(10, 8, 64, 8, new Vec3(0, -.0784F, 0)));
+        state.player().getLatencyUtil().queue(97, true);
+        state.observeBackend(correction(10, 10, new Vec3(0, -.0784F, 0)));
+        state.player().getLatencyUtil().onResponse(97);
+
+        var staleInput = AuthInputPacketsTest.input(11, 8, 64, 8, new Vec3(0, -.0784F, 0));
+        state.observeClient(staleInput);
+        assertEquals(2F, state.authInputPackets().lastResult().rawOffset());
+        assertTrue(state.authInputPackets().lastResult().accepted());
+        assertEquals(10F, staleInput.getPosition().getX());
+        assertFalse(state.teleports().isTeleporting());
+        assertTrue(moves.isEmpty());
+
+        state.observeClient(AuthInputPacketsTest.input(12, 80, 64, 8, Vec3.ZERO));
+        assertEquals(1, moves.size());
+        assertTrue(state.teleports().isHardTeleporting());
+    }
+
     @Test void replayKeepsNewlyAcknowledgedMetadataAndTheLiveInputTick() {
         var s=AuthInputPacketsTest.session();
         s.observeClient(AuthInputPacketsTest.input(10,8,64,8,new Vec3(0,-.0784F,0)));
@@ -144,14 +222,15 @@ class PredictionRewindLifecycleTest {
         assertEquals(10,s.player().position().x);
     }
 
-    @Test void missingHistoryUsesAnAuthoritativeHardResetInsteadOfAcceptingRawMovement() {
+    @Test void missingHistoryUsesAnOrdinaryTeleportInsteadOfAcceptingRawMovement() {
         var s=AuthInputPacketsTest.session();var resets=AuthInputPacketsTest.transport(s);
         s.observeClient(AuthInputPacketsTest.input(30,8,64,8,new Vec3(0,-.0784F,0)));
         s.player().getLatencyUtil().queue(97,true);s.observeBackend(correction(1,10,new Vec3(0,-.0784F,0)));
         s.player().getLatencyUtil().onResponse(97);
         s.observeClient(AuthInputPacketsTest.input(31,1000,64,8,new Vec3(0,-.0784F,0)));
         assertEquals(1,resets.size());assertEquals(10,resets.get(0).getPosition().getX());
-        assertTrue(s.teleports().isHardTeleporting());assertEquals(8,s.player().position().x);
+        assertTrue(s.teleports().isTeleporting());assertFalse(s.teleports().isHardTeleporting());
+        assertEquals(8,s.player().position().x);
     }
 
     @Test void liveCrawlActionHasTheSamePoseLifecycleWithAndWithoutCorrectionReplay() {

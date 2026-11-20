@@ -80,31 +80,35 @@ func rtcAPI(local string) (*webrtc.API, error) {
 }
 
 func main() {
-	listen := flag.String("listen", "0.0.0.0:19137", "Independent inspection signaling listener")
+	listen := flag.String("listen", "0.0.0.0:19132", "Independent inspection HTTP/TCP signaling listener")
 	backend := flag.String("backend", "http://127.0.0.1:19134", "NetherNet backend")
 	adapter := flag.String("adapter", "127.0.0.1:19138", "Loopback Java native-batch adapter")
 	local := flag.String("local-ip", "", "Local LAN IPv4 for Android ICE enumeration")
 	keyPath := flag.String("identity", "keys/inspect-identity.pem", "Persistent public listener identity key")
 	offline := flag.Bool("offline-backend", false, "Re-sign verified frontend login for a private offline NetherNet backend")
+	stock := flag.Bool("stock-geyser-backend", false, "Use stock private NetherNet Geyser with WaterdogPE forwarding")
 	detect := flag.Bool("detect", false, "Enable the existing Navro checks and corrections on this independent connection")
 	flag.Parse()
-	if err := run(*listen, *backend, *adapter, *local, *keyPath, *offline, *detect); err != nil {
+	if err := run(*listen, *backend, *adapter, *local, *keyPath, *offline, *detect, *stock); err != nil {
 		slog.Error("inspect stopped", "error", err)
 		os.Exit(1)
 	}
 }
-func run(listen, backend, adapter, local, keyPath string, offline, detect bool) error {
-	if detect && !offline {
+func run(listen, backend, adapter, local, keyPath string, offline, detect, stock bool) error {
+	if stock && (!detect || offline) {
+		return errors.New("stock Geyser mode requires -detect and is separate from -offline-backend")
+	}
+	if detect && !offline && !stock {
 		return errors.New("detection currently requires an explicitly private offline backend")
 	}
-	if offline {
+	if offline || stock {
 		u, err := url.Parse(backend)
 		if err != nil {
 			return err
 		}
 		ip := net.ParseIP(u.Hostname())
-		if ip == nil || !ip.IsLoopback() {
-			return errors.New("offline backend login is restricted to an explicit loopback endpoint")
+		if ip == nil || !ip.IsLoopback() || (stock && (u.Scheme != "http" || u.Port() == "" || u.User != nil)) {
+			return errors.New("private backend login requires an explicit loopback endpoint")
 		}
 	}
 	host, _, err := net.SplitHostPort(adapter)
@@ -117,6 +121,13 @@ func run(listen, backend, adapter, local, keyPath string, offline, detect bool) 
 	api, err := rtcAPI(local)
 	if err != nil {
 		return err
+	}
+	backendAPI := api
+	if stock {
+		backendAPI, err = rtcAPI("127.0.0.1")
+		if err != nil {
+			return err
+		}
 	}
 	key, saved, err := nethernet.LoadOrGenerateIdentityKey(keyPath)
 	if err != nil {
@@ -162,7 +173,7 @@ func run(listen, backend, adapter, local, keyPath string, offline, detect bool) 
 			return err
 		}
 		go func(front *nethernet.Conn) {
-			if err := session(front, backend, adapter, api, offline, detect); err != nil {
+			if err := session(front, backend, adapter, backendAPI, offline, detect, stock); err != nil {
 				slog.Info("inspect_session_closed", "error", err)
 			}
 		}(c.(*nethernet.Conn))
@@ -176,7 +187,7 @@ type event struct {
 	tick    bool
 }
 
-func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, offline, detect bool) error {
+func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, offline, detect, stock bool) error {
 	defer front.Close()
 	if front.PublicKey() == nil {
 		return errors.New("missing frontend DTLS identity")
@@ -197,13 +208,15 @@ func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, of
 	out := bufio.NewWriter(ipc)
 	in := bufio.NewReader(ipc)
 	magic := uint32(0x4e564231)
-	if offline {
+	if stock {
+		magic = stockBridgeMagic
+	} else if offline {
 		magic = 0x4e564233
 	}
 	binary.Write(out, binary.BigEndian, magic)
 	binary.Write(out, binary.BigEndian, uint32(len(public)))
 	out.Write(public)
-	if offline {
+	if offline || stock {
 		pub, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
 		if err != nil {
 			return err
@@ -217,7 +230,14 @@ func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, of
 		binary.Write(out, binary.BigEndian, uint32(len(priv)))
 		out.Write(priv)
 		clear(priv)
-		if detect {
+		if stock {
+			ip := selectedIP(front)
+			if ip == nil {
+				return errors.New("missing frontend ICE address")
+			}
+			out.WriteByte(byte(len(ip)))
+			out.Write(ip)
+		} else if detect {
 			out.WriteByte(1)
 		} else {
 			out.WriteByte(0)
@@ -226,17 +246,41 @@ func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, of
 	if err = out.Flush(); err != nil {
 		return err
 	}
+	if stock {
+		if err := ipc.SetDeadline(time.Now().Add(10 * time.Second)); err != nil {
+			return err
+		}
+		var accepted uint32
+		if err := binary.Read(in, binary.BigEndian, &accepted); err != nil {
+			return fmt.Errorf("stock Geyser adapter handshake: %w", err)
+		}
+		if accepted != magic {
+			return errors.New("stock Geyser adapter did not confirm detection")
+		}
+	}
+
+
 	identity, err := nethernet.SelfSignedIdentity(key, "https://authorization.franchise.minecraft-services.net/")
 	if err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 	defer cancel()
-	back, err := (nethernet.Dialer{API: api, Identity: identity, DisableTrickleICE: true}).DialContext(ctx, backend, endpoint.NewClient())
+	signaling := endpoint.NewClient()
+	if stock {
+		signaling = stockSignaling()
+	}
+	back, err := (nethernet.Dialer{API: api, Identity: identity, DisableTrickleICE: true}).DialContext(ctx, backend, signaling)
 	if err != nil {
 		return err
 	}
 	defer back.Close()
+	if stock {
+		if !selectedIP(back).IsLoopback() {
+			return errors.New("stock Geyser media is outside loopback")
+		}
+		return stockBridge(front, back, ipc, in, out)
+	}
 	events := make(chan event, 8)
 	done := make(chan struct{})
 	defer close(done)

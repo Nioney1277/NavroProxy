@@ -361,10 +361,10 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
                     default -> { }
                 }
             }
+            horizontalCollision = inputData.contains(PlayerAuthInputData.HORIZONTAL_COLLISION);
+            verticalCollision = inputData.contains(PlayerAuthInputData.VERTICAL_COLLISION);
+            updateInputPose();
         }
-        horizontalCollision = inputData.contains(PlayerAuthInputData.HORIZONTAL_COLLISION);
-        verticalCollision = inputData.contains(PlayerAuthInputData.VERTICAL_COLLISION);
-        if (!predictionInputProcessing) updateInputPose();
         predictionSprinting = serverSprinting;
         predictionSwimming = clientSwimming;
         predictionCrawling = clientCrawling;
@@ -569,13 +569,17 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
 
     public float inputPositionDistance(Vec3 physical) { return inputPositionResidual(physical).length(); }
 
+    public boolean usesVehiclePosition() {
+        return predictionInputProcessing ? vehicleData != null : predictedVehicle != 0;
+    }
+
     public Vec3 inputPositionTarget() {
-        Vec3 physical = predictedVehicle == 0 && boundingBox.isValid() ? boundingBox.feetCenter() : position;
+        Vec3 physical = !usesVehiclePosition() && boundingBox.isValid() ? boundingBox.feetCenter() : position;
         return inputPosition == null ? unvalidatedPosition.clone() : inputPosition.physicalTarget(physical);
     }
 
     public void setResolvedPosition(Vec3 value, Box solved, boolean previous) {
-        setResolvedPosition(value, solved, previous, predictedVehicle != 0);
+        setResolvedPosition(value, solved, previous, usesVehiclePosition());
     }
 
 
@@ -600,11 +604,8 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
 
     public void acceptInputPosition(Vec3 value, java.util.List<Box> collisions) {
         if (boundingBox.isValid()) {
-            Box accepted = predictedVehicle == 0
-                    ? ac.navro.anticheat.collision.AcceptedPositionPhysics.synchronize(boundingBox, value, collisions)
-                    : boundingBox;
-            if (predictedVehicle == 0) setResolvedMovement(accepted, false);
-            else setResolvedPosition(value, accepted, false);
+            if (usesVehiclePosition()) setResolvedPosition(value, boundingBox, false, true);
+            else setResolvedMovement(ac.navro.anticheat.collision.AcceptedPositionPhysics.synchronize(boundingBox, value, collisions), false);
         } else {
             position = value;
             setBoundingBox(value);
@@ -646,7 +647,7 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
     }
 
     public void refreshPoseBoundingBox() {
-        if (predictedVehicle != 0) return;
+        if (usesVehiclePosition()) return;
         float feet = boundingBox.isValid() ? boundingBox.minY : position.y;
         setBoundingBox(new Vec3(position.x, feet, position.z));
     }

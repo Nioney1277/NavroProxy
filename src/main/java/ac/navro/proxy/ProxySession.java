@@ -1,6 +1,7 @@
 package ac.navro.proxy;
 
 import ac.navro.proxy.listener.PacketListener;
+import ac.navro.proxy.protocol.RakNetBackendEncryption;
 import ac.navro.proxy.util.EntityBatchEncoder;
 import ac.navro.proxy.packets.other.NetworkLatencyPackets;
 import ac.navro.proxy.packets.server.ServerChunkPackets;
@@ -22,6 +23,7 @@ import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockClientInitiali
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.LoginPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ClientToServerHandshakePacket;
+import org.cloudburstmc.protocol.bedrock.packet.DisconnectPacket;
 import org.cloudburstmc.protocol.bedrock.packet.NetworkSettingsPacket;
 import org.cloudburstmc.protocol.bedrock.packet.RequestNetworkSettingsPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ServerToClientHandshakePacket;
@@ -36,6 +38,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
@@ -57,6 +60,10 @@ public final class ProxySession {
     private boolean clientEncryptionStarted;
     private LoginPacket pendingLogin;
     private boolean clientHandshakeAccepted;
+    private boolean backendNetworkSettingsReceived;
+    private boolean backendEncryptionReady;
+    private RakNetBackendEncryption backendEncryption;
+    private io.netty.util.concurrent.ScheduledFuture<?> backendEncryptionTimeout;
     private io.netty.util.concurrent.ScheduledFuture<?> serverTickTask;
     private java.util.UUID identity;
     private final java.util.function.Consumer<String> alertRecipient = this::sendAlertMessage;
@@ -65,7 +72,7 @@ public final class ProxySession {
         this.proxy = proxy;
         this.state = new SessionState(proxy.config().backendType());
         this.client = client;
-        state.setBackendSyncTransport(packet->{if(backend!=null&&backend.isConnected())backend.sendPacket(packet);});
+        state.setBackendSyncTransport(packet->{if(backendReady())backend.sendPacket(packet);});
         this.teleportSender=new ac.navro.proxy.teleport.TeleportSender(client,state,()->!closed.get()&&clientHandshakeAccepted);
         state.setTeleportTransport(teleportSender::send);
         state.setPredictionMotionTransport(teleportSender::sendMotion);
@@ -98,7 +105,7 @@ public final class ProxySession {
         this.client.setPacketHandler(new ClientPacketHandler());
         this.client.getPeer().getChannel().closeFuture().addListener(ignored -> close());
         state.placementPipeline().setTransports(packet->{
-            if(closed.get()||backend==null||!backend.isConnected())return false;
+            if(closed.get()||!backendReady())return false;
             backend.sendPacket(packet);return true;
         },client::sendPacket);
         log("RakNet session created");
@@ -175,6 +182,14 @@ public final class ProxySession {
             }
             clientHandshakeAccepted = true;
             state.player().setEntityBatchEncoder(EntityBatchEncoder.install(client, state.player().getLatencyUtil()));
+            if (proxy.config().encryptBackend()) {
+                if (!backendNetworkSettingsReceived || backend == null || !backend.isConnected()) {
+                    disconnect("Backend encryption requested before Bedrock network settings");
+                    return;
+                }
+                backendEncryptionTimeout = backend.getPeer().getChannel().eventLoop().schedule(
+                        () -> disconnect("Bedrock backend encryption handshake timed out"), 10, TimeUnit.SECONDS);
+            }
             forwardToBackend(pendingLogin);
             pendingLogin = null;
             log("client encryption handshake confirmed");
@@ -185,6 +200,7 @@ public final class ProxySession {
             disconnect("Game packet received before Bedrock login completed");
             return;
         }
+        if (proxy.config().encryptBackend() && !backendEncryptionReady) return;
         if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.CommandRequestPacket command
                 &&ac.navro.proxy.command.NavroCommand.handle(command.getCommand(),new ac.navro.proxy.command.NavroCommand.Sender(){
                     public java.util.UUID identity(){return identity;}
@@ -209,6 +225,11 @@ public final class ProxySession {
         else PacketRelay.forward(client, backend, packet);
     }
 
+    private boolean backendReady() {
+        return backend != null && backend.isConnected()
+                && (!proxy.config().encryptBackend() || backendEncryptionReady);
+    }
+
 
     private boolean startClientEncryption(LoginPacket login) {
         try {
@@ -230,8 +251,20 @@ public final class ProxySession {
                 return false;
             }
             var verifiedIdentity=ac.navro.proxy.protocol.LoginIdentity.fromVerifiedChain(chain);
+            if (proxy.config().encryptBackend()) {
+                backendEncryption = new RakNetBackendEncryption();
+                var forwarding = proxy.floodgateForwarding();
+                if (forwarding != null) {
+                    pendingLogin = backendEncryption.forwardedLogin(login.getProtocolVersion(), chain, clientData,
+                            (InetSocketAddress) client.getSocketAddress(), forwarding);
+                } else {
+                    pendingLogin = backendEncryption.login(login.getProtocolVersion(), verifiedIdentity,
+                            chain.rawIdentityClaims(), clientData);
+                }
+            }
             state.player().setName(verifiedIdentity.displayName());
             identity=verifiedIdentity.uuid();
+            state.setExemptionPermission(() -> proxy.permissions().hasPermission(identity,"navro.exempt",false));
             proxy.registerAlertRecipient(identity,alertRecipient);
             proxy.commands().attach(identity,state);
             try {
@@ -318,6 +351,15 @@ public final class ProxySession {
         if (closed.get()) {
             return;
         }
+        if (packet instanceof ServerToClientHandshakePacket handshake) {
+            completeBackendEncryption(handshake);
+            return;
+        }
+        if (proxy.config().encryptBackend() && !backendEncryptionReady
+                && !(packet instanceof DisconnectPacket) && !(packet instanceof NetworkSettingsPacket)) {
+            disconnect("Bedrock backend sent packets before completing the encryption handshake");
+            return;
+        }
         String backendViolation = state.validateBackend(packet);
         if (backendViolation != null) {
             disconnect("Invalid backend packet: " + backendViolation);
@@ -345,15 +387,11 @@ public final class ProxySession {
                     + ", items=" + creative.getContents().size());
         }
 
-        if (packet instanceof ServerToClientHandshakePacket) {
-            disconnect("Backend requested Xbox-authenticated Bedrock encryption. Configure the private backend with xbox-auth=off and allow only this proxy.");
-            return;
-        }
-
         if (packet instanceof NetworkSettingsPacket settings) {
             client.sendPacketImmediately(packet);
             client.setCompression(settings.getCompressionAlgorithm());
             backend.setCompression(settings.getCompressionAlgorithm());
+            backendNetworkSettingsReceived = true;
             return;
         }
         if(state.detectionEnabled() && packet instanceof org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket motion && motion.getRuntimeEntityId()==state.player().runtimeId()){
@@ -372,6 +410,28 @@ public final class ProxySession {
             client.sendPacket(move);
         } else PacketRelay.forward(backend, client, packet);
         state.onBackendPacketQueued(packet);
+    }
+
+    private void completeBackendEncryption(ServerToClientHandshakePacket handshake) {
+        if (!proxy.config().encryptBackend()) {
+            disconnect("Backend requested Bedrock encryption. Use --encrypt-backend with a trusted private backend.");
+            return;
+        }
+        if (backendEncryption == null || backendEncryptionTimeout == null || backendEncryptionReady) {
+            disconnect("Unexpected Bedrock backend encryption handshake");
+            return;
+        }
+        try {
+            backendEncryption.complete(backend, handshake.getJwt());
+            backendEncryptionReady = true;
+            backendEncryption = null;
+            backendEncryptionTimeout.cancel(false);
+            backendEncryptionTimeout = null;
+            log("Bedrock backend encryption handshake confirmed");
+        } catch (Exception | LinkageError error) {
+            if (proxy.config().debug()) error.printStackTrace();
+            disconnect("Invalid Bedrock backend encryption handshake");
+        }
     }
 
     public void disconnect(String reason) {
@@ -394,6 +454,10 @@ public final class ProxySession {
     }
 
     private void closeBackend() {
+        if (backendEncryptionTimeout != null) backendEncryptionTimeout.cancel(false);
+        backendEncryptionTimeout = null;
+        backendEncryption = null;
+        pendingLogin = null;
         state.closePlacement();
         if(state.player().worldDiagnostics()!=null)state.player().worldDiagnostics().event("session_close",java.util.Map.of());
         if (identity != null) { proxy.removeAlertRecipient(identity, alertRecipient);proxy.commands().detach(identity,state); }

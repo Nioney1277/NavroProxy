@@ -15,12 +15,17 @@ import java.util.Set;
 public final class ServerDataPackets {
     private ServerDataPackets() { }
     public static void onPacket(WirePlayerState player, BedrockPacket packet) {
+        onPacket(player, packet, false);
+    }
+
+    public static void onPacket(WirePlayerState player, BedrockPacket packet, boolean uniqueAbilityEntityId) {
         if (packet instanceof StartGamePacket start) {
 
             player.queueAcknowledgment(packet, () -> player.acknowledgeGameType(start.getPlayerGameType() == null
                     ? GameType.from(0) : nativeGameType(start.getPlayerGameType())));
         } else if (packet instanceof UpdateAbilitiesPacket update) {
-            if (update.getUniqueEntityId() != player.runtimeId()) return;
+            long entityId = uniqueAbilityEntityId ? player.uniqueId() : player.runtimeId();
+            if (update.getUniqueEntityId() != entityId) return;
             Set<Ability> values = EnumSet.noneOf(Ability.class);
             for (var layer : update.getAbilityLayers()) values.addAll(layer.getAbilityValues());
             Set<Ability> snapshot = Set.copyOf(values);

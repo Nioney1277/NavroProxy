@@ -63,6 +63,10 @@ application {
     mainClass = "ac.navro.proxy.NavroProxy"
 }
 
+sourceSets.test {
+    java.srcDir("backend/geyser/src/main/java")
+}
+
 tasks.jar {
     archiveFileName.set("NavroProxy-${project.version}.jar")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

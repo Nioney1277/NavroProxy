@@ -97,6 +97,22 @@ class NetherNetBatchSessionTest {
             } finally { buffer.release(); }
         }
     }
+    @Test void geyserBridgeDoesNotSendThePrivateBackendHelloOnSpawn() throws Exception {
+        var backendType=ac.navro.proxy.protocol.BackendType.NAVRO;
+        try(var geyser=new NetherNetBatchSession(null,null,true,backendType,false,false);
+            var nativeBackend=new NetherNetBatchSession(null,null,true,backendType,false)) {
+            for(var session:List.of(geyser,nativeBackend)) {
+                negotiate(session);
+                var start=new StartGamePacket();start.setRuntimeEntityId(7);
+                start.setPlayerPosition(org.cloudburstmc.math.vector.Vector3f.from(8,64,8));
+                session.state().observeBackend(start);
+                assertTrue(session.state().detectionEnabled());
+                assertEquals(7,session.state().player().runtimeId());
+            }
+            assertTrue(geyser.tick().backendbound().isEmpty());
+            assertEquals(1,nativeBackend.tick().backendbound().size());
+        }
+    }
     @Test void reservedBackendClockFramesAreConsumedAndCannotBeInjectedByTheClient() throws Exception {
         try(var session=new NetherNetBatchSession(null)) {
             negotiate(session);

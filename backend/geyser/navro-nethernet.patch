@@ -1,0 +1,11 @@
+--- a/core/src/main/java/org/geysermc/geyser/network/bedrock/nethernet/NetherNetChannelInitialiser.java
++++ b/core/src/main/java/org/geysermc/geyser/network/bedrock/nethernet/NetherNetChannelInitialiser.java
+@@ -91,6 +91,8 @@
+         //  be all that's needed. Until that is tested, keep sending one packet per message.
+         channel.pipeline().replace(BedrockBatchEncoder.NAME, NetherNetPacketEncoder.NAME, NetherNetPacketEncoder.INSTANCE);
+ 
++        NavroNetherNetGate.install(channel, geyser);
++
+         if (outcomes != null) {
+             channel.pipeline().addBefore(BedrockPeer.NAME, GameOutcomeReporter.HANDLER_NAME,
+                     outcomes.observer(protocol -> GameProtocol.getBedrockCodec(protocol) != null));

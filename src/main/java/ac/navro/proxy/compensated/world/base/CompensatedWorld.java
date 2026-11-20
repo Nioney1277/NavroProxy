@@ -86,6 +86,7 @@ public class CompensatedWorld {
     private int protocolVersion = -1;
     private int airNetworkId;
     private NetworkBlockStateRegistry blockStates;
+    private NetworkBlockStateRegistry.RuntimePalette runtimeBlockPalette;
     private final Map<Integer, int[]> dimensionBounds = new HashMap<>();
 
     private final Map<Vector3i, ShulkerCollisionState> shulkerCollisions = new HashMap<>();
@@ -156,12 +157,13 @@ public class CompensatedWorld {
     }
 
     public void setProtocolVersion(int version) { protocolVersion = version; }
+    public void setRuntimeBlockPalette(NetworkBlockStateRegistry.RuntimePalette palette) { runtimeBlockPalette = palette; }
     public void apply(StartGamePacket packet) {
         dimension = packet.getDimensionId();
         blockRegistryChecksum = packet.getBlockRegistryChecksum();
         hashedBlockIds = packet.isBlockNetworkIdsHashed();
         palette.clear();
-        blockStates = NetworkBlockStateRegistry.fromStartGame(protocolVersion, packet);
+        blockStates = NetworkBlockStateRegistry.fromStartGame(protocolVersion, packet, runtimeBlockPalette);
         airNetworkId = blockStates.airNetworkId();
     }
 
@@ -617,6 +619,11 @@ public class CompensatedWorld {
         @Override public int getRuntimeId() { return runtimeId; }
     }
     public static final class CachedChunk {
+        private long loadedTick = -1;
+
+        public long loadedTick() { return loadedTick; }
+        public void markLoaded(long tick) { if (loadedTick < 0) loadedTick = Math.max(0, tick); }
+
         private final int minY;
         private final int maxY;
         private final int airNetworkId;

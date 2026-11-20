@@ -51,7 +51,7 @@ public final class Collider {
 
     public static void acceptInputPosition(WirePlayerState player, ProtocolCollisionWorld world, Vec3 accepted) {
         Box current = player.boundingBox();
-        if (player.predictedVehicle() != 0 || !current.isValid()) {
+        if (player.usesVehiclePosition() || !current.isValid()) {
             player.acceptInputPosition(accepted, List.of());
             return;
         }

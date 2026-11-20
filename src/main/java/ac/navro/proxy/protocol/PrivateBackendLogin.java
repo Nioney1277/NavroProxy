@@ -1,6 +1,5 @@
-package ac.navro.proxy.nethernet;
+package ac.navro.proxy.protocol;
 
-import ac.navro.proxy.protocol.LoginIdentity;
 import org.cloudburstmc.protocol.bedrock.data.auth.*;
 import org.cloudburstmc.protocol.bedrock.packet.LoginPacket;
 import org.jose4j.jws.JsonWebSignature;
@@ -10,12 +9,8 @@ import java.time.Instant;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-
-
-
-
-public final class NetherNetOfflineLogin {
-    private NetherNetOfflineLogin(){ }
+public final class PrivateBackendLogin {
+    private PrivateBackendLogin(){ }
     public static LoginPacket encode(int protocol,LoginIdentity verified,Map<String,Object> claims,
                                      byte[] verifiedClientData,KeyPair backendKey)throws Exception{
         String cpk=Base64.getEncoder().encodeToString(backendKey.getPublic().getEncoded());
@@ -33,8 +28,12 @@ public final class NetherNetOfflineLogin {
         payload.put("xid",xuid instanceof String value?value:"");payload.put("ipt","");
         payload.put("mid",claims.get("mid") instanceof String value?value:"");
         payload.put("tid",claims.get("tid") instanceof String value?value:"");
+        return packet(protocol,sign(JsonUtil.toJson(payload),backendKey,cpk),verifiedClientData,backendKey);
+    }
+    static LoginPacket packet(int protocol,String token,byte[] verifiedClientData,KeyPair backendKey)throws Exception{
+        String cpk=Base64.getEncoder().encodeToString(backendKey.getPublic().getEncoded());
         var login=new LoginPacket();login.setProtocolVersion(protocol);
-        login.setAuthPayload(new TokenPayload(sign(JsonUtil.toJson(payload),backendKey,cpk),AuthType.SELF_SIGNED));
+        login.setAuthPayload(new TokenPayload(token,AuthType.SELF_SIGNED));
         login.setClientJwt(sign(new String(verifiedClientData,StandardCharsets.UTF_8),backendKey,cpk));
         return login;
     }

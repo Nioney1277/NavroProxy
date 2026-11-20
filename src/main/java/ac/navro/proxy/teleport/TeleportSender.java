@@ -27,9 +27,13 @@ public final class TeleportSender {
     public boolean send(org.cloudburstmc.protocol.bedrock.packet.CorrectPlayerMovePredictionPacket packet) {
         if(!ready())return false;
         var encoder=state.player().getEntityBatchEncoder();
-        var data=state.onProxyPredictionCorrection(packet);
+        var acknowledgment=state.onProxyPredictionCorrection(packet);
         try { client.sendPacket(packet);return true; }
-        catch(RuntimeException|Error e){encoder.discard(packet);if(data!=null)state.teleports().getQueuedTeleports().remove(data);throw e;}
+        catch(RuntimeException|Error e){
+            encoder.discard(packet);
+            if(state.teleports().removePendingCorrection(acknowledgment))state.teleports().finishCorrectionCooldown();
+            throw e;
+        }
     }
     public boolean send(MovePlayerPacket packet){
         if(!ready())return false;

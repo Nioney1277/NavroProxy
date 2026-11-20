@@ -1,6 +1,7 @@
 package ac.navro.proxy;
 
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 
 
 public record ProxyConfig(
@@ -13,8 +14,33 @@ public record ProxyConfig(
         boolean debug,
         Mode mode,
         ac.navro.proxy.protocol.BackendType backendType,
-        boolean smoothSetback
+        boolean smoothSetback,
+        boolean encryptBackend,
+        Path floodgateForwardingKey
 ) {
+    public ProxyConfig {
+        if (encryptBackend && !"127.0.0.1".equals(backendHost)) {
+            throw new IllegalArgumentException("--encrypt-backend requires an explicit 127.0.0.1 backend");
+        }
+        if (floodgateForwardingKey != null && !encryptBackend) {
+            throw new IllegalArgumentException("--floodgate-forwarding-key requires --encrypt-backend");
+        }
+    }
+
+    public ProxyConfig(String listenHost, int listenPort, String backendHost, int backendPort,
+                       int protocol, long maxBalanceAdvantageMs, boolean debug, Mode mode,
+                       ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, boolean encryptBackend) {
+        this(listenHost, listenPort, backendHost, backendPort, protocol, maxBalanceAdvantageMs,
+                debug, mode, backendType, smoothSetback, encryptBackend, null);
+    }
+
+    public ProxyConfig(String listenHost, int listenPort, String backendHost, int backendPort,
+                       int protocol, long maxBalanceAdvantageMs, boolean debug, Mode mode,
+                       ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback) {
+        this(listenHost, listenPort, backendHost, backendPort, protocol, maxBalanceAdvantageMs,
+                debug, mode, backendType, smoothSetback, false);
+    }
+
     public ProxyConfig(String listenHost, int listenPort, String backendHost, int backendPort,
                        int protocol, long maxBalanceAdvantageMs, boolean debug, Mode mode,
                        ac.navro.proxy.protocol.BackendType backendType) {
@@ -48,6 +74,8 @@ public record ProxyConfig(
         Mode mode = defaults.mode();
         var backendType = defaults.backendType();
         boolean smoothSetback = defaults.smoothSetback();
+        boolean encryptBackend = defaults.encryptBackend();
+        Path floodgateForwardingKey = defaults.floodgateForwardingKey();
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -68,6 +96,8 @@ public record ProxyConfig(
                 case "--protocol" -> protocol = Integer.parseInt(requireValue(args, ++i, arg));
                 case "--max-balance-advantage-ms" -> maxBalanceAdvantageMs = Long.parseLong(requireValue(args, ++i, arg));
                 case "--smooth-setback" -> smoothSetback = true;
+                case "--encrypt-backend" -> encryptBackend = true;
+                case "--floodgate-forwarding-key" -> floodgateForwardingKey = Path.of(requireValue(args, ++i, arg));
                 case "--debug" -> debug = true;
                 case "--mode" -> mode = Mode.valueOf(requireValue(args, ++i, arg).toUpperCase(java.util.Locale.ROOT));
                 case "--inspect" -> mode = Mode.INSPECT;
@@ -84,7 +114,7 @@ public record ProxyConfig(
             throw new IllegalArgumentException("Ports must be between 1 and 65535");
         }
         return new ProxyConfig(listenHost, listenPort, backendHost, backendPort, protocol,
-                maxBalanceAdvantageMs, debug, mode, backendType, smoothSetback);
+                maxBalanceAdvantageMs, debug, mode, backendType, smoothSetback, encryptBackend, floodgateForwardingKey);
     }
 
     private static String requireValue(String[] args, int index, String option) {
@@ -107,9 +137,11 @@ public record ProxyConfig(
         System.out.println("  --listen host:port   listen address (default 0.0.0.0:19132)");
         System.out.println("  --backend host:port  Bedrock backend (default 127.0.0.1:19133)");
         System.out.println("  --backend-type navro|bds  movement semantics (default navro)");
+        System.out.println("  --encrypt-backend    require Bedrock encryption with a trusted 127.0.0.1 backend");
+        System.out.println("  --floodgate-forwarding-key path    PKCS#8 PEM signing key for the Geyser backend (RakNet only)");
         System.out.println("  --protocol version    fallback Bedrock protocol (default 898)");
         System.out.println("  --max-balance-advantage-ms milliseconds (default 8500, Navro Timer)");
-        System.out.println("  --smooth-setback      use Navro soft corrections (default false)");
+        System.out.println("  --smooth-setback      use Boar-style soft corrections (default false; hard correction remains available)");
         System.out.println("  --debug               log packet summaries");
         System.out.println("  --mode detect|inspect    default detect; inspect observes without checks");
     }

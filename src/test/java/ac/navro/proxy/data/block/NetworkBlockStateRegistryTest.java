@@ -74,6 +74,34 @@ class NetworkBlockStateRegistryTest {
         assertNotEquals(1, NetworkBlockStateRegistry.forProtocol(2193, false).airNetworkId());
     }
 
+    @Test void exportedPaletteDecodesRuntimeOrderAndDefersToAnExplicitWirePalette(
+            @org.junit.jupiter.api.io.TempDir java.nio.file.Path directory) throws Exception {
+        var stone = NbtMap.builder().putString("name", "minecraft:stone").putCompound("states", NbtMap.EMPTY).build();
+        var air = NbtMap.builder().putString("name", "minecraft:air").putCompound("states", NbtMap.EMPTY).build();
+        var path = directory.resolve("palette.nbt.gz");
+        var exported = NbtMap.builder().putInt("protocol", 2225).putList("states", NbtType.COMPOUND,
+                java.util.List.of(air, stone)).build();
+        try (var writer = org.cloudburstmc.nbt.NbtUtils.createGZIPWriter(java.nio.file.Files.newOutputStream(path))) {
+            writer.writeTag(exported);
+        }
+        var palette = NetworkBlockStateRegistry.readRuntimePalette(path);
+        var state = new ac.navro.proxy.SessionState();
+        state.setProtocolVersion(2225);
+        state.setRuntimeBlockPalette(palette);
+        var start = new StartGamePacket();
+        start.setPlayerPosition(org.cloudburstmc.math.vector.Vector3f.ZERO);
+        state.observeBackend(start);
+        assertEquals(0, state.world().airNetworkId());
+        assertEquals("minecraft:stone", state.world().networkBlockState(1).identifier());
+        assertEquals(1F, state.world().wireBlock(1).collisionShape().getFirst().maxY);
+        assertNotEquals(0, NetworkBlockStateRegistry.fromStartGame(2193, start, palette).airNetworkId());
+
+        start.setBlockPalette(new NbtList<>(NbtType.COMPOUND, stone, air));
+        state.observeBackend(start);
+        assertEquals(1, state.world().airNetworkId());
+        assertEquals("minecraft:stone", state.world().networkBlockState(0).identifier());
+    }
+
     @Test void propertyConversionsAndStateOwnershipFollowNavro() {
         byte[] bytes = {1, 2};
         var tag = NbtMap.builder().putString("name", "minecraft:test").putByteArray("payload", bytes)
