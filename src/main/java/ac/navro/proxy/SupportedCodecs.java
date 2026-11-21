@@ -38,10 +38,25 @@ public final class SupportedCodecs {
             Bedrock_v2169.CODEC,
             Bedrock_v2193.CODEC,
             Bedrock_v2225.CODEC
-    ).stream().map(codec -> codec.getProtocolVersion() < 898 ? codec : codec.toBuilder()
-            .updateSerializer(org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket.class,
-                    new ac.navro.proxy.protocol.LosslessAvailableCommandsSerializer(codec.getProtocolVersion())).build())
+    ).stream().map(SupportedCodecs::adapt)
             .sorted(Comparator.comparingInt(BedrockCodec::getProtocolVersion)).toList();
+
+    private static BedrockCodec adapt(BedrockCodec codec) {
+        var builder = codec.toBuilder();
+        if (codec.getProtocolVersion() >= 776) {
+            builder.updateSerializer(org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket.class,
+                            new ac.navro.proxy.protocol.MovementPredictionSyncSerializer(codec.getProtocolVersion()))
+                    .updateFactory(org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket.class,
+                            ac.navro.proxy.packets.input.ClientMovementPredictionSyncPacket::new)
+                    .aliasPacket(ac.navro.proxy.packets.input.ClientMovementPredictionSyncPacket.class,
+                            org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket.class);
+        }
+        if (codec.getProtocolVersion() >= 898) {
+            builder.updateSerializer(org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket.class,
+                    new ac.navro.proxy.protocol.LosslessAvailableCommandsSerializer(codec.getProtocolVersion()));
+        }
+        return builder.build();
+    }
 
     private SupportedCodecs() {
     }

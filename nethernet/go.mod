@@ -1,8 +1,11 @@
 module ac.navro/nethernet-probe
 
-go 1.27.3
+go 1.26.0
 
-require github.com/helix-bedrock/nethernet v0.0.0-20261109175854-3c60f0396e41
+require (
+	github.com/helix-bedrock/nethernet v0.0.0-20261109175854-3c60f0396e41
+	github.com/pion/webrtc/v4 v4.2.21-0.20260920133716-91bfc6c2039f
+)
 
 require (
 	github.com/go-jose/go-jose/v4 v4.1.8 // indirect
@@ -22,11 +25,9 @@ require (
 	github.com/pion/stun/v4 v4.0.1 // indirect
 	github.com/pion/transport/v5 v5.0.1 // indirect
 	github.com/pion/turn/v5 v5.1.2 // indirect
-	github.com/pion/webrtc/v4 v4.2.21-0.20260920133716-91bfc6c2039f // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 )
-

@@ -1,0 +1,12 @@
+{
+  "capturedAt": "2026-11-15T05:45:51.422190+00:00",
+  "source": "Actual official BDS 1.26.63.1 / protocol 2225, private offline NetherNet 19139",
+  "captureBoundary": "Gophertunnel PacketFunc incoming IDAvailableCommands, packet body unchanged; native header 76, VarInt frame size and 255 uncompressed prefix added",
+  "bodyBytes": 396495,
+  "bodySha256": "38814e4cddd8761d89af280baf53383ba51a4e40e4cef622c1339598935e5a84",
+  "batchSha256": "e95ad72581547ca93296fc89d6b852621266b856f93fae7736b9bfa8b3208595",
+  "fixtureSha256": "636ac6b1f18c2bfd0641860fd8a521ab6c30778b352f339823cddf139a809d51",
+  "contract": "Backend command schema must reach the client byte-for-byte, including optional chained-command values not safely re-encodable by the SDK",
+  "containsLoginTokens": false,
+  "dataScope": "Standard AvailableCommands schema and enum tables only"
+}

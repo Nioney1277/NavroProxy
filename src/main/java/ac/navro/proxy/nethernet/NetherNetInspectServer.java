@@ -34,6 +34,7 @@ public final class NetherNetInspectServer {
         boolean smoothSetback = false;
         boolean stockBackend = false;
         boolean operatorCommandTable = false;
+        boolean backendStateSync = false;
         var palettes = new HashMap<Integer, RuntimePalette>();
         for (int i = 1; i < args.length; i++) {
             switch(args[i]) {
@@ -44,6 +45,7 @@ public final class NetherNetInspectServer {
                 case "--smooth-setback" -> smoothSetback = true;
                 case "--stock-geyser-backend" -> stockBackend = true;
                 case "--operator-command-table" -> operatorCommandTable = true;
+                case "--backend-state-sync" -> backendStateSync = true;
                 case "--block-palette" -> {
                     if (++i >= args.length) throw new IllegalArgumentException("Missing block palette path");
                     var palette = NetworkBlockStateRegistry.readRuntimePalette(Path.of(args[i]));
@@ -62,17 +64,18 @@ public final class NetherNetInspectServer {
         final boolean selectedSmoothSetback = smoothSetback;
         final boolean allowStockBackend = stockBackend;
         final boolean restrictCommandTable = operatorCommandTable;
+        final boolean allowBackendStateSync = backendStateSync;
         var selectedPalettes = Map.copyOf(palettes);
         var pool=new ThreadPoolExecutor(0,32,30,TimeUnit.SECONDS,new SynchronousQueue<>(),
                 new ThreadPoolExecutor.AbortPolicy());
         try(var server=new ServerSocket()){
             server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(),port));
             System.out.println("NETHERNET_ADAPTER_READY loopback="+server.getLocalSocketAddress()+" mode=per_connection backendType="+backendType);
-            while(true){var socket=server.accept();try{pool.execute(()->handle(socket, selectedBackend, selectedSmoothSetback, allowStockBackend, selectedPalettes, restrictCommandTable));}
+            while(true){var socket=server.accept();try{pool.execute(()->handle(socket, selectedBackend, selectedSmoothSetback, allowStockBackend, selectedPalettes, restrictCommandTable, allowBackendStateSync));}
                 catch(RejectedExecutionException e){socket.close();}}
         }finally{pool.shutdownNow();}
     }
-    private static void handle(Socket socket, ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, boolean allowStockBackend, Map<Integer, RuntimePalette> palettes, boolean restrictCommandTable){
+    private static void handle(Socket socket, ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, boolean allowStockBackend, Map<Integer, RuntimePalette> palettes, boolean restrictCommandTable, boolean allowBackendStateSync){
         var gson=new Gson();
         try(socket;var in=new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             var out=new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()))){
@@ -107,7 +110,7 @@ public final class NetherNetInspectServer {
                     throw new IOException("Invalid frontend address");
             }
             boolean detect=detectBridge||magic==0x4e564233&&in.readBoolean();
-            try(var session=new NetherNetBatchSession(key,backendKey,detect,backendType,smoothSetback,!detectBridge,peerAddress)){
+            try(var session=new NetherNetBatchSession(key,backendKey,detect,backendType,smoothSetback,!detectBridge || stockBackend && allowBackendStateSync,peerAddress)){
                 session.setRuntimePalettes(palettes);
                 session.setOperatorCommandTable(restrictCommandTable);
                 if(detectBridge){out.writeInt(magic);out.flush();}

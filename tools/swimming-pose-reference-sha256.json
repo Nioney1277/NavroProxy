@@ -1,0 +1,32 @@
+{
+  "productionSources": {
+    "src/main/java/ac/navro/proxy/SessionState.java": "dfea693cbde813bd90463d8970c5007e0add81e83a68ef91bc0eefe7ea8d3d7b",
+    "src/main/java/ac/navro/proxy/state/WirePlayerState.java": "c83ada297c65d033528e79ed1f8cef30ad2769c07cc8c133bbfb1fdc7cfac9b9",
+    "src/main/java/ac/navro/proxy/prediction/fluid/FluidMovement.java": "21e96ea25f5db0cd7390904a78be81c8612c78f25c44a18dd60bf8f7f38f806c",
+    "src/main/java/ac/navro/proxy/prediction/fluid/ProtocolFluidStateTracker.java": "38c4abd584b6b4afd352fc9cb5e49faeb6a1639e75d4cafc28ebada84980ac4e"
+  },
+  "originalNavroSources": {
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/packets/input/legacy/LegacyAuthInputPackets.java": "d4f77e1977013fc717b4e2f7ffaded9cc36a1a2e3f9a0b86682a233fd2a2527c",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/packets/input/AuthInputPackets.java": "c02bfa6ea3e2fb44c3e10721b4da5888e891ee88649fb713acb61c1305f9d26b",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/prediction/PredictionRunner.java": "0634994d6697e9c380920e27456c5d6739a851e22fa6b516f7ecb58170a5b27e",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/prediction/fluid/FluidMovement.java": "ef782e98f3dd3d4456cb0e23e3b6289f8a6f74310e2091f4b5373be130d87c87",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/prediction/fluid/FluidPredictionState.java": "f15942812ae452940c92b41af2aee89bf30034cba8a150a66067ef26ad66dd2c",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/prediction/fluid/LiquidPhysics.java": "b1e76650da342ea696aa104fa26d32c72c041c6c692eafb7fdd2b612d54d1b38",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/player/NavroPlayer.java": "ce2e82a9cf1eb327ae12fef56fdd6526a58357ce92f0b73406c25b4f61db24f1",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/prediction/engine/impl/fluid/WaterPredictionEngine.java": "832437d4d0d67ebf572b36aacf75991e82b5ddb7a40a8b135b50df7d7ba04452",
+    "/storage/emulated/0/AntiCheat Work/Navro/src/main/java/ac/navro/anticheat/prediction/engine/impl/fluid/LavaPredictionEngine.java": "75760bfdf5c9e82d1eeb195cb9433eb29fbe7380af265d9c0e542858e56c7e38"
+  },
+  "userBadPacketsD": {
+    "path": "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketsD.java",
+    "sha256": "6c96291ddbd6eb4ee0b2b60db72a37c846f0b51f64de5b09cc289b421a58ebe3"
+  },
+  "referenceSourceHashAudit": "Original sources in movement-metadata-reference-sha256.json and prediction-reference-sha256.json still match.",
+  "testSource": {
+    "path": "src/test/java/ac/navro/proxy/prediction/fluid/SwimmingPosePipelineTest.java",
+    "sha256": "c30a02026b35359b1702a6a985846064717fe6c375739188eab91f4f6ee6c0aa"
+  },
+  "jar": {
+    "path": "/storage/emulated/0/AntiCheat Work/NavroProxy/build/install/navro-proxy/lib/NavroProxy-0.1.0-SNAPSHOT.jar",
+    "sha256": "22dbd4e3af1c024314fb0d93955fc8ed7e09a7d04f20aaa1dda43456b4b3bedc"
+  }
+}

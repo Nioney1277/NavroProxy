@@ -1,0 +1,16 @@
+{
+  "../Navro/Nukkit-MOT-SNAPSHOT.jar": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6",
+  "../Navro/src/main/java/ac/navro/anticheat/validator/inventory/ItemTransactionValidator.java": "d6a6e2c8e7f826a3898224ca2af94d8b5f99f809e797523adfe413b2951b6b7d",
+  "../Navro/src/main/java/ac/navro/anticheat/util/block/BlockPlacementPhysics.java": "b3c0403cb83f09f7ed332de3ebaeb618a2c9fe07ed0332b22e393db2bdd086d2",
+  "../Navro/src/main/java/ac/navro/anticheat/data/inventory/ItemCache.java": "3724f208e06ff86c513ef0bcf4bc57a2f1555fefdd67025f49e6d441c07a9ee3",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/item/Item.java": "0ce4f90eb07fc718151338f97a86f86ed767b4c6b8f15d78da4f93b63706951b",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/item/ItemBlock.java": "bee10ad07a75a32c8973946bb18f500207475d4bdecc6fc397248749c7b87896",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/item/ItemDye.java": "e5aed3d1b7aee3184790e94c68d09025fc7ed4a168af39020be66a432f3107f1",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/Block.java": "e6e9cebfd5aa9ae4d345259944875cdf12fa451bbaa1f5140a2fd67237984d3e",
+  "tools/NukkitItemPlacementExporter.java": "88ec21556e53980f4a6abb40a4f0113dd6271389559560890f5c48839d41fdb7",
+  "tools/NavroItemPlacementStageFixture.java": "df94bf6f4fc4b79d97d596081eb5cccecde1c28667fce0c3275fd2a73d945074",
+  "tools/native-item-placement.tsv": "d92d5bacaa7c272a3034d73e6d4c16253f32ddc423a8bee51e30cf7cca9368ef",
+  "src/main/resources/navro/item-placement.bin.gz": "b59516db297d7317d68d2d9b55babfccc3bedaa4b97fc7442af05e14219aa489",
+  "src/test/resources/native-item-placement.bin": "33831622b4319e78be6fb599625bc0e714adbcb85ff380df40e4ac9803de4bcb",
+  "src/test/resources/navro-item-placement-stage.bin.gz": "ffca71c0cfc1cbd27723a92b8f13c183dd10e844b1fb67ebf890ca660834e335"
+}

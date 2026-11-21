@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-11-13T22:32:33.316797+00:00",
+  "nativeJar": {
+    "path": "../Navro/Nukkit-MOT-SNAPSHOT.jar",
+    "sha256": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6"
+  },
+  "nativeSources": {
+    "cn/nukkit/utils/BinaryStream.java": "194e0ef129034a47f69d77c3e9fa46cb69d26f29d19aed2cf329a3c339a516f0",
+    "cn/nukkit/utils/Binary.java": "85a973ad0ba90d58e88c98e4ee99e950e065100ecc09312694c17de3c1960877",
+    "cn/nukkit/item/Item.java": "0ce4f90eb07fc718151338f97a86f86ed767b4c6b8f15d78da4f93b63706951b",
+    "cn/nukkit/item/ItemBlock.java": "bee10ad07a75a32c8973946bb18f500207475d4bdecc6fc397248749c7b87896",
+    "cn/nukkit/item/RuntimeItemMapping.java": "0fb7d4b260343dd45f1c469547d5f9cb4c95f2309f380d6965e8d8bc59452421",
+    "cn/nukkit/item/RuntimeItems.java": "54fb28bc07f6a99197552fca6ad6d063a469fdf48c73eb89a2e04994e6418338",
+    "cn/nukkit/item/ItemMap.java": "3a72823ad369c710126a656423502682c79562ddf2e175f232a01808bd9b0bc8",
+    "cn/nukkit/item/ItemFirework.java": "2d415d7ef3d3d10fc9674a2827cb7bf1068fd41495e60fabb1b1dc73b79626ed",
+    "cn/nukkit/item/ItemFireworkStar.java": "e29ba7a3766e7c889100dd9e4bceb5e413a1917ae8cf17b40ecbe4b7c5280bc5",
+    "cn/nukkit/nbt/tag/CompoundTag.java": "0ebd7fc02bc2f808ba9f3ca3805e5430873f04195ee0af4e59a43e0de169cd9d",
+    "cn/nukkit/item/enchantment/Enchantment.java": "fbc6fc39cc7ff42db046910e86d531c0bb2747571bed4865590d899f494bdf05",
+    "cn/nukkit/network/protocol/InventorySlotPacket.java": "2ef47b76958be482a9bc3c90eee6695e31d8c6db27e3dac3d08c0faf53493396",
+    "cn/nukkit/network/protocol/InventoryContentPacket.java": "06bb6b8f8eb74427fa1987187a4cbc8bb180e3137029ab35de59b3e81fb15d21",
+    "cn/nukkit/network/protocol/InventoryTransactionPacket.java": "ae5fc3758f3bd8416760089514ac7bb819ac10e27da5f783b06fb7f620d4735a",
+    "cn/nukkit/network/protocol/ProtocolInfo.java": "d80b4116f55ea7eeacc426c49492c63c324472992ad9a766abdc4cb90eb90d01"
+  },
+  "artifacts": {
+    "tools/NukkitItemDecoderExporter.java": "59adbba6aa7584daa9d9184de0e3978aad00f31c6637ea33ac226e8370a283bf",
+    "tools/NukkitItemDecoderFixture.java": "5a8efc7c32e0231ab431dd5b38415a292295f2c40c6109be131ad643a76daba7",
+    "src/main/resources/navro/item-decoder.bin.gz": "dde135143cb2c8ef16626fbf9f07df7365ac56ef0d3a7229353a4452c48b23a9",
+    "src/main/resources/navro/prediction-items.bin.gz": "a0d6f0dbd002c78c3f009cc19d79202829660c88dd16f8f7b64430e749025147",
+    "src/test/resources/native-item-decoder.bin.gz": "9a7765c05fc6a14d38636c840586ef7235a37c0825cddfd5107b6363a7493937",
+    "src/main/java/ac/navro/proxy/data/inventory/NativeItemDecoder.java": "3756b059c9c76ed9c71130a6dbe890e1501d27af9c8c5af84c64d2cb5a64a151",
+    "src/main/java/ac/navro/proxy/data/inventory/NativePredictionItems.java": "f8a98f22e72e43897218025a415952287ebaf603e885ef70f1fcdc9671e84a77",
+    "src/main/java/ac/navro/proxy/prediction/live/PredictionItemUse.java": "a5c47bd7d28ae8981cc1e84be4e77112030995e1272d31ad40ca8b5ab79a5dcb",
+    "src/main/java/ac/navro/proxy/prediction/live/PredictionContext.java": "d9b5c4bd10fb4620cd12cb074e96cfddd4c09151a99cf7f06d8ea52206a58603",
+    "src/main/java/ac/navro/proxy/prediction/live/PlayerTicker.java": "48beaf8c4b623afc4871eb82c5e5b2f5e971d9453b448632fe70362814302c7d",
+    "src/main/java/ac/navro/proxy/prediction/live/WaterPredictionEngine.java": "e294b525f5fa7731d497d8bb68dec19b90b619b6653d328087c576b93d681593",
+    "src/test/java/ac/navro/proxy/data/inventory/NativeItemDecoderReferenceTest.java": "aafca7cf4c6bd7aaa276d871044218efb0e5d542e6d0f3c474b5da72d5d87b1a",
+    "src/test/java/ac/navro/proxy/prediction/live/PredictionItemUseTest.java": "784cd39f1f86f654da89d688b3c4ce2835af9d01cb8dc38134f680929f0d8034"
+  },
+  "coverage": {
+    "protocols": 17,
+    "constructors": 3089,
+    "numeric": 1274,
+    "named": 1815,
+    "metadataInputs": 202440704,
+    "nativeWireCases": 4488,
+    "nativeSuccessCases": 4005,
+    "nativeExceptionCases": 483,
+    "entryModes": [
+      "inventory",
+      "transaction",
+      "slot",
+      "descriptor"
+    ],
+    "nativeEnchantmentCount": 42,
+    "sdkInventoryWireComparison": true
+  },
+  "verification": {
+    "tests": 313,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "command": "JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=4 sh ../Navro/gradlew --offline test installDist --rerun-tasks --console=plain",
+    "log": "build/item-decoder-final-verification.log",
+    "fullNativeReexportLog": "build/native-item-decoder-reproduced.log",
+    "fullReexportSha256": "dde135143cb2c8ef16626fbf9f07df7365ac56ef0d3a7229353a4452c48b23a9",
+    "protectedExistingProductionResources": 14,
+    "jarSha256": "07b92531fcd47b5442b90b9ed3eb3efd485ac0593bc1d99d849dcb5b0fb91285"
+  },
+  "scope": [
+    "live item-use handshake and validation",
+    "firework flight",
+    "riptide release priority",
+    "movement armor enchantment reads"
+  ],
+  "remaining": [
+    "placement and bundle decoded-view integration",
+    "custom unexported constructors",
+    "metadata outside 0..65535",
+    "stateful map constructor without supplied native NBT",
+    "unexported fromString numeric/meta/alias forms"
+  ],
+  "backup": "/data/data/com.termux/files/home/navro-proxy-item-decoder-20261113-215001",
+  "deployment": {
+    "pid": 29796,
+    "deployment": "/data/data/com.termux/files/home/navro-proxy-backend-test/proxy-dist-item-decoder-20261113-222808",
+    "jarSha256": "07b92531fcd47b5442b90b9ed3eb3efd485ac0593bc1d99d849dcb5b0fb91285",
+    "fullTests": 313
+  },
+  "protocolProbes": {
+    "proxy": {
+      "protocol": 2193,
+      "result": "NetworkSettingsPacket",
+      "log": "build/item-decoder-proxy-probe.log",
+      "sha256": "d7f8e88096c1d5a934caad65ad8ead8bd543b5d0597d57bdaf180f303bd11b53"
+    },
+    "backend": {
+      "protocol": 2193,
+      "result": "NetworkSettingsPacket",
+      "log": "build/item-decoder-backend-probe.log",
+      "sha256": "ff3ab1bf48084072c41fdc70dee7d9427023b992027f8fc44890bc5616b05e4a"
+    }
+  },
+  "documentation": {
+    "README.md": "30b6a3212d1f98d58345ad81a3059ecad034bd0b1d97ada43a96a60313dd0a79",
+    "BOTTOM_LAYER_ALIGNMENT.md": "26d0677f1658196540151ea4927f781386bd8fb0f0861a2c0020c08f3e5ce129"
+  }
+}

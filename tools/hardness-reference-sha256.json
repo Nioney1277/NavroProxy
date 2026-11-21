@@ -1,0 +1,18 @@
+{
+  "files": {
+    "../Navro/Nukkit-MOT-SNAPSHOT.jar": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6",
+    "../Navro/src/main/java/ac/navro/anticheat/util/block/BlockUtil.java": "e6e7c3ace35d86a3ae15b6485783a3f3b765e41932ad6985db5134d508010474",
+    "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/Block.java": "e6e9cebfd5aa9ae4d345259944875cdf12fa451bbaa1f5140a2fd67237984d3e",
+    "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/network/protocol/types/GameType.java": "9d0bf423b265f67b324322618be313bc9768c2aeb8b88b6ac7456a36699d2be8",
+    "tools/NukkitBlockPropertiesExporter.java": "663b58fb6afdc672dd843424f85d06c696569834adda5fd10eb697c2ac255055",
+    "tools/NavroBlockHardnessFixture.java": "ba2188535b94bc1b9f9ad1ad9b8a506470aa93ebdbf48489ad8c7c2d3997e1d5",
+    "tools/native-block-hardness.tsv": "1a16d422dfc4daccd9e7c9d301d18f595d7949264ff26ed22f1fe9f4d923fb17",
+    "src/main/resources/navro/block-properties.bin.gz": "a1b53cee7c5669a31594cf212402eba23b4ac5fadaaca57a970f96356c788bf5",
+    "src/test/resources/navro-block-hardness.bin": "0dc206f40170dc488a9fc37afaf900b9871f84432427bb55e0c4caba8bf8e826"
+  },
+  "native_classes": {
+    "cn/nukkit/block/Block.class": "62004db7381c231face74a7532cafc79633902cf3448d195d91fe5b140e348d4",
+    "cn/nukkit/block/BlockUnknown.class": "c64abeb0bd20c55da2af2a3262ea90c405fc42d66ab015cb97447e2978bb9b20",
+    "cn/nukkit/network/protocol/types/GameType.class": "df0603a388d5baa83a74e505135471223419357a839a13c2be284cbb5dcf26fc"
+  }
+}

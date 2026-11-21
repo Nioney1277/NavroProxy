@@ -19,7 +19,7 @@ NetherNet 用 Geyser 终止 WebRTC。`navro-nethernet.patch` 在 Bedrock 批次�
 ## 启用
 
 1. 使用 `build/libs/Geyser-Standalone-2.12.1-b1305-Navro.jar`。Geyser 仍用 Java 后端 Floodgate 的 `key.pem`，这和下面生成的 Navro 身份签名密钥是两套不同的密钥。
-2. 在 Termux 私有目录中生成 Navro 签名密钥。只把公钥交给 Geyser，不要把私钥放进 `/storage/emulated/0`、Git 仓库或发布包。
+2. 在服务账户的私有目录中生成 Navro 签名密钥。只把公钥交给 Geyser，私钥不进入 Git 仓库或发布包。下面使用 POSIX shell；Windows 可使用 OpenSSL 和对应的私有文件路径。
 
    ```sh
    umask 077

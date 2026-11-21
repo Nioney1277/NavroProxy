@@ -1,0 +1,97 @@
+{
+  "verifiedAt": "2026-11-15T04:54:12.326885+00:00",
+  "tests": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "classes": 3
+  },
+  "sources": {
+    "src/main/java/ac/navro/proxy/state/WirePlayerState.java": "e43fe8d9a924d921b36a60d54f8d17ed16c6f5967642dc7f35055327ac985a1c",
+    "src/main/java/ac/navro/proxy/nethernet/NetherNetBatchSession.java": "a72f7fc3bb13afb4f1df5479be0b916614839f3d3b8fc8ffd44462451a4edbe5",
+    "src/main/java/ac/navro/proxy/nethernet/NetherNetInspectServer.java": "4b3337261d061f5418969c0306ede4a9c8c0114f1583a71f6172a22b5a99905d",
+    "src/test/java/ac/navro/proxy/nethernet/NetherNetBatchSessionTest.java": "c3f7e3253082c9afdb915f6db8487a9551cc831b8424cf50eb3831f393f95889",
+    "nethernet/inspect/main.go": "b9106a22182a4fb00e454b7b6f03030f8854c919886d0053f4dba67b7a392a79",
+    "src/main/java/ac/navro/proxy/nethernet/NetherNetOfflineLogin.java": "06e73faf98c6504cd1c267c9e4251bc531dd0175949cd983d41aff6e1b5520bd",
+    "src/test/java/ac/navro/proxy/nethernet/NetherNetOfflineLoginUtilityTest.java": "e2e0abab3d07f20fcf7cc8369171daf2abe88f2d06e686acc5836e06d1ffd05e"
+  },
+  "originalNetherNetRouteUnaffected": true,
+  "frontMicrosoftValidation": true,
+  "backend19139OnlineMode": false,
+  "fullAuthenticatedInspectionLoginTested": false,
+  "observationalOnly": true,
+  "runtime": {
+    "frontend": {
+      "pid": 22506,
+      "args": [
+        "/data/data/com.termux/files/home/navro-nethernet-inspect",
+        "-listen",
+        "0.0.0.0:19137",
+        "-backend",
+        "http://127.0.0.1:19139",
+        "-adapter",
+        "127.0.0.1:19138",
+        "-local-ip",
+        "192.168.0.104",
+        "-identity",
+        "/data/data/com.termux/files/home/navro-nethernet-independent/keys/inspect-identity.pem"
+      ],
+      "log": "/data/data/com.termux/files/home/navro-nethernet-independent/inspect-transport.log",
+      "mode": "INSPECT",
+      "startedAt": "2026-11-15T04:45:03.589881+00:00",
+      "raknetUsed": false,
+      "activeGameplayRouteReplaced": false,
+      "fullAuthenticatedLoginTested": false,
+      "backend": "http://127.0.0.1:19139",
+      "backendOnlineMode": false,
+      "frontMicrosoftValidation": true,
+      "updatedAt": "2026-11-15T04:52:46.812145+00:00"
+    },
+    "javaAdapter": {
+      "pid": 23688,
+      "args": [
+        "java",
+        "-XX:ActiveProcessorCount=2",
+        "-Xmx512m",
+        "-cp",
+        "/storage/emulated/0/AntiCheat Work/NavroProxy/build/classes/java/main:/storage/emulated/0/AntiCheat Work/NavroProxy/build/resources/main:/data/data/com.termux/files/home/navro-proxy-backend-test/proxy-dist-session-rewrite-20261115-024029-244931/lib/*",
+        "ac.navro.proxy.nethernet.NetherNetInspectServer",
+        "19138"
+      ],
+      "log": "/data/data/com.termux/files/home/navro-nethernet-independent/inspect-java.log",
+      "mode": "INSPECT",
+      "startedAt": "2026-11-15T04:45:03.538239+00:00",
+      "recordsBackendDisconnectReason": true
+    },
+    "privateBackend": {
+      "pid": 21294,
+      "args": [
+        "/data/data/com.termux/files/usr/bin/qemu-x86_64",
+        "-cpu",
+        "max",
+        "-L",
+        "/data/data/com.termux/files/usr/var/lib/proot-distro/containers/debian/rootfs",
+        "-E",
+        "LD_LIBRARY_PATH=/data/data/com.termux/files/home/navro-bds-linux-latest-20261114/server:/data/data/com.termux/files/usr/var/lib/proot-distro/containers/debian/rootfs/usr/lib/x86_64-linux-gnu",
+        "/data/data/com.termux/files/home/navro-bds-nethernet-inspect/server/bedrock_server"
+      ],
+      "cwd": "/data/data/com.termux/files/home/navro-bds-nethernet-inspect/server",
+      "console": "/data/data/com.termux/files/home/navro-bds-nethernet-inspect/backend.stdin",
+      "log": "/data/data/com.termux/files/home/navro-bds-nethernet-inspect/bds-inspect.log",
+      "logOffset": 0,
+      "startedAt": "2026-11-15T04:51:27.726899+00:00",
+      "onlineMode": false,
+      "bind": "127.0.0.1:19139",
+      "transport": "nethernet",
+      "productionBdsChanged": false,
+      "world": "navro-nethernet-inspect"
+    }
+  },
+  "networkSettingsThroughNewPrivateBackend": true,
+  "fullAuthenticatedInspectionLoginAwaitingRetest": true,
+  "updatedAt": "2026-11-15T05:05:37.155265+00:00",
+  "backendLoginMode": "SELF_SIGNED bound to upstream DTLS key, only after frontend Microsoft and client signature verification",
+  "privateBackendOnlineMode": false,
+  "rejectionBeforeFix": "BDS NOT_AUTHENTICATED despite online-mode=false"
+}

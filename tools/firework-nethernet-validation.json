@@ -1,0 +1,125 @@
+{
+  "verifiedAt": "2026-11-15T04:28:52.750727+00:00",
+  "nukkitFireworkBridge": {
+    "backendPid": 12147,
+    "proxyPid": 11014,
+    "plugin": {
+      "path": "/data/data/com.termux/files/home/navro-proxy-backend-test/plugins/NavroFireworkBridge.jar",
+      "sha256": "aa71c3dd1f44d1b0fa82028356528528fa760960efe7977db25d913f99242c54",
+      "version": "0.1.0",
+      "validatedNativeMotionAndExplosion": true
+    },
+    "nativeIntegration": {
+      "backendJar": "/data/data/com.termux/files/home/navro-proxy-backend-test/Nukkit-MOT-latest.jar",
+      "backendSha256": "7f3ff6c07f7cc5027998532a913ae056e3bbdba9d554390e67aca0f4f05dec50",
+      "pluginJar": "/storage/emulated/0/AntiCheat Work/NavroProxy/backend/nukkit/build/NavroFireworkBridge.jar",
+      "pluginSha256": "aa71c3dd1f44d1b0fa82028356528528fa760960efe7977db25d913f99242c54",
+      "realNativeMotionIntegrationPassed": true
+    },
+    "ready": true,
+    "fullClientFireworkRetested": false,
+    "evidence": "/data/data/com.termux/files/home/navro-firework-bridge-20261115-040019",
+    "verifiedAt": "2026-11-15T04:28:22.826422+00:00",
+    "raknetHandshakes": {
+      "19133": {
+        "exit": 0,
+        "result": "NetworkSettingsPacket"
+      },
+      "19132": {
+        "exit": 0,
+        "result": "NetworkSettingsPacket"
+      }
+    }
+  },
+  "independentNethernet": {
+    "verifiedAt": "2026-11-15T04:28:11.223049+00:00",
+    "checks": {
+      "direct-bds": {
+        "address": "http://127.0.0.1:19134",
+        "exit": 0,
+        "webRtcConnected": true,
+        "networkSettingsReceived": true
+      },
+      "independent-loopback": {
+        "address": "http://127.0.0.1:19136",
+        "exit": 0,
+        "webRtcConnected": true,
+        "networkSettingsReceived": true
+      },
+      "independent-lan": {
+        "address": "http://192.168.0.104:19136",
+        "exit": 0,
+        "webRtcConnected": true,
+        "networkSettingsReceived": true
+      }
+    },
+    "raknetUsed": false,
+    "nethernetPacketChecksApplied": false,
+    "fullClientLoginTested": false,
+    "lanAddress": "192.168.0.104",
+    "relay": {
+      "pid": 12773,
+      "args": [
+        "python",
+        "/storage/emulated/0/AntiCheat Work/NavroProxy/nethernet/relay.py",
+        "--listen",
+        "0.0.0.0:19136",
+        "--backend",
+        "127.0.0.1:19134",
+        "--media",
+        "19140-19203"
+      ],
+      "cwd": "/storage/emulated/0/AntiCheat Work/NavroProxy/nethernet",
+      "log": "/data/data/com.termux/files/home/navro-nethernet-independent/relay.log",
+      "startedAt": "2026-11-15T04:17:06.201200+00:00",
+      "signaling": "0.0.0.0:19136",
+      "mediaUdpRange": "19140-19203",
+      "backend": "127.0.0.1:19134",
+      "transport": "NetherNet to NetherNet",
+      "raknetUsed": false,
+      "anticheatChecksApplied": false,
+      "updatedAt": "2026-11-15T04:27:43.583195+00:00"
+    },
+    "bds": {
+      "pid": 13790,
+      "args": [
+        "/data/data/com.termux/files/usr/bin/qemu-x86_64",
+        "-cpu",
+        "max",
+        "-L",
+        "/data/data/com.termux/files/usr/var/lib/proot-distro/containers/debian/rootfs",
+        "-E",
+        "LD_LIBRARY_PATH=/data/data/com.termux/files/home/navro-bds-linux-latest-20261114/server:/data/data/com.termux/files/usr/var/lib/proot-distro/containers/debian/rootfs/usr/lib/x86_64-linux-gnu",
+        "/data/data/com.termux/files/home/navro-bds-linux-latest-20261114/server/bedrock_server"
+      ],
+      "cwd": "/data/data/com.termux/files/home/navro-bds-linux-latest-20261114/server",
+      "console": "/data/data/com.termux/files/home/navro-bds-linux-latest-20261114/backend.stdin",
+      "log": "/data/data/com.termux/files/home/navro-bds-linux-latest-20261114/bds-live.log",
+      "logOffset": 12226,
+      "bind": "127.0.0.1:19134",
+      "software": "Official BDS Linux",
+      "phase": "trial",
+      "version": "1.26.63.1",
+      "source": {
+        "url": "https://www.minecraft.net/bedrockdedicatedserver/bin-linux/bedrock-server-1.26.63.1.zip",
+        "officialDiscovery": "https://net-secondary.web.minecraft-services.net/api/v1.0/download/links",
+        "zipSha256": "b40b04c8f5a7c42a19ee685c22fc593e66116b9c22741b8c75489306b252ff62",
+        "binarySha256": "dc9b3c566a014cf53930eb1b54c6b599a99a81cc32c68aba06a5d73a0fd63179",
+        "files": 4103
+      }
+    },
+    "sources": {
+      "nethernet/relay.py": "d45654ee31eeed828cebd3c00e351f9266b4ba09d51002aafb5e52297e44312c",
+      "nethernet/test_relay.py": "6286032595d2dce6c4871397116f01c6bc4909c0d3ad7f219aab5eb02355e90a",
+      "nethernet/probe/main.go": "e0a96469bd53b0632930a254ee301a7456c36044deda4f88c54085a57d7fec73",
+      "nethernet/go.mod": "558dd6ce7a3318d88905bc0b52a4b64f3f7aa9a4ff433ae9000fca0b49ccb4df",
+      "nethernet/go.sum": "c2e8a7e00aa5510611d3ee3c0609010a7214e9be2df7ed560066eac93a835c93"
+    },
+    "probeLibrary": {
+      "repository": "helix-bedrock/nethernet",
+      "commit": "3c60f0396e41d85e582ca3da2386384482467f1d"
+    },
+    "serverListStatusBodyEmpty": true
+  },
+  "userBadPacketsDSha256": "6c96291ddbd6eb4ee0b2b60db72a37c846f0b51f64de5b09cc289b421a58ebe3"
+}

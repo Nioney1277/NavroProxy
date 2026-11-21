@@ -32,6 +32,7 @@ public final class NativeIds {
     }
     public static final class Effect {
         public static final int JUMP_BOOST = 8;
+        public static final int BLINDNESS = 15;
         public static final int LEVITATION = 24;
         public static final int SLOW_FALLING = 27;
         public static final int WEAVING = 33;

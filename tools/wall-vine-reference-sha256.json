@@ -1,0 +1,21 @@
+{
+  "src/main/java/ac/navro/proxy/check/impl/place/PlacementPipeline.java": "bb2fc8cbd29fefe02fe18a89ecf558dfc9b85352539f137020de522bf07c7ed5",
+  "src/main/java/ac/navro/proxy/data/block/NativeWallVineSelection.java": "2ac36b842276969bd7ecdbdb6672a325738efb55e993b7f192b8097b4e764102",
+  "src/main/resources/navro/wall-vine-selection.bin.gz": "b1bf730049004a43515bb67f04a90314988329dd518c34d7e0afff6b079f5f96",
+  "src/test/java/ac/navro/proxy/check/impl/place/PlacementPipelineLifecycleTest.java": "e71d8706c0a17f9320405b337bcb366295e8199be1b2b05144d854265cce9998",
+  "src/test/java/ac/navro/proxy/check/impl/place/WallVinePlacementLifecycleTest.java": "bf1ffd581de421ac90ed936853356311ed813c5be7070eae4d38ec8af745ea3d",
+  "src/test/java/ac/navro/proxy/check/impl/place/WallVineSelectionReferenceTest.java": "074ae124aeed01b0b02fdf607435f6befcdb6d6f3dc081db147c8efbcc96049f",
+  "src/test/resources/native-wall-vine-selection.bin.gz": "7f04da3f7b99b8091fd9a7f5d117a150f19ee3775bf9b0ee7ad0a57fd782e8f8",
+  "tools/NukkitWallVineSelectionExporter.java": "31925b8414f5e498395faa05ef9ad49685c7818ab729e4b6841035de09f54115",
+  "../Navro/src/main/java/ac/navro/anticheat/check/impl/place/RotationPlace.java": "3aa685e78090773be1dcabb30aae2a764e4070a01973a8aba6340885edb7f804",
+  "../Navro/src/main/java/ac/navro/anticheat/data/block/NavroBlockState.java": "cbaed34d727139410394d6746b08355c22785682592db7143a758e8bdf4bd667",
+  "../Navro/Nukkit-MOT-SNAPSHOT.jar": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6",
+  "../Navro/src/main/java/ac/navro/anticheat/collision/GeyserCollisionData.java": "bf33996c7fa0a393179ed24588d343066fc34a9729e40ea66be3d48a33b58e32",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/BlockWall.java": "38e14aa49ced7b2e760cf4ea4b30d420e3f31e04f146318e1cedbb2fbef6885c",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/BlockVine.java": "53dea8ca075139bf321f1f7fe8a34447d5c1d03058923ec878eb39efe7e722f0",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/BlockFenceGate.java": "6ddc7915149ac6ef0f80a7e0356f8331ef8e80be4526ce7fe025022f1305843c",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/BlockStairs.java": "3531baa4878facd22957bdc94d82c0e8bb9ea9cb44aab1e981e131315c6e7852",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/BlockTrapdoor.java": "e043333fd8688400250e8288901a0270c0fd26e550c66877ee46f4c2d5323b56",
+  "BOTTOM_LAYER_ALIGNMENT.md": "1e599f56acd84cc802ec523491c823d6e6db2d52ca2941d0ecc1e3c79c937c77",
+  "build/install/navro-proxy/lib/NavroProxy-0.1.0-SNAPSHOT.jar": "1bb0aa6ae682504c86c5901c82f6ea435173c3bd2ad761ca75d27f153dcfdff5"
+}

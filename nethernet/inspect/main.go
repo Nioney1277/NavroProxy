@@ -23,56 +23,21 @@ import (
 
 	"github.com/helix-bedrock/nethernet"
 	"github.com/helix-bedrock/nethernet/endpoint"
-	"github.com/pion/transport/v5"
-	"github.com/pion/transport/v5/stdnet"
 	"github.com/pion/webrtc/v4"
 )
 
-type localNet struct {
-	*stdnet.Net
-	interfaces []*transport.Interface
-}
-
-func (n *localNet) Interfaces() ([]*transport.Interface, error) { return n.interfaces, nil }
-func (n *localNet) InterfaceByIndex(index int) (*transport.Interface, error) {
-	for _, i := range n.interfaces {
-		if i.Index == index {
-			return i, nil
-		}
-	}
-	return nil, fmt.Errorf("unknown interface")
-}
-func (n *localNet) InterfaceByName(name string) (*transport.Interface, error) {
-	for _, i := range n.interfaces {
-		if i.Name == name {
-			return i, nil
-		}
-	}
-	return nil, fmt.Errorf("unknown interface")
-}
 func rtcAPI(local string) (*webrtc.API, error) {
-	ip := net.ParseIP(local)
-	if ip == nil || ip.To4() == nil {
-		return nil, fmt.Errorf("explicit local IPv4 required")
-	}
-	n := &localNet{Net: &stdnet.Net{}}
-	for _, address := range []net.IP{net.IPv4(127, 0, 0, 1), ip} {
-		if len(n.interfaces) > 0 && address.Equal(net.IPv4(127, 0, 0, 1)) {
-			continue
-		}
-		flags := net.FlagUp | net.FlagRunning
-		if address.IsLoopback() {
-			flags |= net.FlagLoopback
-		}
-		i := transport.NewInterface(net.Interface{Index: len(n.interfaces) + 1, Name: fmt.Sprintf("navro%d", len(n.interfaces)), MTU: 1500, Flags: flags})
-		i.AddAddress(&net.IPNet{IP: address, Mask: net.CIDRMask(32, 32)})
-		n.interfaces = append(n.interfaces, i)
-	}
 	var s webrtc.SettingEngine
 	nethernet.ApplySettings(&s)
 	s.SetIncludeLoopbackCandidate(true)
 	s.SetNetworkTypes([]webrtc.NetworkType{webrtc.NetworkTypeUDP4})
-	s.SetNet(n)
+	if local != "" {
+		ip := net.ParseIP(local)
+		if ip == nil || ip.To4() == nil || ip.IsUnspecified() {
+			return nil, fmt.Errorf("local-ip must be a local IPv4 address")
+		}
+		s.SetIPFilter(func(candidate net.IP) bool { return candidate.IsLoopback() || candidate.Equal(ip) })
+	}
 	if err := s.SetEphemeralUDPPortRange(19210, 19273); err != nil {
 		return nil, err
 	}
@@ -83,7 +48,7 @@ func main() {
 	listen := flag.String("listen", "0.0.0.0:19132", "Independent inspection HTTP/TCP signaling listener")
 	backend := flag.String("backend", "http://127.0.0.1:19134", "NetherNet backend")
 	adapter := flag.String("adapter", "127.0.0.1:19138", "Loopback Java native-batch adapter")
-	local := flag.String("local-ip", "", "Local LAN IPv4 for Android ICE enumeration")
+	local := flag.String("local-ip", "", "Optional local IPv4 filter for ICE candidates (default: automatic interface discovery)")
 	keyPath := flag.String("identity", "keys/inspect-identity.pem", "Persistent public listener identity key")
 	offline := flag.Bool("offline-backend", false, "Re-sign verified frontend login for a private offline NetherNet backend")
 	stock := flag.Bool("stock-geyser-backend", false, "Use stock private NetherNet Geyser with WaterdogPE forwarding")
@@ -258,7 +223,6 @@ func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, of
 			return errors.New("stock Geyser adapter did not confirm detection")
 		}
 	}
-
 
 	identity, err := nethernet.SelfSignedIdentity(key, "https://authorization.franchise.minecraft-services.net/")
 	if err != nil {

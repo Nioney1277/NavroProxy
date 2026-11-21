@@ -1,0 +1,102 @@
+{
+  "verifiedAt": "2026-11-15T08:11:38.238226+00:00",
+  "evidenceDirectory": "/data/data/com.termux/files/home/navro-nethernet-spawn-20261115-061137",
+  "status": "deployed",
+  "targetedTests": {
+    "tests": 24,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "classes": 8
+  },
+  "fullTests": {
+    "tests": 477,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "classes": 110
+  },
+  "sourceHashes": {
+    "src/test/java/ac/navro/proxy/nethernet/NetherNetDetectionTest.java": "75f0026aa075a8518429545b77a3b6cc7ce6b065db2580f5e608856eee4772f5",
+    "src/main/java/ac/navro/proxy/SessionState.java": "220ae562e6704071fc2245a6a1bc23f9e0dd29801b3d1342cb7d6758fbf4ffd0",
+    "src/main/java/ac/navro/proxy/state/WirePlayerState.java": "e43fe8d9a924d921b36a60d54f8d17ed16c6f5967642dc7f35055327ac985a1c",
+    "src/main/java/ac/navro/proxy/nethernet/NetherNetBatchSession.java": "e4794b7173b3907287eb6223f79edc55c6844a439c977dfa73e934463eed6b27",
+    "src/main/java/ac/navro/proxy/packets/input/AuthInputPackets.java": "4a68f97d4a59e937c2399d92de783198a6d1d9aeec2d688ab76459a134e5626b",
+    "src/main/java/ac/navro/proxy/packets/input/PostAuthInputPackets.java": "ce39eec84906e788f3a56ef8b15fde2b3af034b3967c06046be9e4c00b3f3bcd",
+    "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketsD.java": "6c96291ddbd6eb4ee0b2b60db72a37c846f0b51f64de5b09cc289b421a58ebe3",
+    "src/test/resources/nethernet-bds-2225-spawn-start.batch.gz": "e44e9b412a8600fa4311fee6d2b77b1e0df572cd752c76e323c67f01368baa11",
+    "src/test/resources/nethernet-bds-2225-spawn-ready.batch.gz": "05749fb3fc18ae2c9d0939239326d52b190714bad9ded61e2a1b44e0cdc0a01f",
+    "src/test/resources/nethernet-bds-2225-spawn-provenance.json": "918297510995051477ae71e6b9ecd9e8401e8947608dbe6f717f3e75d441d0da",
+    "src/test/java/ac/navro/proxy/nethernet/NetherNetSpawnLifecycleTest.java": "61538259d856ed7a6378b838b9e96ccdbde2103296104b16c9e9022ea1712dbe"
+  },
+  "jarSha256": "9698388ff6ff5c49eeef5500360e74261e0dd3c17212aeb285c0e8fd7a926169",
+  "distributionClassesMatchTestedClasses": true,
+  "deployment": {
+    "java": {
+      "pid": 23743,
+      "args": [
+        "java",
+        "-XX:ActiveProcessorCount=2",
+        "-Xmx512m",
+        "-cp",
+        "/data/data/com.termux/files/home/navro-nethernet-independent/detect-dist-20261115-081003/lib/*",
+        "ac.navro.proxy.nethernet.NetherNetInspectServer",
+        "19138"
+      ],
+      "log": "/data/data/com.termux/files/home/navro-nethernet-independent/inspect-java.log",
+      "mode": "DETECT",
+      "startedAt": "2026-11-15T08:10:03.998135+00:00",
+      "distribution": "/data/data/com.termux/files/home/navro-nethernet-independent/detect-dist-20261115-081003",
+      "recordsBackendDisconnectReason": true,
+      "offlineBackendLoginTranslated": true
+    },
+    "transport": {
+      "pid": 23771,
+      "args": [
+        "/data/data/com.termux/files/home/navro-nethernet-independent/detect-dist-20261115-081003/bin/navro-nethernet",
+        "-listen",
+        "0.0.0.0:19137",
+        "-backend",
+        "http://127.0.0.1:19139",
+        "-adapter",
+        "127.0.0.1:19138",
+        "-local-ip",
+        "10.25.2.209",
+        "-identity",
+        "/data/data/com.termux/files/home/navro-nethernet-independent/keys/inspect-identity.pem",
+        "-offline-backend",
+        "-detect"
+      ],
+      "log": "/data/data/com.termux/files/home/navro-nethernet-independent/inspect-transport.log",
+      "mode": "DETECT",
+      "startedAt": "2026-11-15T08:10:05.008453+00:00",
+      "raknetUsed": false,
+      "activeGameplayRouteReplaced": false,
+      "fullAuthenticatedLoginTested": false,
+      "backend": "http://127.0.0.1:19139",
+      "backendOnlineMode": false,
+      "frontMicrosoftValidation": true,
+      "updatedAt": "2026-11-15T05:02:58.857977+00:00",
+      "offlineBackendLoginTranslated": true,
+      "distribution": "/data/data/com.termux/files/home/navro-nethernet-independent/detect-dist-20261115-081003",
+      "inspectionPlayerLoginPreviouslyConfirmed": true,
+      "transportSha256": "e3d14885a6795e9824d7f82541fb2155b26707a7a17e05b339c03c6af02a2289"
+    },
+    "jarSha256": "9698388ff6ff5c49eeef5500360e74261e0dd3c17212aeb285c0e8fd7a926169"
+  },
+  "deployedWebRtcAndNetworkSettingsHandshake": true,
+  "backend": "private BDS 127.0.0.1:19139",
+  "clientAddressOnThisPhone": "127.0.0.1:19137",
+  "mode": "DETECT",
+  "raknetUsed": false,
+  "frontendMicrosoftValidation": true,
+  "badPacketsDPreserved": "6c96291ddbd6eb4ee0b2b60db72a37c846f0b51f64de5b09cc289b421a58ebe3",
+  "operatorReconnectHelperRunning": true,
+  "player": "DriftyJet720138",
+  "clientRetestAfterFix": false,
+  "startupSocketHealthProbe": "A connection-only readiness check closes before the IPC header; the resulting initial EOF log is expected. The subsequent native NetherNet protocol probe completed normally.",
+  "limits": [
+    "Real BDS startup packets and recorded user stationary input fields exercised with fixture terrain; not a complete recording of original gameplay",
+    "General BDS physics parity and post-fix live authenticated client movement/respawn remain unverified"
+  ]
+}

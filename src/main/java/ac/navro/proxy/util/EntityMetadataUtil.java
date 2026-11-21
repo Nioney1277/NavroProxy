@@ -20,6 +20,8 @@ public final class EntityMetadataUtil {
 
     public static int nativeFlagId(EntityFlag flag) { return FlagIds.id(flag); }
 
+    public static EntityFlag nativeFlag(int id) { return FlagIds.flag(id); }
+
     public static Set<Integer> copyFlags(EntityDataMap metadata) {
         if (metadata == null || metadata.getFlags() == null) return null;
         Set<Integer> flags = new HashSet<>();

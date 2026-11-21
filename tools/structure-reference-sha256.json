@@ -1,0 +1,1364 @@
+{
+  "generatedAt": "2026-11-14T03:24:18.453762+00:00",
+  "backup": "/data/data/com.termux/files/home/navro-proxy-structure-20261114-031354",
+  "renames": {
+    "ac.navro.proxy.prediction.live.ClimbableBlockPhysics": "ac.navro.proxy.prediction.ClimbableBlockPhysics",
+    "ac.navro.proxy.prediction.live.GlidingState": "ac.navro.proxy.prediction.GlidingState",
+    "ac.navro.proxy.prediction.live.GroundTravelPhysics": "ac.navro.proxy.prediction.GroundTravelPhysics",
+    "ac.navro.proxy.prediction.live.RiptidePhysics": "ac.navro.proxy.prediction.RiptidePhysics",
+    "ac.navro.proxy.prediction.live.SneakInputPhysics": "ac.navro.proxy.prediction.SneakInputPhysics",
+    "ac.navro.proxy.prediction.live.SprintJumpPhysics": "ac.navro.proxy.prediction.SprintJumpPhysics",
+    "ac.navro.proxy.prediction.live.StickyBlockPhysics": "ac.navro.proxy.prediction.StickyBlockPhysics",
+    "ac.navro.proxy.prediction.live.PredictionRunner": "ac.navro.proxy.prediction.PredictionRunner",
+    "ac.navro.proxy.prediction.live.GlidingPredictionEngine": "ac.navro.proxy.prediction.engine.impl.GlidingPredictionEngine",
+    "ac.navro.proxy.prediction.live.GroundAndAirPredictionEngine": "ac.navro.proxy.prediction.engine.impl.GroundAndAirPredictionEngine",
+    "ac.navro.proxy.prediction.live.LavaPredictionEngine": "ac.navro.proxy.prediction.engine.impl.fluid.LavaPredictionEngine",
+    "ac.navro.proxy.prediction.live.WaterPredictionEngine": "ac.navro.proxy.prediction.engine.impl.fluid.WaterPredictionEngine",
+    "ac.navro.proxy.prediction.live.PredictionEngine": "ac.navro.proxy.prediction.engine.base.PredictionEngine",
+    "ac.navro.proxy.prediction.live.EntityTicker": "ac.navro.proxy.prediction.ticker.base.EntityTicker",
+    "ac.navro.proxy.prediction.live.LivingTicker": "ac.navro.proxy.prediction.ticker.impl.LivingTicker",
+    "ac.navro.proxy.prediction.live.PlayerTicker": "ac.navro.proxy.prediction.ticker.impl.PlayerTicker",
+    "ac.navro.proxy.prediction.live.ScaffoldingCollision": "ac.navro.proxy.collision.ScaffoldingCollision",
+    "ac.navro.proxy.prediction.live.Velocity": "ac.navro.proxy.prediction.engine.data.Vector",
+    "ac.navro.proxy.prediction.live.BlockPosition": "ac.navro.anticheat.util.math.Mutable",
+    "ac.navro.proxy.prediction.live.PredictionBlock": "ac.navro.proxy.data.block.NavroBlockState",
+    "ac.navro.proxy.prediction.live.PredictionWorld": "ac.navro.proxy.compensated.world.CompensatedWorldImpl",
+    "ac.navro.proxy.prediction.fluid.ProtocolLiquidPhysics": "ac.navro.proxy.prediction.fluid.LiquidPhysics",
+    "ac.navro.proxy.state.tracker.FlagTracker": "ac.navro.proxy.player.data.tracker.FlagTracker",
+    "ac.navro.proxy.world.ProtocolFluidState": "ac.navro.proxy.data.FluidState",
+    "ac.navro.proxy.prediction.live.Collider": "ac.navro.proxy.collision.Collider",
+    "ac.navro.proxy.prediction.live.LiveFluidMovement": "ac.navro.proxy.prediction.fluid.FluidMovement",
+    "ac.navro.proxy.prediction.live.LivePrediction": "ac.navro.proxy.packets.input.AuthInputPackets",
+    "ac.navro.proxy.prediction.live.PredictionContext.PredictionData": "ac.navro.proxy.data.input.PredictionData",
+    "ac.navro.proxy.prediction.live.PredictionContext.FluidState": "ac.navro.proxy.prediction.fluid.FluidPredictionState"
+  },
+  "summary": {
+    "alignedFiles": 121,
+    "proxySpecificFiles": 66,
+    "mainResourcesUnchanged": 16,
+    "checkBodiesUnchanged": 22,
+    "renamedClassBodiesIdenticalAfterTypeNormalization": 23
+  },
+  "identicalRenamedBodies": [
+    "ac.navro.proxy.prediction.ClimbableBlockPhysics",
+    "ac.navro.proxy.prediction.GlidingState",
+    "ac.navro.proxy.prediction.GroundTravelPhysics",
+    "ac.navro.proxy.prediction.RiptidePhysics",
+    "ac.navro.proxy.prediction.SneakInputPhysics",
+    "ac.navro.proxy.prediction.SprintJumpPhysics",
+    "ac.navro.proxy.prediction.StickyBlockPhysics",
+    "ac.navro.proxy.prediction.PredictionRunner",
+    "ac.navro.proxy.prediction.engine.impl.GlidingPredictionEngine",
+    "ac.navro.proxy.prediction.engine.impl.GroundAndAirPredictionEngine",
+    "ac.navro.proxy.prediction.engine.impl.fluid.LavaPredictionEngine",
+    "ac.navro.proxy.prediction.engine.impl.fluid.WaterPredictionEngine",
+    "ac.navro.proxy.prediction.engine.base.PredictionEngine",
+    "ac.navro.proxy.prediction.ticker.base.EntityTicker",
+    "ac.navro.proxy.prediction.ticker.impl.LivingTicker",
+    "ac.navro.proxy.prediction.ticker.impl.PlayerTicker",
+    "ac.navro.proxy.collision.ScaffoldingCollision",
+    "ac.navro.proxy.prediction.engine.data.Vector",
+    "ac.navro.anticheat.util.math.Mutable",
+    "ac.navro.proxy.data.block.NavroBlockState",
+    "ac.navro.proxy.prediction.fluid.LiquidPhysics",
+    "ac.navro.proxy.player.data.tracker.FlagTracker",
+    "ac.navro.proxy.data.FluidState"
+  ],
+  "structuralExtractionOrMerge": [
+    "ac.navro.proxy.compensated.world.CompensatedWorldImpl",
+    "ac.navro.proxy.collision.Collider",
+    "ac.navro.proxy.prediction.fluid.FluidMovement",
+    "ac.navro.proxy.packets.input.AuthInputPackets"
+  ],
+  "files": [
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/AcceptedPositionPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/AcceptedPositionPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/ClipCollideResult.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/ClipCollideResult.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/CollisionQuery.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/CollisionQuery.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/CollisionShapeRegistry.java",
+      "kind": "proxy-specific",
+      "reason": "离线导出的碰撞表与 runtime-ID 查询，不依赖服务端核心"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/ProtocolCollisionSolver.java",
+      "kind": "proxy-specific",
+      "reason": "协议提供的形状列表到精确碰撞数学的适配入口"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/SneakEdgePhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/SneakEdgePhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/SweptMovement.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/SweptMovement.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/collision/util/CuboidBlockIterator.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/util/CuboidBlockIterator.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/data/EntityDimensions.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/EntityDimensions.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/data/MovementAabbSnapshot.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/MovementAabbSnapshot.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/data/input/InputPosition.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/input/InputPosition.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/data/vanilla/AttributeInstance.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/vanilla/AttributeInstance.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/data/vanilla/StatusEffect.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/vanilla/StatusEffect.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/BdsTrigMath.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/BdsTrigMath.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/ClientFloatMath.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/ClientFloatMath.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/MathUtil.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/MathUtil.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/NavroTrigMath.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/NavroTrigMath.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/Pair.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/Pair.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/math/Box.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/math/Box.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/math/Direction.java",
+      "kind": "proxy-specific",
+      "reason": "替代运行时核心方向枚举的几何兼容类型"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/math/Mutable.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/math/Mutable.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/anticheat/util/math/Vec3.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/math/Vec3.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/NavroProxy.java",
+      "kind": "proxy-specific",
+      "reason": "代理启动、连接管理及检查服务装配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/PacketRelay.java",
+      "kind": "proxy-specific",
+      "reason": "保留入站字节/引用计数的代理转发"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/ProtocolDefinitions.java",
+      "kind": "proxy-specific",
+      "reason": "Cloudburst 编解码器的协议 definition 注册"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/ProxyConfig.java",
+      "kind": "proxy-specific",
+      "reason": "代理 CLI、监听及后端连接配置"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/ProxySession.java",
+      "kind": "proxy-specific",
+      "reason": "客户端/后端双连接、登录加密与代理传输"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/SessionState.java",
+      "kind": "proxy-specific",
+      "reason": "协议观察及包处理模块的会话装配边界"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/SupportedCodecs.java",
+      "kind": "proxy-specific",
+      "reason": "代理可用的 Cloudburst codec 版本目录"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/alert/AlertManager.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/alert/AlertManager.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/alert/AlertSubscriptions.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/alert/AlertSubscriptions.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/api/Check.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/api/Check.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/api/annotations/CheckInfo.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/api/annotations/CheckInfo.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/api/annotations/Experimental.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/api/annotations/Experimental.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/api/holder/CheckHolder.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/api/holder/CheckHolder.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/api/impl/OffsetHandlerCheck.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/api/impl/OffsetHandlerCheck.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/api/impl/PacketCheck.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/api/impl/PacketCheck.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/api/impl/PingBasedCheck.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/api/impl/PingBasedCheck.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketA.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketA.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketB.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketB.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketsC.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketsC.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketsD.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketsD.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/AntiKB.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/AntiKB.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/Collisions.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/Collisions.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/GroundSpoof.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/GroundSpoof.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/Horizonal.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/Horizonal.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/NoSlow.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/NoSlow.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/Phase.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/Phase.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/Prediction.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/Prediction.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/PredictionSubCheck.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/PredictionSubCheck.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/prediction/Vertical.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/prediction/Vertical.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/timer/NegativeTimer.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/timer/NegativeTimer.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/check/impl/timer/Timer.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/check/impl/timer/Timer.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/Collider.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/Collider.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/CollisionPhysicsState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/CollisionPhysicsState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/CollisionShapeEntry.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/CollisionShapeEntry.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/EntityCollisionPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/EntityCollisionPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/MoveTowardsClosestSpace.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/MoveTowardsClosestSpace.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/PlantCollision.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/PlantCollision.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/ProtocolCollisionWorld.java",
+      "kind": "proxy-specific",
+      "reason": "协议补偿块/实体状态到碰撞查询的适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/ProtocolEntityTolerance.java",
+      "kind": "proxy-specific",
+      "reason": "协议实体插值及碰撞容差快照"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/ScaffoldingCollision.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/ScaffoldingCollision.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/ShulkerPushPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/ShulkerPushPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/block/PistonArmBlock.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/block/PistonArmBlock.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/block/PistonBlock.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/block/PistonBlock.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/collision/block/ShulkerCollisionState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/collision/block/ShulkerCollisionState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/command/CommandArguments.java",
+      "kind": "proxy-specific",
+      "reason": "代理命令行文本解析"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/command/NavroAlertCommand.java",
+      "kind": "proxy-specific",
+      "reason": "代理聊天命令中的告警开关与命令声明适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/CompensatedInventory.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/CompensatedInventory.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/cache/container/ContainerCache.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/cache/container/ContainerCache.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/cache/container/impl/ArmorContainerCache.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/cache/container/impl/ArmorContainerCache.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/cache/container/impl/PlayerContainerCache.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/cache/container/impl/PlayerContainerCache.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/cache/container/impl/TradeContainerCache.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/cache/container/impl/TradeContainerCache.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/cache/entity/EntityCache.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/cache/entity/EntityCache.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/cache/entity/state/CachedEntityState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/cache/entity/state/CachedEntityState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/world/BackendBlockSnapshots.java",
+      "kind": "proxy-specific",
+      "reason": "只供纠正使用的后端已发送地形，不参与补偿碰撞"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/world/CompensatedWorldImpl.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/world/CompensatedWorldImpl.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/world/base/BucketPredictionTracker.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/world/base/BucketPredictionTracker.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/compensated/world/base/CompensatedWorld.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/compensated/world/base/CompensatedWorld.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/BreakingData.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/BreakingData.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/FluidState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/FluidState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/ItemUseTracker.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/ItemUseTracker.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/BlockBreakState.java",
+      "kind": "proxy-specific",
+      "reason": "挖块校验器所需的 detached 原生属性视图"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/BlockStateEncoding.java",
+      "kind": "proxy-specific",
+      "reason": "离线状态属性编码键"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NativeBlockProperties.java",
+      "kind": "proxy-specific",
+      "reason": "导出原生方块属性的运行时查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NativeInteractionProperties.java",
+      "kind": "proxy-specific",
+      "reason": "导出原生交互属性的运行时查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NativePistonProperties.java",
+      "kind": "proxy-specific",
+      "reason": "导出活塞属性的运行时查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NativePlacementProperties.java",
+      "kind": "proxy-specific",
+      "reason": "导出放置属性的运行时查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NativePlantProperties.java",
+      "kind": "proxy-specific",
+      "reason": "导出植物属性的运行时查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NativeUseItemOnProperties.java",
+      "kind": "proxy-specific",
+      "reason": "导出物品对方块使用属性的运行时查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NavroBlockState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/block/NavroBlockState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NetworkBlockState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/block/NetworkBlockState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/block/NetworkBlockStateRegistry.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/block/NetworkBlockStateRegistry.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/input/PredictionData.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/input/PredictionData.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/inventory/BundleData.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/inventory/BundleData.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/inventory/ItemCache.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/data/inventory/ItemCache.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/inventory/NativeItemDecoder.java",
+      "kind": "proxy-specific",
+      "reason": "将 wire item 恢复为离线原生物品视图"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/inventory/NativeItemPlacementProperties.java",
+      "kind": "proxy-specific",
+      "reason": "导出物品放置属性查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/inventory/NativePredictionItems.java",
+      "kind": "proxy-specific",
+      "reason": "导出预测所需物品属性查询"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/vanilla/GameType.java",
+      "kind": "proxy-specific",
+      "reason": "原生游戏模式的无核心依赖兼容枚举"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/data/vanilla/PlayerActionType.java",
+      "kind": "proxy-specific",
+      "reason": "原生动作的无核心依赖兼容枚举"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/diagnostics/WorldCollisionDiagnostics.java",
+      "kind": "proxy-specific",
+      "reason": "代理独立 JSONL 诊断输出与快照"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/entity/EntityLinkState.java",
+      "kind": "proxy-specific",
+      "reason": "协议实体骑乘链接跟踪"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/inventory/InventoryType.java",
+      "kind": "proxy-specific",
+      "reason": "协议窗口类型兼容枚举"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/listener/PacketListener.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/listener/PacketListener.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/input/AuthInputPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/input/AuthInputPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/input/PostAuthInputPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/input/PostAuthInputPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/input/legacy/InputPositionDecoder.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/input/legacy/InputPositionDecoder.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/input/legacy/LegacyAuthInputPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/input/legacy/LegacyAuthInputPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/other/NetworkLatencyPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/other/NetworkLatencyPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/player/PlayerInventoryPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/player/PlayerInventoryPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/player/PlayerVelocityPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/player/PlayerVelocityPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/server/ServerChunkPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/server/ServerChunkPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/server/ServerDataPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/server/ServerDataPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/packets/server/ServerEntityPackets.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/packets/server/ServerEntityPackets.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/permission/ProtocolPermissions.java",
+      "kind": "proxy-specific",
+      "reason": "协议观察到的服务端权限状态"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/permission/ProxyPermissions.java",
+      "kind": "proxy-specific",
+      "reason": "代理本地权限存储及解析"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/player/data/tracker/FlagTracker.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/player/data/tracker/FlagTracker.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ClimbableBlockPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/ClimbableBlockPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/GlidingState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/GlidingState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/GroundTravelPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/GroundTravelPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/PredictionRunner.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/PredictionRunner.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/PredictionSample.java",
+      "kind": "proxy-specific",
+      "reason": "检查/候选帧的协议无关视图，不冒充完整 NavroPlayer"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ProtocolBlockEffects.java",
+      "kind": "proxy-specific",
+      "reason": "协议快照回放中显式传参的方块效果适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ProtocolGlidingPrediction.java",
+      "kind": "proxy-specific",
+      "reason": "协议快照回放中显式传参的滑翔计算适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ProtocolGroundAirPhysics.java",
+      "kind": "proxy-specific",
+      "reason": "协议快照回放的标量物理入口"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ProtocolGroundAirPrediction.java",
+      "kind": "proxy-specific",
+      "reason": "协议快照回放的地面/空中多阶段编排"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ProtocolInputMath.java",
+      "kind": "proxy-specific",
+      "reason": "wire 输入向量的显式参数归一化与缩放适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ProtocolPredictionReplay.java",
+      "kind": "proxy-specific",
+      "reason": "历史协议帧回放编排，与实时 PredictionRunner 分开"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ProtocolRiptidePrediction.java",
+      "kind": "proxy-specific",
+      "reason": "协议快照回放的激流计算入口"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/RiptidePhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/RiptidePhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/SneakInputPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/SneakInputPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/SprintJumpPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/SprintJumpPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/StickyBlockPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/StickyBlockPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/WireMotionSeed.java",
+      "kind": "proxy-specific",
+      "reason": "后端运动包对应的历史帧种子"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/engine/base/PredictionEngine.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/engine/base/PredictionEngine.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/engine/data/Vector.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/engine/data/Vector.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/engine/data/VectorType.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/engine/data/VectorType.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/engine/impl/GlidingPredictionEngine.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/engine/impl/GlidingPredictionEngine.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/engine/impl/GroundAndAirPredictionEngine.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/engine/impl/GroundAndAirPredictionEngine.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/engine/impl/fluid/LavaPredictionEngine.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/engine/impl/fluid/LavaPredictionEngine.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/engine/impl/fluid/WaterPredictionEngine.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/engine/impl/fluid/WaterPredictionEngine.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/fluid/FluidMovement.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/fluid/FluidMovement.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/fluid/FluidPoseState.java",
+      "kind": "proxy-specific",
+      "reason": "wire 物理 AABB/姿态请求与回放兼容状态"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/fluid/FluidPredictionState.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/fluid/FluidPredictionState.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/fluid/LiquidPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/fluid/LiquidPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/fluid/ProtocolFluidPrediction.java",
+      "kind": "proxy-specific",
+      "reason": "协议快照液体运动回放适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/fluid/ProtocolFluidStateTracker.java",
+      "kind": "proxy-specific",
+      "reason": "每会话已观察液体状态与不可变回放快照"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/live/NativeIds.java",
+      "kind": "proxy-specific",
+      "reason": "离线冻结的原生 ID 常量，避免运行时核心依赖"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/live/PredictionContext.java",
+      "kind": "proxy-specific",
+      "reason": "会话状态到实时引擎候选帧的适配视图"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/live/PredictionItemUse.java",
+      "kind": "proxy-specific",
+      "reason": "ItemUseTracker/FlagTracker/物品事务的代理上下文实现"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ticker/base/EntityTicker.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/ticker/base/EntityTicker.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ticker/impl/LivingTicker.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/ticker/impl/LivingTicker.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/prediction/ticker/impl/PlayerTicker.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/prediction/ticker/impl/PlayerTicker.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/protocol/BackendProtocolProfile.java",
+      "kind": "proxy-specific",
+      "reason": "StartGame 公布的协议行为参数快照"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/protocol/LoginIdentity.java",
+      "kind": "proxy-specific",
+      "reason": "代理登录身份解析与验证边界"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/MovementMetadata.java",
+      "kind": "proxy-specific",
+      "reason": "wire 元数据及输入动作到移动语义的适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/WireAcknowledgment.java",
+      "kind": "proxy-specific",
+      "reason": "协议 ACK 观察记录"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/WireAnomaly.java",
+      "kind": "proxy-specific",
+      "reason": "协议观察异常记录"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/WireEvent.java",
+      "kind": "proxy-specific",
+      "reason": "代理收发事件记录"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/WirePlayerState.java",
+      "kind": "proxy-specific",
+      "reason": "原始协议输入、ACK 状态和物理 AABB 的会话适配层"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/WireTickSnapshot.java",
+      "kind": "proxy-specific",
+      "reason": "协议输入帧观察快照"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/WireVec2.java",
+      "kind": "proxy-specific",
+      "reason": "wire 二维向量值"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/state/WireVec3.java",
+      "kind": "proxy-specific",
+      "reason": "wire 三维向量值"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/teleport/ProtocolTeleportMotion.java",
+      "kind": "proxy-specific",
+      "reason": "协议传送/速度包回放快照"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/teleport/TeleportSender.java",
+      "kind": "proxy-specific",
+      "reason": "代理新编码纠正包的传输边界"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/teleport/TeleportUtil.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/teleport/TeleportUtil.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/teleport/data/CorrectionResetData.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/teleport/data/CorrectionResetData.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/teleport/data/RewindHistory.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/teleport/data/RewindHistory.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/teleport/data/TeleportData.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/teleport/data/TeleportData.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/EntityBatchEncoder.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/EntityBatchEncoder.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/EntityMetadataUtil.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/EntityMetadataUtil.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/Hash.java",
+      "kind": "proxy-specific",
+      "reason": "协议状态键哈希辅助"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/ItemUtil.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/ItemUtil.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/LatencyUtil.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/LatencyUtil.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/NbtNumber.java",
+      "kind": "proxy-specific",
+      "reason": "Cloudburst NBT 与原生数字类型语义适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/NbtString.java",
+      "kind": "proxy-specific",
+      "reason": "Cloudburst NBT 字符串读取语义适配"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/StringUtil.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/StringUtil.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/block/BlockActionText.java",
+      "kind": "proxy-specific",
+      "reason": "代理挖块动作诊断格式"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/block/BlockActions.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/block/BlockActions.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/block/BlockCorrectionSender.java",
+      "kind": "proxy-specific",
+      "reason": "代理方块纠正包与真实出站批次 ACK 传输"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/block/BlockPlacementPhysics.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/block/BlockPlacementPhysics.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/block/BlockUtil.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/block/BlockUtil.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/util/reach/PositionInterpolator.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/util/reach/PositionInterpolator.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/validator/blockbreak/ServerBreakBlockValidator.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/validator/blockbreak/ServerBreakBlockValidator.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/validator/inventory/ItemTransactionValidator.java",
+      "kind": "aligned",
+      "navro": "src/main/java/ac/navro/anticheat/validator/inventory/ItemTransactionValidator.java"
+    },
+    {
+      "file": "src/main/java/ac/navro/proxy/world/WireBlock.java",
+      "kind": "proxy-specific",
+      "reason": "线上的方块 definition/网络状态视图"
+    }
+  ],
+  "verification": {
+    "tests": 345,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "testLog": "build/structure-test-verification.log",
+    "distributionLog": "build/structure-final-verification.log",
+    "command": "JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=4 sh ../Navro/gradlew --offline test installDist --console=plain",
+    "jarSha256": "51dec463ad0efb446935b3d844416a15cb166044fe461fb086bc94394533db1a",
+    "oldClassesAbsent": true,
+    "newClassesPresent": true
+  },
+  "sourceHashes": {
+    "src/main/java/ac/navro/anticheat/collision/AcceptedPositionPhysics.java": "f91f8675fe5d055fdca8dcb186551c87c7c475bd30c08b6309f03710a84454ff",
+    "src/main/java/ac/navro/anticheat/collision/ClipCollideResult.java": "5ca59d93dc1d5862640a7c6dfc41c7bd3a46c03bbf1745dddea1062a8c1aeb02",
+    "src/main/java/ac/navro/anticheat/collision/CollisionQuery.java": "71881768b65545023f29b9aee9d7fe8820e9775a5154b758a83024b258696dcf",
+    "src/main/java/ac/navro/anticheat/collision/CollisionShapeRegistry.java": "f23a6a883c1511a6a52743684e4da8d1511b24e49dba2ed608e5ed91efe6f75a",
+    "src/main/java/ac/navro/anticheat/collision/ProtocolCollisionSolver.java": "0d00116318b884753073d0cd6aa1964fbb32a8975ccf547f6d195cec01878f91",
+    "src/main/java/ac/navro/anticheat/collision/SneakEdgePhysics.java": "c95403e0630cf5092dad30de387aef4b2f3d67699fd4ba6bf09b54fd8345e12d",
+    "src/main/java/ac/navro/anticheat/collision/SweptMovement.java": "0f796c5488e67ab9d655da515fd6d57a9d91bf3c5d9e2b55ce4ca31c15ecee1c",
+    "src/main/java/ac/navro/anticheat/collision/util/CuboidBlockIterator.java": "38b8893f72d47bbdf4a28d5d954419f6d7f1c898778331d6dafa427850aeca32",
+    "src/main/java/ac/navro/anticheat/data/EntityDimensions.java": "e997c52787986362f929c2f99cecbbf2eba70f7df7a66a0d91f055b0c54db0a2",
+    "src/main/java/ac/navro/anticheat/data/MovementAabbSnapshot.java": "2b0a180479e13ec5d4dc88acafcd9a9741567b84affe528beb01a643795c78be",
+    "src/main/java/ac/navro/anticheat/data/input/InputPosition.java": "d410673a0897a315d87b9f9bf978da9e8c06c581127d15faaf550a9a9316dcef",
+    "src/main/java/ac/navro/anticheat/data/vanilla/AttributeInstance.java": "5776a4e148adb5ec91480a9e2865bf1ee8ba4d295c6b4236503feac76a89e7dc",
+    "src/main/java/ac/navro/anticheat/data/vanilla/StatusEffect.java": "490ef4c63bbe722c2c91cd3a1d76354ed589437c91fa5d0fab8d3b7fed3d6407",
+    "src/main/java/ac/navro/anticheat/util/BdsTrigMath.java": "3e8f2d52a2f32b27ad678a3df543f2991d414fb7300b209240968c5d23b1e2cd",
+    "src/main/java/ac/navro/anticheat/util/ClientFloatMath.java": "856d9cdd42f2ae62bb0ae4e9c5c744de58fa55d20fcf6783c38371ea75bfd784",
+    "src/main/java/ac/navro/anticheat/util/MathUtil.java": "edd42ece922b33da60f48fae71ea3ae3935e02e08a53f8eaa256cb9fd4cf7305",
+    "src/main/java/ac/navro/anticheat/util/NavroTrigMath.java": "febe0191b550c7454ffa91fbccebe1ca1e33790e6175c0607c73ddff25aaafc9",
+    "src/main/java/ac/navro/anticheat/util/Pair.java": "913f38fb8828e4713c0d3eee441ba42184e901113bc1577806761a317e0b9d5a",
+    "src/main/java/ac/navro/anticheat/util/math/Box.java": "70916a963845d002bfe6ac37bda3f9071fcf3cccb55862ece0c2b19e1e7bc96b",
+    "src/main/java/ac/navro/anticheat/util/math/Direction.java": "43583a6ff4e8c4bb11c91e3dca7d460af240e740291557e68a3ed7f307019a35",
+    "src/main/java/ac/navro/anticheat/util/math/Mutable.java": "e3c4336db9e34f8f07711f95ae2b0750b1fdb5f4bd31b9c50de976d952549ea9",
+    "src/main/java/ac/navro/anticheat/util/math/Vec3.java": "057f5658fb6b3fe7c48370a19497efcb6e89f25725ac9cc7ae231ee9e3b97b9a",
+    "src/main/java/ac/navro/proxy/NavroProxy.java": "8a6317ed8d17aa1c827ab0aec2c992b7432bd86acb5d4fe29642dedaab824b4d",
+    "src/main/java/ac/navro/proxy/PacketRelay.java": "fc066b7bedfada7b53606a0362ef375ff5a9b046e4aa6424033fc9f7e420ca6e",
+    "src/main/java/ac/navro/proxy/ProtocolDefinitions.java": "f64002d4586aa4e6d417619992db6c33bced4b791f0ebaa3970b6c140dfb3364",
+    "src/main/java/ac/navro/proxy/ProxyConfig.java": "0a051519366c395688fbde07d61501a0a86e8b1e685d7c8bdfc91fc9165838e3",
+    "src/main/java/ac/navro/proxy/ProxySession.java": "3a600cadd9c46dd6b14158d0c167f8075fec5a45ae35649077770a60d2476347",
+    "src/main/java/ac/navro/proxy/SessionState.java": "2284a8e38a19050d20a57ce5fa267e1f70221d590a77240e70ce38ae67da81be",
+    "src/main/java/ac/navro/proxy/SupportedCodecs.java": "5726852c0afdf8b22d9db93fd145cf3e524875356eae45ea5f1b4c9f2984cba8",
+    "src/main/java/ac/navro/proxy/alert/AlertManager.java": "cb1968b54fda5967afd61fafda164cf727576ddbc418b2b079bf636b666bf8e8",
+    "src/main/java/ac/navro/proxy/alert/AlertSubscriptions.java": "29cfd877b5095bdd4c81e862800e1cf0502d2281bcee74a9c8806d45127f477b",
+    "src/main/java/ac/navro/proxy/check/api/Check.java": "c78bfc8b49c94cad16cb666f6efa83021478f79aa9559982c24e32e4a98268fa",
+    "src/main/java/ac/navro/proxy/check/api/annotations/CheckInfo.java": "84cf12a3a0291dbc1935e89399447eea883e22ffba9db1e87ec07c8240fd2954",
+    "src/main/java/ac/navro/proxy/check/api/annotations/Experimental.java": "4bdd8bd34bbfc07f5d7a86b2f4d85f87141946c8a2e9aa4c5d86fe2694307ed6",
+    "src/main/java/ac/navro/proxy/check/api/holder/CheckHolder.java": "3ad7756c17c40f0cbe7be3ffb0f0b9a7d7ae2ca59627f98b5ebb47a1708148ee",
+    "src/main/java/ac/navro/proxy/check/api/impl/OffsetHandlerCheck.java": "84a83cc4ec6b97f62aea5d11bccd745a1180744a79025f0d180cc53582a11b01",
+    "src/main/java/ac/navro/proxy/check/api/impl/PacketCheck.java": "dac577bc01ff72a8ad35f6a839276642bb8b7906623779b6dfe5a3b157e56e30",
+    "src/main/java/ac/navro/proxy/check/api/impl/PingBasedCheck.java": "d2046fe0409b5aaab1070cdb54b1f73280608467775779bbaf21d349d1afe959",
+    "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketA.java": "0f0c88816310048e6034afbfc8adbbdc4ca5bf59972b3257edcc9489bda53b20",
+    "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketB.java": "8c183fbde4f00bfa86b00554ab01e806a9418bbbd6579db174a00325edcc9840",
+    "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketsC.java": "716460d95335b4072637667925f707a139b9b2c5833e4bff0dcab04bf0f3c103",
+    "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketsD.java": "ebf647cbc6e90760c8a055f9efcb782c72f5a58648f8d14988ab9ae0f5c663fa",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/AntiKB.java": "48bf513605c85d8611da3693045d3062698d65364a7d85edfac4828e95fb73bd",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/Collisions.java": "ed8ab219d2ab14ee32f28515a4f1860b5ea0ab570e932c9c3f0e7626c484de14",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/GroundSpoof.java": "b4f4be9df80d2be56d271be2ee0753f6b58deac82fa10c5ac89dba387e53a538",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/Horizonal.java": "71fbc7daec5fc19723e28ef12667ef8087a9264ed94dabf0d77d42fcedf899a2",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/NoSlow.java": "ccd52353386824bae85c63ac2de0e7f68c1fdccd9a3a167fd048a9913ffd4906",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/Phase.java": "e95bf435042cb425633f5018ad8e26b4aedcecc319d185881d23645c213febcb",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/Prediction.java": "b9b3c27c6ae0c3e52ea4b2bd2c85ace4cac151271242e195b2cebe814ebd61c0",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/PredictionSubCheck.java": "658400cdf11b88bd3525bb9e0cc91537ea7f0734397523f6e3564a1f932b5f78",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/Vertical.java": "693439a3def311087dc2cd40f759412ebef5a09524c0ad1464c8b5c94b0295bb",
+    "src/main/java/ac/navro/proxy/check/impl/timer/NegativeTimer.java": "e7e40eb27d85b5ab85c5954eb7f24bbaa50c9ed64b0d1d218ba17c01995f9e65",
+    "src/main/java/ac/navro/proxy/check/impl/timer/Timer.java": "fcf6169176b9afea98fdcfa6ae637e732355daa8e1553e6becc19c724bc75f1b",
+    "src/main/java/ac/navro/proxy/collision/Collider.java": "3dbc40be57a1867668b6a8c460b811f37c853a65490fe9c407cdfd39a1d7b8e4",
+    "src/main/java/ac/navro/proxy/collision/CollisionPhysicsState.java": "43fc666c0da53f7aeb23225b9c3d5186e354df0c0141b98033848447333b2d51",
+    "src/main/java/ac/navro/proxy/collision/CollisionShapeEntry.java": "806a8dfe8d28584b8263820b11956dc2b82cef10eb60c4e9a03dce38a6c84a14",
+    "src/main/java/ac/navro/proxy/collision/EntityCollisionPhysics.java": "064ba7daed77e53e8cd5979914b4fb5b2ce3b9da427db12b9500ac47002c833f",
+    "src/main/java/ac/navro/proxy/collision/MoveTowardsClosestSpace.java": "b045fbb30bf15b0e9e24d077069f3ddbc4a57ac83542c853323896bd203bee90",
+    "src/main/java/ac/navro/proxy/collision/PlantCollision.java": "a7af6821920b60f2e8426e0037d86af04b76655bc860b3b0e8ba2a72d417ba2c",
+    "src/main/java/ac/navro/proxy/collision/ProtocolCollisionWorld.java": "b27b7a74b1d960f5e91034190940c6b600bd24c58dc367c7e981ea105a16c308",
+    "src/main/java/ac/navro/proxy/collision/ProtocolEntityTolerance.java": "29b99ae99e402c6ef7f9f09bc1144dfc418f47b54f327936fedfcf16289b5c0b",
+    "src/main/java/ac/navro/proxy/collision/ScaffoldingCollision.java": "f76fe0f31107b444e76079c7355ec8dc817af769d247fd9f6a98fdb0dc74edc7",
+    "src/main/java/ac/navro/proxy/collision/ShulkerPushPhysics.java": "3f65fea6bbc35b5bc590f1c4f9ae48e5cfce5f91005e13b41693f534eb8378a8",
+    "src/main/java/ac/navro/proxy/collision/block/PistonArmBlock.java": "26c8730de8f7f06901334a86a773c2ed5f07bf297bda29dcf093c5c65630f241",
+    "src/main/java/ac/navro/proxy/collision/block/PistonBlock.java": "10d6f6e9e04b1ea36b93407cc42b9bf8b97c185120f3ef65dade5cfda51bce9a",
+    "src/main/java/ac/navro/proxy/collision/block/ShulkerCollisionState.java": "68d28b626b50d0b4d192a8e3024acfc34830279fb377aa558d5e08d88a859151",
+    "src/main/java/ac/navro/proxy/command/CommandArguments.java": "a7dd52be53e6db93f652a58f80ae75b74211ed30b7fb083f7fca8f50e54f5bcf",
+    "src/main/java/ac/navro/proxy/command/NavroAlertCommand.java": "8a852f9dcb8c1b29b1152f3c7c11003c9ed71798d60478912bfdda80ff5b4010",
+    "src/main/java/ac/navro/proxy/compensated/CompensatedInventory.java": "94acea0029f744f36b05c60267addce775944b1ce0775e52ae748b1dc287469f",
+    "src/main/java/ac/navro/proxy/compensated/cache/container/ContainerCache.java": "6b98a3c148ca3dd7aaf34718c32ad90583fa089f9a4e607171ba8525a08667de",
+    "src/main/java/ac/navro/proxy/compensated/cache/container/impl/ArmorContainerCache.java": "11f90e6cfab88dd6580bec525ae5a5091769a743c7147f5c6ffcfc3a7ace7afb",
+    "src/main/java/ac/navro/proxy/compensated/cache/container/impl/PlayerContainerCache.java": "78207ae62eda78d52a85c89c8837f4451425a760725a2129efa34a1c524e8e72",
+    "src/main/java/ac/navro/proxy/compensated/cache/container/impl/TradeContainerCache.java": "856504a05ba1fdb5e6c97dbcd1689bdfdcb3ebcd5b171bdee435d3a444b2cdea",
+    "src/main/java/ac/navro/proxy/compensated/cache/entity/EntityCache.java": "df4ef8225567c4f2a2cb0b7c097f612aec6bd0931274346081e408bd4e4e644a",
+    "src/main/java/ac/navro/proxy/compensated/cache/entity/state/CachedEntityState.java": "a2e91d3b9ec8a486bac1258440edd36ed1d74b6399810e09fb4aa623efd423a9",
+    "src/main/java/ac/navro/proxy/compensated/world/BackendBlockSnapshots.java": "46bac8acd20894dc4b9ddfe66d221a3dc086f08b82b6948a9ea05088b5f7cd85",
+    "src/main/java/ac/navro/proxy/compensated/world/CompensatedWorldImpl.java": "af3f1b416cdc446ed9e6dcc6b9222a5d8d2e8f54daa76a6c34cb2b8d3316074d",
+    "src/main/java/ac/navro/proxy/compensated/world/base/BucketPredictionTracker.java": "1d47a9115f4da883f72be0df1ee8b4c8302ea4ecb419ba70bdba3694ca4f3940",
+    "src/main/java/ac/navro/proxy/compensated/world/base/CompensatedWorld.java": "4e00198af6d737c8a05e385f0bab4d5c1a510afec0d9fbf3156e65c1356b319f",
+    "src/main/java/ac/navro/proxy/data/BreakingData.java": "072c8b18fea46d6ae3bc2c8c60e0f07b6518e887d21b835196a6a2555854d954",
+    "src/main/java/ac/navro/proxy/data/FluidState.java": "a91a5effc8fcd1f1a1b809eafec01bd6e816fc2785661039b0124921467d3935",
+    "src/main/java/ac/navro/proxy/data/ItemUseTracker.java": "5e7935a26151f3d99e53b69c7ca714cabe319d5548906db9008a0b82ac42ed84",
+    "src/main/java/ac/navro/proxy/data/block/BlockBreakState.java": "80c18201decfc7b5b3bbf29a3e9150ce0023e456396632f4bfbef1d9eae21e2b",
+    "src/main/java/ac/navro/proxy/data/block/BlockStateEncoding.java": "e25d476b6a22c0005d8035853216cd1db6b7ea7f2fc82a0b9cd85a457571835a",
+    "src/main/java/ac/navro/proxy/data/block/NativeBlockProperties.java": "4f168877350ee5d174b8fff5c2f7c9108322762db9d5a221a2d181917e34dd97",
+    "src/main/java/ac/navro/proxy/data/block/NativeInteractionProperties.java": "ec68e21e487d34abaf68680234dc77763c994a2491a432152734e2471f1f0fbb",
+    "src/main/java/ac/navro/proxy/data/block/NativePistonProperties.java": "f35b8571f3ce245373fb2238e5e13cc836c1ca0f0e2c704c149475bbf2a8e9de",
+    "src/main/java/ac/navro/proxy/data/block/NativePlacementProperties.java": "408a4b282e6e0ec0d2f8635efb9938970e6ed10f24d0acce2680f547fb54f126",
+    "src/main/java/ac/navro/proxy/data/block/NativePlantProperties.java": "72c32b8477755644a63a1b66fd9aae5c65de427f122ceedc0dd4db5e70393291",
+    "src/main/java/ac/navro/proxy/data/block/NativeUseItemOnProperties.java": "220feba71ff3badc04f155dee9d9cef65445130fa0dc3722a3df7d7c942db655",
+    "src/main/java/ac/navro/proxy/data/block/NavroBlockState.java": "cbf103ffea3274ebd01feb453180d6b36c89161cef59ccd53d7cfb8e8ec001a7",
+    "src/main/java/ac/navro/proxy/data/block/NetworkBlockState.java": "962987a0279f61efce8a3f9c8b91e241970fc32e5603a3a5a884c197520e63eb",
+    "src/main/java/ac/navro/proxy/data/block/NetworkBlockStateRegistry.java": "162d5978dbe3a178350a6f4fc6f3a4d9d4dfeb3942a91ce32cf8e398aea84d8a",
+    "src/main/java/ac/navro/proxy/data/input/PredictionData.java": "17e7d5a24000aaa7d5f8f061d9decee569eddef5b9f088c1c0cce5b883db7c61",
+    "src/main/java/ac/navro/proxy/data/inventory/BundleData.java": "0f9f86440529f8239f447fb001a91fbaec86504039ba830c26746f59c70e943f",
+    "src/main/java/ac/navro/proxy/data/inventory/ItemCache.java": "806c248ab9d861936609e280b846a6c0ec8d9cc2e3ff27b28ff56034abf226c9",
+    "src/main/java/ac/navro/proxy/data/inventory/NativeItemDecoder.java": "ecd24bbea381df1bf206834d27623816a2bbc518e21e15ec71a6e147e2a73768",
+    "src/main/java/ac/navro/proxy/data/inventory/NativeItemPlacementProperties.java": "67ec17ceb05ff5ff3543c143a918b0364dfcf043cb77f07c696bd7164dd99c32",
+    "src/main/java/ac/navro/proxy/data/inventory/NativePredictionItems.java": "f8a98f22e72e43897218025a415952287ebaf603e885ef70f1fcdc9671e84a77",
+    "src/main/java/ac/navro/proxy/data/vanilla/GameType.java": "42808d78e69614ed82bdbf648b7733be64569bacf817363563739f06be6642ab",
+    "src/main/java/ac/navro/proxy/data/vanilla/PlayerActionType.java": "373dd58736c17a6f636415565508076edcb61ea1b358c51711486c303ca545bc",
+    "src/main/java/ac/navro/proxy/diagnostics/WorldCollisionDiagnostics.java": "a3cdefef14b029bc1eeee9598efb1a60ba810551cbd68f523ccee772090efead",
+    "src/main/java/ac/navro/proxy/entity/EntityLinkState.java": "e3c6c17ce6a0ba0603ae87a04ceea9458072b0fe73ba825c3c74b827e104361e",
+    "src/main/java/ac/navro/proxy/inventory/InventoryType.java": "13e9ee6e2721402c5e5e3ebd4e8904fedda6be1c6f68b24f8913f019245ec8a1",
+    "src/main/java/ac/navro/proxy/listener/PacketListener.java": "e1dc0818a1afefa65cf72c716115afe39149b781cffb4973c16929fa69a43ef0",
+    "src/main/java/ac/navro/proxy/packets/input/AuthInputPackets.java": "c44eb5192f90ba2991ae72c99b254e0b2a5e869d5842dd9a622ffd5c62e00755",
+    "src/main/java/ac/navro/proxy/packets/input/PostAuthInputPackets.java": "1918043592c0aae38ed4c6bc030361e835a84027c29b4b843829fa41366a6fff",
+    "src/main/java/ac/navro/proxy/packets/input/legacy/InputPositionDecoder.java": "df453906723ef4dc606eb4abd0a2c02f6b51a51a2d70b86a553295ac74110d26",
+    "src/main/java/ac/navro/proxy/packets/input/legacy/LegacyAuthInputPackets.java": "f25b58125adb27ed7f62a245b244942ce18ee3a02f3401e0626862581593d461",
+    "src/main/java/ac/navro/proxy/packets/other/NetworkLatencyPackets.java": "cdc605feadef89011e517df1a0c3c79b7e42555069fd24e3806374aa81c2383c",
+    "src/main/java/ac/navro/proxy/packets/player/PlayerInventoryPackets.java": "3fbe99963d9936912ca5a25dfae9148e358db882b3bf099a396b4df79393ab12",
+    "src/main/java/ac/navro/proxy/packets/player/PlayerVelocityPackets.java": "6465ae28d8dec806fe55cafb9a882602fea3857d8c51e3cee345868cd4ae9736",
+    "src/main/java/ac/navro/proxy/packets/server/ServerChunkPackets.java": "3df393ec7ad511a5c0c7b5659e2b67da4a4f7a12ec5b9e9652849fd0dd00f470",
+    "src/main/java/ac/navro/proxy/packets/server/ServerDataPackets.java": "663e2023fc75468124ff3085ed599553a5816e85c8a008fab95b54e1cebbe035",
+    "src/main/java/ac/navro/proxy/packets/server/ServerEntityPackets.java": "05382206a0400cd4928b223a80ad4cbcae3e4307dcbd25d96e5bcf25f1da7b05",
+    "src/main/java/ac/navro/proxy/permission/ProtocolPermissions.java": "9d5562da92ae458dd33810af10e89f60e25cbfa9ac229f2d43a113f137aa37d3",
+    "src/main/java/ac/navro/proxy/permission/ProxyPermissions.java": "5c531ff8633ca1ff45ec429da7a7bf982686f2371f1be4a0c0ac35d017ba8206",
+    "src/main/java/ac/navro/proxy/player/data/tracker/FlagTracker.java": "b06accda03d68e216ea21b3e957cf7de5304fd08ff57b138153b26731fa76561",
+    "src/main/java/ac/navro/proxy/prediction/ClimbableBlockPhysics.java": "6ebd2f14c4cf8ef3104e2d6559cda991a1f6b8fa0b8aae31a5152333307c43f7",
+    "src/main/java/ac/navro/proxy/prediction/GlidingState.java": "df62f9c8c6136b7fd2a17944a0fd86abe96bc625c967989066d06e731bf16ad7",
+    "src/main/java/ac/navro/proxy/prediction/GroundTravelPhysics.java": "3eee22bb4c2ef11ba3ef4d9b29ddf00c4b498ded06ac820c7995c487f5c69bc0",
+    "src/main/java/ac/navro/proxy/prediction/PredictionRunner.java": "35de77e976409b0e85d62f8e7ceca62e5a046f5d7ab259a02d4937c2953d3858",
+    "src/main/java/ac/navro/proxy/prediction/PredictionSample.java": "39c961f6836818c1d2b399a7782884ccfa458b052d1518a96748560236ea70ed",
+    "src/main/java/ac/navro/proxy/prediction/ProtocolBlockEffects.java": "984ec2b35470620a20f9b3f668bd54dc70bb645aefd7b585e0e6f85b54aa5777",
+    "src/main/java/ac/navro/proxy/prediction/ProtocolGlidingPrediction.java": "82382356df4cc283f4e238a21f9daa766a519b3088e92f403c6b1c8a3a3bdf34",
+    "src/main/java/ac/navro/proxy/prediction/ProtocolGroundAirPhysics.java": "d4f4eae2eb42fa18f6fda5ba6ff437800b1af1d4438504e75e53104738e33639",
+    "src/main/java/ac/navro/proxy/prediction/ProtocolGroundAirPrediction.java": "51e4c9b7125b86a114c2ed2fed5a114111d4251c421c6833a1516c0a39fb64d2",
+    "src/main/java/ac/navro/proxy/prediction/ProtocolInputMath.java": "cf7b47befe459657b64cd87de7e47c842da49983cc65fb0781c24589fd76c629",
+    "src/main/java/ac/navro/proxy/prediction/ProtocolPredictionReplay.java": "78f98e0ea7f98a4083109388013c07728b3b0f4b6fca9d1d670fbe4184d6a1f6",
+    "src/main/java/ac/navro/proxy/prediction/ProtocolRiptidePrediction.java": "dfbdf04330b5d5954d50750ff2f3594626381632833b4264aa3dd95f8bba3c76",
+    "src/main/java/ac/navro/proxy/prediction/RiptidePhysics.java": "c8791a144c8a2f77fca9bff4c315623ee49cf4f78e89fca901103ddc65d5a182",
+    "src/main/java/ac/navro/proxy/prediction/SneakInputPhysics.java": "0f84f71a239e5bbf7b48b56406d54997c1a17287906e510e296d75d41e12dc26",
+    "src/main/java/ac/navro/proxy/prediction/SprintJumpPhysics.java": "0f480ed063ffcfacce6b3457f8752a0c85c2a8e8fa18ce869d359094a9bbdbc3",
+    "src/main/java/ac/navro/proxy/prediction/StickyBlockPhysics.java": "53558e224e38765b375a46bbc9f3750b4695c02def6c9f452707a5e22f29e898",
+    "src/main/java/ac/navro/proxy/prediction/WireMotionSeed.java": "52a3e8b2980f7ecf5596c7fe5fcab7383e325f37ed030dc219b51bb5b7f222c2",
+    "src/main/java/ac/navro/proxy/prediction/engine/base/PredictionEngine.java": "9b66011e6cff37e37c67abbf124e6d4ef9b3f6c67654c507dcc02350038959ab",
+    "src/main/java/ac/navro/proxy/prediction/engine/data/Vector.java": "efe154e34ce8d65ba752c4176d3439bbf9afb7b11378664adfd8fb08c0a9d09d",
+    "src/main/java/ac/navro/proxy/prediction/engine/data/VectorType.java": "826bd97612a11533e7768ad7b9b3ef7074cb8b3cf046120dcafd5ef5aa7346bb",
+    "src/main/java/ac/navro/proxy/prediction/engine/impl/GlidingPredictionEngine.java": "5a7738b5a5185320fb42ee10da57b114cbcc75959874baa65f873db98a960036",
+    "src/main/java/ac/navro/proxy/prediction/engine/impl/GroundAndAirPredictionEngine.java": "f347591f11ea05479dcc3d4c6f96181193abcf0bd8ddfd80f92485108024f756",
+    "src/main/java/ac/navro/proxy/prediction/engine/impl/fluid/LavaPredictionEngine.java": "a04532d6af61b9ce8f3a24afe9516a241ac2a3b62e6a2a0d445490c44bb37396",
+    "src/main/java/ac/navro/proxy/prediction/engine/impl/fluid/WaterPredictionEngine.java": "23977fbaef923002e86e39435ddc6e8ae222e98f08980d312375e8b22005e722",
+    "src/main/java/ac/navro/proxy/prediction/fluid/FluidMovement.java": "4445fe7cbd59a15e1d54301b2ea5f0a89aaf4163059ffd4cc580269253aca0bc",
+    "src/main/java/ac/navro/proxy/prediction/fluid/FluidPoseState.java": "66297da9ce88b1724f1467b256892fc8a473fbd4184a34889273682c585a276d",
+    "src/main/java/ac/navro/proxy/prediction/fluid/FluidPredictionState.java": "ceb24d5124a42fe9d65e4cebbeb1235bf2311bfb8b8300972a3358732e5979a0",
+    "src/main/java/ac/navro/proxy/prediction/fluid/LiquidPhysics.java": "7ed1466e81a889ef7cdf76ba1e7f34a34a591de3d234353cc6e420b000baee96",
+    "src/main/java/ac/navro/proxy/prediction/fluid/ProtocolFluidPrediction.java": "7e44eab1a4156cf4cb9e779ed42077623606b89785786a8aa0e6d9cf351639d2",
+    "src/main/java/ac/navro/proxy/prediction/fluid/ProtocolFluidStateTracker.java": "52ee9e4126289ad8db421a824d1e7250a516e028b5d4a5899a074d142f8c01d1",
+    "src/main/java/ac/navro/proxy/prediction/live/NativeIds.java": "47c42d38b92a3ddecaeb1739e2e42fb79d3574069e61ae0c119fc50e2ffc7663",
+    "src/main/java/ac/navro/proxy/prediction/live/PredictionContext.java": "91ee70f5943cf2dc7f6504958f10398bef33b32030685c7198040fc901fdb909",
+    "src/main/java/ac/navro/proxy/prediction/live/PredictionItemUse.java": "ff61d8e9d2b78009d40cfbbc2db7dfaf816f878b03b0ba4e8ce9e2f74649af14",
+    "src/main/java/ac/navro/proxy/prediction/ticker/base/EntityTicker.java": "c0bdab8963b501bb1caf1dd42b57512cd36ccef6ba483a3d0f8518155a411d0d",
+    "src/main/java/ac/navro/proxy/prediction/ticker/impl/LivingTicker.java": "a172398e21f0f910dd0d5e9d65ef71f4ca0c0ddc851ffe4d0048beb5caafd8f8",
+    "src/main/java/ac/navro/proxy/prediction/ticker/impl/PlayerTicker.java": "f552fdfe3adb7392abc65d51de060df024dcf16c5df5dd696e4b1fcaac272fc1",
+    "src/main/java/ac/navro/proxy/protocol/BackendProtocolProfile.java": "52e2ec42adc67dee44cd8f4682d55d45849cc9a15f88878b1e7858218790759b",
+    "src/main/java/ac/navro/proxy/protocol/LoginIdentity.java": "15b74fa1da1090f574106abd615593f07dba33a57e03823b4b30169b995b073c",
+    "src/main/java/ac/navro/proxy/state/MovementMetadata.java": "f7756b6dca6f1db4507f8937d9b78726b936b6d06845bb8485785aa7977669fa",
+    "src/main/java/ac/navro/proxy/state/WireAcknowledgment.java": "a84259a8e13f7f004db2140ec30e435b698ffefdc225d114f906af15052dd3b9",
+    "src/main/java/ac/navro/proxy/state/WireAnomaly.java": "594528f63f62597ff6f040966df308fa88d345ef15b44ec18b34d9e7f523026d",
+    "src/main/java/ac/navro/proxy/state/WireEvent.java": "f01cc70041179a096f1895c3c15435154d73062537342d4ac86f2f3c2239e7e4",
+    "src/main/java/ac/navro/proxy/state/WirePlayerState.java": "f2d6cc253c9be49670eaa92474ffa9306a76188fef6cf691ad11b3a1f546cd25",
+    "src/main/java/ac/navro/proxy/state/WireTickSnapshot.java": "c99607a50935f1b6d350f6de5bf5a5870b08bcdc5a2f27531f1769dfd0cdef23",
+    "src/main/java/ac/navro/proxy/state/WireVec2.java": "7405764f07b8da9444e89a61c44d2941d02d13f451aa4cf1bc315be3acd7aa81",
+    "src/main/java/ac/navro/proxy/state/WireVec3.java": "5bc98470214020340a68d73fc988bb4b0f14c8841714956b8bbe5c39f04ef8cd",
+    "src/main/java/ac/navro/proxy/teleport/ProtocolTeleportMotion.java": "7c141a3f66a40be3ffe8f8305238b5013de4286314113fc4f2685f807ac8a63f",
+    "src/main/java/ac/navro/proxy/teleport/TeleportSender.java": "13a1cb6ae08df97fe607bb824f225d798fcbdafc45d9c3d478b9d506c1fad73d",
+    "src/main/java/ac/navro/proxy/teleport/TeleportUtil.java": "68337c0e9d185544fe393ce55de4e93b2e3e78de9b05401baa06bbc1eecad7a3",
+    "src/main/java/ac/navro/proxy/teleport/data/CorrectionResetData.java": "053a1dbac58a737e4b247c55d0258c4c39a6ff0f18937e1b62da429130604873",
+    "src/main/java/ac/navro/proxy/teleport/data/RewindHistory.java": "09660911d85ebb8c9f8c5a9987da59d8d406337d35e183e8f20c0b8c765bb24f",
+    "src/main/java/ac/navro/proxy/teleport/data/TeleportData.java": "867700dd207b7f2f446ed811b77270dcd142f25c0b6e52951deec6e4066287ed",
+    "src/main/java/ac/navro/proxy/util/EntityBatchEncoder.java": "94dca18b9adb8a065a78ed1b76afbe9b7cccc8fea0024e0c2801c2b3bb3cc759",
+    "src/main/java/ac/navro/proxy/util/EntityMetadataUtil.java": "4346b5ccc791b4d81d8984654bf61587bdd1a4fc7eb5733bc880397633d687ff",
+    "src/main/java/ac/navro/proxy/util/Hash.java": "cfd81399548efd1a1d3afc879722646e62fc3eea1b8f88f89d6b53b126b32f41",
+    "src/main/java/ac/navro/proxy/util/ItemUtil.java": "96220f560a3fc9d5699c503c931ba91ed98708ce4b8ab6f3d78f4bf34f16dde2",
+    "src/main/java/ac/navro/proxy/util/LatencyUtil.java": "c6079a94edc8570cc8190d92995db30555776bd8e78b3e33ea6e8cc260dfee77",
+    "src/main/java/ac/navro/proxy/util/NbtNumber.java": "5954f537fd0e13ea748c468c0be6f0db09c70cebc21460de17b6b271aaa43019",
+    "src/main/java/ac/navro/proxy/util/NbtString.java": "6c26fab6fbb37020596f5d13c7a73bb55cdf483878247f62fad235e9ed01b810",
+    "src/main/java/ac/navro/proxy/util/StringUtil.java": "e79e8b664c8281c9e4c1915f5054a6d4e294f99dd5b9d4da120d58da69fa815a",
+    "src/main/java/ac/navro/proxy/util/block/BlockActionText.java": "9984b5afbcd618ebaedefc8e37236144ac62d006738b2a2233d962d9c02bed8c",
+    "src/main/java/ac/navro/proxy/util/block/BlockActions.java": "02ee776273eb13417ad11515bd9b5d184b93a29b2e24437cb713a8429aa4be8a",
+    "src/main/java/ac/navro/proxy/util/block/BlockCorrectionSender.java": "506fec9f22b62705b6de28a82af2b336a3fec40b2f1badcea74bf2fcccde287a",
+    "src/main/java/ac/navro/proxy/util/block/BlockPlacementPhysics.java": "e4e4380c1af5665afc083e825a18dece9e7e10d56aee4c538ec6722251e515ed",
+    "src/main/java/ac/navro/proxy/util/block/BlockUtil.java": "0f2e22a71b01579a57bcb0d233d2be59ef365facc642b9f3ae2afbf67ea877f4",
+    "src/main/java/ac/navro/proxy/util/reach/PositionInterpolator.java": "2c87158d99f73e9497296f560a3bdf87ebd35671586401f2f70012dd32cd587b",
+    "src/main/java/ac/navro/proxy/validator/blockbreak/ServerBreakBlockValidator.java": "fe0041913b2400402002a25cdf627233bd125d9ba5f1b61db82311c0b9654fce",
+    "src/main/java/ac/navro/proxy/validator/inventory/ItemTransactionValidator.java": "c361e3d1b4ec55781febc241dbd59f4ec29c600c586a5bdeb4fe244d60a831c2",
+    "src/main/java/ac/navro/proxy/world/WireBlock.java": "60a02a7222faa91a30f0f2f07f5a68265a61246466bf96278d657ea515a4f0c0"
+  },
+  "navroSourceHashes": {
+    "src/main/java/ac/navro/anticheat/collision/AcceptedPositionPhysics.java": "f91f8675fe5d055fdca8dcb186551c87c7c475bd30c08b6309f03710a84454ff",
+    "src/main/java/ac/navro/anticheat/collision/ClipCollideResult.java": "a351d40e50c6f55b6b5366ed0760a49fc1719d802f987dc9d08617fc21b2a5cf",
+    "src/main/java/ac/navro/anticheat/collision/CollisionQuery.java": "ed74c21c1d0153892d11ecd27b9733ea79bab8e98f27d69d9abbb0a39589fbc7",
+    "src/main/java/ac/navro/anticheat/collision/SneakEdgePhysics.java": "c95403e0630cf5092dad30de387aef4b2f3d67699fd4ba6bf09b54fd8345e12d",
+    "src/main/java/ac/navro/anticheat/collision/SweptMovement.java": "ac86c500a6c8e6aa6e51e507e82db69342396173eba7cc15631f7c25afddf7c3",
+    "src/main/java/ac/navro/anticheat/collision/util/CuboidBlockIterator.java": "e5b9cdf983790c8db60280bc3383ea6b9d4f60a2619b2bced78fa268c64c71f2",
+    "src/main/java/ac/navro/anticheat/data/EntityDimensions.java": "f4ce634e7defbaed8e8e1a8d375be6f725271ae671b96a05ba62fb4d215f26ea",
+    "src/main/java/ac/navro/anticheat/data/MovementAabbSnapshot.java": "f564a99cb843daff0a568c86a0fdeb8c95baad08af8db2efd4313e6c455728d7",
+    "src/main/java/ac/navro/anticheat/data/input/InputPosition.java": "cc54a07a6fc397618889f39dd685e3f967be677d32573ed2c4cd0b343cacf5aa",
+    "src/main/java/ac/navro/anticheat/data/vanilla/AttributeInstance.java": "59a59bce418993766c83d5008c3370abc9f69f7d51a99a8fe58bdd997247e309",
+    "src/main/java/ac/navro/anticheat/data/vanilla/StatusEffect.java": "2196f2d4264d5d6719e42bfdf3a61ea1647026f93f7820eb66ff06622731e14d",
+    "src/main/java/ac/navro/anticheat/util/BdsTrigMath.java": "a77649e034b7a9ff560928d270c9762fa376b0fc26225c44f69748fd45e78a4a",
+    "src/main/java/ac/navro/anticheat/util/ClientFloatMath.java": "258a3a7ed99e0e6d44469f0facba7fca75b99b6abd7e5d6896fd0d4d69588db3",
+    "src/main/java/ac/navro/anticheat/util/MathUtil.java": "8fabf98a98d3fb9e5cc748a4719287d47e17c8742aca828b57d40dcc20d454a8",
+    "src/main/java/ac/navro/anticheat/util/NavroTrigMath.java": "0a060eb5da0b1f8a5ecc7847333b1e8466e36d553fe1ecbd28f15f6215e7bac4",
+    "src/main/java/ac/navro/anticheat/util/Pair.java": "08ef03965b7582d4835f6bb17c10558d72de5bcf5037fbd9ec34cec773f79730",
+    "src/main/java/ac/navro/anticheat/util/math/Box.java": "8e8066e1f2b5648238a919af618543f59216c3ad99c7ab48aa83008b513b0033",
+    "src/main/java/ac/navro/anticheat/util/math/Mutable.java": "2d4acc4d8fcfad10fa32ba1b5b1865f8c2599df458bba62efb8288bc747b641a",
+    "src/main/java/ac/navro/anticheat/util/math/Vec3.java": "8e4a88a9da6fe23562062047655f6f13351cf2fbe12c00f035b054e904b13a2b",
+    "src/main/java/ac/navro/anticheat/alert/AlertManager.java": "1314f42ece4730ff2dacab7c9f47c479fd8fbfea5a42e5cb652a11cf9a811e73",
+    "src/main/java/ac/navro/anticheat/alert/AlertSubscriptions.java": "daf364181e6dbfb63b871cac554a456f740f74cb30e26b194c5e70fd39868bb9",
+    "src/main/java/ac/navro/anticheat/check/api/Check.java": "1f94e3cc22efa22be5963787c55fa7587d8e5a01a1ce92d8e0abfce648afd7d0",
+    "src/main/java/ac/navro/anticheat/check/api/annotations/CheckInfo.java": "8cbe64a2c96231237bb0b25d6dc5d54bdd2e59f5058694b8abf186919cbb2ce4",
+    "src/main/java/ac/navro/anticheat/check/api/annotations/Experimental.java": "d79c16824be46c146e9e1b932c5a1db7037821608e735dad11cc9a30ac1c5592",
+    "src/main/java/ac/navro/anticheat/check/api/holder/CheckHolder.java": "2d40075a1726b61a1524be51ccf94caf73d587736491780d0bf1d1cd82a0ff89",
+    "src/main/java/ac/navro/anticheat/check/api/impl/OffsetHandlerCheck.java": "12a36520af836cbb1f9d01f644bf4184debfb09b34bde2bbba6e82b4ef5c8c89",
+    "src/main/java/ac/navro/anticheat/check/api/impl/PacketCheck.java": "75f0e6815008a4a3057e3fa172529f02468747e88bf1175881a41af30f5bea99",
+    "src/main/java/ac/navro/anticheat/check/api/impl/PingBasedCheck.java": "7a1c45b90685de1c086e6d125a5dd0c63081189d76d4245fe78ee4992c3bcebc",
+    "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketA.java": "a1e4f29b47381c9dcd35c85cd94844b48f9e938d8fd2b9079fdb81616c765e57",
+    "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketB.java": "b426bfe2f4147ee98a280fcf159ea872e77bd5f7461a858831e4f78ef39aaf9c",
+    "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketsC.java": "20fa45409981fabdd46614500891935405fc0d6004c363e9b813966c89ac26e6",
+    "src/main/java/ac/navro/anticheat/check/impl/badpackets/BadPacketsD.java": "b024f18f0413d53298281b2064b3be2367090171adfb37de81904afe1ee01749",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/AntiKB.java": "e365121a9b05e96218667a1af17c840352170593fb1da937ad37bc567724c27e",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/Collisions.java": "4415d64dd69b3e0b5cf50c108e61906c38d0d78e99698619ec7eddaaab63e0d3",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/GroundSpoof.java": "d0d407203dc3ab13e7d319a9fbfecb5087549b762ff8c4494833484302c2b34f",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/Horizonal.java": "a7a547f2d3849ffb8cab913c986c2c97795316a046c6b937c813f7d911776b20",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/NoSlow.java": "3168e78f08415ebf441b4dc58381ebb175516b4874828ac25b4c1606b62a7d86",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/Phase.java": "e8726a10d3b45a1a2883cfaea99db8681916ba66b1154f81be2b16ce0f211ac1",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/Prediction.java": "3f6c9cced12c651a40faca5c402c972bacccafa076b5e59c4b74b250e42b6bbb",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/PredictionSubCheck.java": "9d7b10833fa7f69657361b8cc0025bbd2b0232218ae2593ef60a27fc61a3fc7c",
+    "src/main/java/ac/navro/anticheat/check/impl/prediction/Vertical.java": "7518541449cfa53e4da3d35a26382722dceb7544ee8668a68de96b632396ebdf",
+    "src/main/java/ac/navro/anticheat/check/impl/timer/NegativeTimer.java": "3dbf5c1496129245c151b6646abb87eb2241bd526ce8e912d10ca93863147b77",
+    "src/main/java/ac/navro/anticheat/check/impl/timer/Timer.java": "4ecf915d685025d15ef6e089ed94016fc2a73bfd40bb9a2d8937892c0889df0e",
+    "src/main/java/ac/navro/anticheat/collision/Collider.java": "78687ca451cd69245cd67a370d824de895fa0b29f2daca08c3b94d7e653708a4",
+    "src/main/java/ac/navro/anticheat/collision/CollisionPhysicsState.java": "8b880ca542fa4e1210ab0e47c78e816f75b81ac788311a6caa05370a791157d8",
+    "src/main/java/ac/navro/anticheat/collision/CollisionShapeEntry.java": "31ede825a1f0896a3c81a09d2aa20abfee1f82850374aec2bf8436ae6dbb934d",
+    "src/main/java/ac/navro/anticheat/collision/EntityCollisionPhysics.java": "63d286ff2ed514441fad4914f4694f809709b637233ad9932e6523e2e8e04ea1",
+    "src/main/java/ac/navro/anticheat/collision/MoveTowardsClosestSpace.java": "accb467ee11889d43ba82380667bdc7cbb4c55a833df6b2c64372038a14b1f69",
+    "src/main/java/ac/navro/anticheat/collision/PlantCollision.java": "55d88f3d6535e29301806502b45b0d38b70875d459987451a7211e498b733ba5",
+    "src/main/java/ac/navro/anticheat/collision/ScaffoldingCollision.java": "c1b839ef1e8f6969e900d96d4018668ee568c0ea1d5ee2f6f122f14011542804",
+    "src/main/java/ac/navro/anticheat/collision/ShulkerPushPhysics.java": "173a1fc297e98ce6d9bb2e56bd69128f9845248164836eb01fb65efae6eea49d",
+    "src/main/java/ac/navro/anticheat/collision/block/PistonArmBlock.java": "c3bcaf72d6a960c625111b03fe1d8d408bb6d8b506b0b7f497295685e77045d0",
+    "src/main/java/ac/navro/anticheat/collision/block/PistonBlock.java": "f62d9fff5aaf1206a89540b2e70f699e01a34cb0771c65f654015ea97d81fabb",
+    "src/main/java/ac/navro/anticheat/collision/block/ShulkerCollisionState.java": "43c259002d47186c58014e9516e103113cb0335e5324cab44636745e45ab5d91",
+    "src/main/java/ac/navro/anticheat/compensated/CompensatedInventory.java": "6a08561d4ff50372f2d06d7726b401941b61f412616e80006bd6da5cd01a0293",
+    "src/main/java/ac/navro/anticheat/compensated/cache/container/ContainerCache.java": "3ed0b4ff74554ecc09ac5f8bd7ee88d7480a57f1085f72e714b0690d034dfe9e",
+    "src/main/java/ac/navro/anticheat/compensated/cache/container/impl/ArmorContainerCache.java": "63e80ec8b2f2ece0d214f0d1751816a50e99cd20cb23e69f77da115ca4d67743",
+    "src/main/java/ac/navro/anticheat/compensated/cache/container/impl/PlayerContainerCache.java": "6d4eccb5ce59b741ba750e14fa0ddc093922aad9672ee60f46279f82b41475c1",
+    "src/main/java/ac/navro/anticheat/compensated/cache/container/impl/TradeContainerCache.java": "f3dbc90ad8ebcd4d4a4316421303ae1d7250fa2e8d42bbb0a1ec1ee431ca16b9",
+    "src/main/java/ac/navro/anticheat/compensated/cache/entity/EntityCache.java": "3bd37964b2968d158448a8e388336b50e443d350aad9c3612669a04626832ddb",
+    "src/main/java/ac/navro/anticheat/compensated/cache/entity/state/CachedEntityState.java": "4e80b9591032442c06a94ce4f3cb2e52eb9b8067e07316a470bddf3232fe46ad",
+    "src/main/java/ac/navro/anticheat/compensated/world/CompensatedWorldImpl.java": "cf2e49ee329567173e6b27f4d1adc5d5418ae4068bbc90d78e61c829a9e8a2a3",
+    "src/main/java/ac/navro/anticheat/compensated/world/base/BucketPredictionTracker.java": "c8f872a1a4a4cff49a4d07004cfd6b6f7bc9d41e25a768b7fc9668f52712ac77",
+    "src/main/java/ac/navro/anticheat/compensated/world/base/CompensatedWorld.java": "603125040a5a7bee258c88eede845b83037e70cd225684778032c0eedda87ccb",
+    "src/main/java/ac/navro/anticheat/data/BreakingData.java": "c6448e6470b277a4d5658403c49429ca51c3f156a67f52e9bbe7b4d4f3388bcc",
+    "src/main/java/ac/navro/anticheat/data/FluidState.java": "8fed0f688b1ede6c4f7f5f66b5eaeda5f43057323d514a24169fd7b9fa9f7aa9",
+    "src/main/java/ac/navro/anticheat/data/ItemUseTracker.java": "8b7848179575113ce03e262c4b960e13b24bed2e5fcc7672c5b3c7ec3ebac57b",
+    "src/main/java/ac/navro/anticheat/data/block/NavroBlockState.java": "cbaed34d727139410394d6746b08355c22785682592db7143a758e8bdf4bd667",
+    "src/main/java/ac/navro/anticheat/data/block/NetworkBlockState.java": "846c67bbd43786d61dddc480bead9398812d20f707c93300e02df59dde019304",
+    "src/main/java/ac/navro/anticheat/data/block/NetworkBlockStateRegistry.java": "0df960e10b3167f88d9de358dfceb0708bf917553ef7c2899a1608197d91ae3c",
+    "src/main/java/ac/navro/anticheat/data/input/PredictionData.java": "95016243aef9e419b41ed61be9d09c3edb8ec94fe0794cbc23c7ddc01a3d3211",
+    "src/main/java/ac/navro/anticheat/data/inventory/BundleData.java": "a576b79c8354df7e5e0a52d035199dcfe7afa112a503921c01d64391fb97ff44",
+    "src/main/java/ac/navro/anticheat/data/inventory/ItemCache.java": "3724f208e06ff86c513ef0bcf4bc57a2f1555fefdd67025f49e6d441c07a9ee3",
+    "src/main/java/ac/navro/anticheat/listener/PacketListener.java": "8e9f79aea8332119c277edbf3f135c167079421082c3138caa8e86f435e26453",
+    "src/main/java/ac/navro/anticheat/packets/input/AuthInputPackets.java": "c02bfa6ea3e2fb44c3e10721b4da5888e891ee88649fb713acb61c1305f9d26b",
+    "src/main/java/ac/navro/anticheat/packets/input/PostAuthInputPackets.java": "6e67ff340a4fda09435b56ccdf9d32c2e48b8f70a513036e51e219d970c1595e",
+    "src/main/java/ac/navro/anticheat/packets/input/legacy/InputPositionDecoder.java": "d2d1c2288ad06f3deaa91c98854ef63d591197a27b114ed438a9469ba1116151",
+    "src/main/java/ac/navro/anticheat/packets/input/legacy/LegacyAuthInputPackets.java": "d4f77e1977013fc717b4e2f7ffaded9cc36a1a2e3f9a0b86682a233fd2a2527c",
+    "src/main/java/ac/navro/anticheat/packets/other/NetworkLatencyPackets.java": "df1dc23f2af80da6cfc024126b777228aece3e962997292fc64a9b1a84ba3882",
+    "src/main/java/ac/navro/anticheat/packets/player/PlayerInventoryPackets.java": "25f7d7aa05e64e16b5f5ed5ee97a08117711dda4a88bf0387615182dae5d2cb6",
+    "src/main/java/ac/navro/anticheat/packets/player/PlayerVelocityPackets.java": "2140d8b05be5153612ad168e47674543f3d19a5ab9732cd04d72fa39e31750f9",
+    "src/main/java/ac/navro/anticheat/packets/server/ServerChunkPackets.java": "3b875edbac4636724f16cc45a325ed87dab140e5396e89a18b0c35f23e20315c",
+    "src/main/java/ac/navro/anticheat/packets/server/ServerDataPackets.java": "0b452ab72b36838a5f51ff789de16e85682e10a46eba225ccc0a1ccf8104d47a",
+    "src/main/java/ac/navro/anticheat/packets/server/ServerEntityPackets.java": "d8862f7ad06a2d2102eb218a524afa92591ff16ce89c2798b32b1d4436d89804",
+    "src/main/java/ac/navro/anticheat/player/data/tracker/FlagTracker.java": "9f8fcc0e33405d8902ab1d75c47e6ff7eac4ee640ff38bff21ffb472150b8488",
+    "src/main/java/ac/navro/anticheat/prediction/ClimbableBlockPhysics.java": "74383f488e0cf85efb3947af6a25d64ff146415be2e958b896b76a714f1daf7b",
+    "src/main/java/ac/navro/anticheat/prediction/GlidingState.java": "67c3e2ab62adccce83080ef49fa5ad550b35f995b90f88d2a827e53448d5d481",
+    "src/main/java/ac/navro/anticheat/prediction/GroundTravelPhysics.java": "742c6e9d4f8a3cbad0a35333b8d37d3ad86d9de3fc1361c4bac6ca6f4f4a9f5c",
+    "src/main/java/ac/navro/anticheat/prediction/PredictionRunner.java": "0634994d6697e9c380920e27456c5d6739a851e22fa6b516f7ecb58170a5b27e",
+    "src/main/java/ac/navro/anticheat/prediction/RiptidePhysics.java": "ed42c463d5d7316ee6989f8f7c306f2d0269a61f7df8070ab8913ed31c483000",
+    "src/main/java/ac/navro/anticheat/prediction/SneakInputPhysics.java": "6a647e84b84a0c97ab5811f8dcd83953f6bca3e858e33cba28f1de087a747ff0",
+    "src/main/java/ac/navro/anticheat/prediction/SprintJumpPhysics.java": "24f7d5bde813c9bb9414d944158190ad38f69eabfbb45b34df61099aeac7c4e8",
+    "src/main/java/ac/navro/anticheat/prediction/StickyBlockPhysics.java": "5cda96c4534689279399f2dbc78f29a17383eb109622d865d83b4f652d222451",
+    "src/main/java/ac/navro/anticheat/prediction/engine/base/PredictionEngine.java": "3a7f045cf90c4650b0f70411f86d342d077071443f98dd4b293975086d0f21b4",
+    "src/main/java/ac/navro/anticheat/prediction/engine/data/Vector.java": "bdc0e4d77e016a1a8bff1845736faf7c94118d281908c1601c21e582fbf7264e",
+    "src/main/java/ac/navro/anticheat/prediction/engine/data/VectorType.java": "9170a57d275c35b0cd2ead10cb9444b51bae06d6b1bd33581e4ff1ce78106611",
+    "src/main/java/ac/navro/anticheat/prediction/engine/impl/GlidingPredictionEngine.java": "8db8979d3935abf85a2be4617c68113e287d21df36b93775156f6cc32ca546ed",
+    "src/main/java/ac/navro/anticheat/prediction/engine/impl/GroundAndAirPredictionEngine.java": "108a2fabb8aac7ba69e983c9556b2270ad46ccbb998a86687ad30c11c329ca1d",
+    "src/main/java/ac/navro/anticheat/prediction/engine/impl/fluid/LavaPredictionEngine.java": "75760bfdf5c9e82d1eeb195cb9433eb29fbe7380af265d9c0e542858e56c7e38",
+    "src/main/java/ac/navro/anticheat/prediction/engine/impl/fluid/WaterPredictionEngine.java": "832437d4d0d67ebf572b36aacf75991e82b5ddb7a40a8b135b50df7d7ba04452",
+    "src/main/java/ac/navro/anticheat/prediction/fluid/FluidMovement.java": "ef782e98f3dd3d4456cb0e23e3b6289f8a6f74310e2091f4b5373be130d87c87",
+    "src/main/java/ac/navro/anticheat/prediction/fluid/FluidPredictionState.java": "f15942812ae452940c92b41af2aee89bf30034cba8a150a66067ef26ad66dd2c",
+    "src/main/java/ac/navro/anticheat/prediction/fluid/LiquidPhysics.java": "b1e76650da342ea696aa104fa26d32c72c041c6c692eafb7fdd2b612d54d1b38",
+    "src/main/java/ac/navro/anticheat/prediction/ticker/base/EntityTicker.java": "40e8e6affae579d9754381f918575b70890f7d5b63c8c96c2342efbee8d1e0fb",
+    "src/main/java/ac/navro/anticheat/prediction/ticker/impl/LivingTicker.java": "0001a22c0c91a90328664bc830818880a423599b90313eea6ad91a61e7ccb4d6",
+    "src/main/java/ac/navro/anticheat/prediction/ticker/impl/PlayerTicker.java": "d4bb572f4b61cd3599fa7d106446d791bb97fa43ff64744a80292a116afae156",
+    "src/main/java/ac/navro/anticheat/teleport/TeleportUtil.java": "612916fb99a0fae2120e485e4b55740a8cc6edb51f5e920f98477a17201ab3b3",
+    "src/main/java/ac/navro/anticheat/teleport/data/CorrectionResetData.java": "76d15cae64c27f267cc0f983a923c2731e06fd6ed447d6986cc9b31744230f73",
+    "src/main/java/ac/navro/anticheat/teleport/data/RewindHistory.java": "c0fe38e1450f195609404c2893ab20b8857e86dfa446916afd0e2608ec03fb9d",
+    "src/main/java/ac/navro/anticheat/teleport/data/TeleportData.java": "7b3f490657481beccc8db7a1e3bbc5e550f1eaa5812ae89975715d09860f5b2f",
+    "src/main/java/ac/navro/anticheat/util/EntityBatchEncoder.java": "ed503c15c43426016f87ee93c2505db53b22702655c048dba1a781db77cc8a2c",
+    "src/main/java/ac/navro/anticheat/util/EntityMetadataUtil.java": "7478081ae4414c844dbb98a13409108315c9b63570bf9d3cc671711eeeee16b1",
+    "src/main/java/ac/navro/anticheat/util/ItemUtil.java": "cc46576da259da41a900ede399795ba4e9cca12fe17ba7bbd588c09d0c5ff7dd",
+    "src/main/java/ac/navro/anticheat/util/LatencyUtil.java": "88bf1d19d3becac14b8b0b4567ec014d9faf03bed942f9395271101b5f540cff",
+    "src/main/java/ac/navro/anticheat/util/StringUtil.java": "c6b9fa8c1fcaff2fedc5ae41d4e42af16c72460a028dfddbd21e30839482a088",
+    "src/main/java/ac/navro/anticheat/util/block/BlockActions.java": "13e9bc32734fe6721ce79e5d21e610b14d9a76f64d44398c862f88023b136921",
+    "src/main/java/ac/navro/anticheat/util/block/BlockPlacementPhysics.java": "b3c0403cb83f09f7ed332de3ebaeb618a2c9fe07ed0332b22e393db2bdd086d2",
+    "src/main/java/ac/navro/anticheat/util/block/BlockUtil.java": "e6e7c3ace35d86a3ae15b6485783a3f3b765e41932ad6985db5134d508010474",
+    "src/main/java/ac/navro/anticheat/util/reach/PositionInterpolator.java": "094e80c5d803792f8b7d125ea2583b81e76c7106fbe227e3543c40d2e0542cb1",
+    "src/main/java/ac/navro/anticheat/validator/blockbreak/ServerBreakBlockValidator.java": "bc4d830e2e026f0af1df0bdecb75bb988c9247f9c9e3f6aa842b354a5f2f9928",
+    "src/main/java/ac/navro/anticheat/validator/inventory/ItemTransactionValidator.java": "d6a6e2c8e7f826a3898224ca2af94d8b5f99f809e797523adfe413b2951b6b7d"
+  },
+  "documentation": {
+    "README.md": "132a8b43684d4915d8bf6acc06377a81fad238cffc308da244704dedcbe973b9",
+    "BOTTOM_LAYER_ALIGNMENT.md": "1eb6a51e7b94b2e163940b9675592a6edf3075b8d8217fb97da0443f4ac8f796",
+    "NAVRO_STRUCTURE.md": "2c8177575643a4abc5ec3480ba53d65ba259323a13d18e442214c2eca4921f6d"
+  },
+  "deployment": {
+    "pid": 10487,
+    "deployment": "/data/data/com.termux/files/home/navro-proxy-backend-test/proxy-dist-structure-20261114-032642",
+    "jarSha256": "51dec463ad0efb446935b3d844416a15cb166044fe461fb086bc94394533db1a",
+    "fullTests": 345,
+    "logOffset": 19224678
+  },
+  "backendUnchanged": true,
+  "completedAt": "2026-11-14T03:27:23.469800+00:00",
+  "protocolProbes": {
+    "proxy": {
+      "port": 19132,
+      "protocol": 2168,
+      "result": "NetworkSettingsPacket",
+      "log": "build/structure-19132-probe.log",
+      "sha256": "ae0ba0efd5d1870662a3e211dae02c3fdfed51a0b1952a0a498abfa53da8d29b"
+    },
+    "backend": {
+      "port": 19133,
+      "protocol": 2168,
+      "result": "NetworkSettingsPacket",
+      "log": "build/structure-19133-probe.log",
+      "sha256": "d4a126a0bb0af336251306f0c5c5bea265dc539ecaeb459e3ff6bbaf38575ba0"
+    }
+  }
+}

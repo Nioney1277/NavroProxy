@@ -45,12 +45,12 @@ closing ACK 才提交。BDS 没有安装该插件时不生成能力，也不因�
 
 ## 构建与验证
 
-后端产物：`backend/nukkit-mot/build/NavroBackendBridge.jar`。插件内部名称保持不变，部署时不要同时保留旧 JAR。
-构建：`python backend/nukkit-mot/build.py`。
+后端产物：`backend/nukkit/build/NavroBackendBridge.jar`。插件内部名称保持不变，部署时不要同时保留旧 JAR。
+构建：`python backend/nukkit/build.py --nukkit-jar /path/to/Nukkit-MOT.jar`。
 
 后端测试执行真实 Nukkit InventoryTransaction.execute / SlotChangeAction / BaseInventory
 与原生库存编码，生成 `native-transaction-slots.json`；代理测试解码这些原生字节并核对 ACK
 前后的缓存。另覆盖无握手零流量、真实 tick 跳跃、普通库存包去重、取消发送重试、窗口关闭、
 退出、客户端伪造消息、新旧连接与过期能力。
 
-后端构建和集成测试结果见 `backend/nukkit-mot/build/validation.json`。
+后端构建和集成测试结果见 `backend/nukkit/build/validation.json`。

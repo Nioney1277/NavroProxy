@@ -442,9 +442,19 @@ public final class SessionState {
         observeClient(packet, false);
     }
 
+    public void observePredictionSync(org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket packet) {
+        boolean accepted = player.predictionSync().receive(packet, player.uniqueId(), player.tick());
+        var log = player.worldDiagnostics();
+        if (log != null) log.predictionSyncReceived(packet, accepted);
+    }
+
     private boolean observeClient(BedrockPacket packet, boolean checked) {
         applyCheckConfig();
         boolean forward = true;
+        if (detectionEnabled && !checked && !player.isExempted()
+                && packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket sync) {
+            observePredictionSync(sync);
+        }
         if(player.worldDiagnostics()!=null)player.worldDiagnostics().client(packet);
         if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.ItemStackRequestPacket request) {
             transactionValidator.handle(request);

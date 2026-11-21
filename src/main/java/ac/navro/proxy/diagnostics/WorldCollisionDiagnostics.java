@@ -81,6 +81,33 @@ public final class WorldCollisionDiagnostics {
                 "metadataFlags",ac.navro.proxy.util.EntityMetadataUtil.copyFlags(update),
                 "metadata",update.toString(),"movementState",movementState()));}catch(Throwable ignored){}
     }
+    public void predictionSyncReceived(MovementPredictionSyncPacket packet, boolean accepted) {
+        event("clientPredictionSyncReceived", fields("accepted", accepted,
+                "reportedUniqueId", packet.getUniqueEntityId(), "expectedUniqueId", player.uniqueId(),
+                "modelRuntimeId", player.runtimeId(),
+                "reportedFlags", new TreeSet<>(ac.navro.proxy.packets.input.ClientMovementPredictionSyncPacket.copyFlags(packet)),
+                "reportedDimensions", String.valueOf(packet.getBoundingBox()), "reportedSpeed", number(packet.getSpeed()),
+                "reportedExtraScalars", List.of(number(packet.getUnknown1()), number(packet.getUnknown2()), number(packet.getUnknown3())),
+                "reportedFlying", packet.isFlying(), "pendingReport", predictionReport(player.predictionSync().pending())));
+    }
+
+    public void predictionSyncAtInput(long sourceTick, ac.navro.proxy.prediction.PredictionSyncState.Report report) {
+        event("clientPredictionSyncAtInput", fields("sourceTick", sourceTick, "report", predictionReport(report),
+                "canonicalState", movementState()));
+    }
+
+    private static Map<String, Object> predictionReport(ac.navro.proxy.prediction.PredictionSyncState.Report report) {
+        if (report == null) return null;
+        return fields("sequence", report.sequence(), "receivedAfterTick", report.receivedAfterTick(),
+                "uniqueEntityId", report.uniqueEntityId(), "flags", new TreeSet<>(report.flags()),
+                "scale", number(report.scale()), "width", number(report.width()), "height", number(report.height()),
+                "speed", number(report.speed()), "underwaterSpeed", number(report.underwaterSpeed()),
+                "lavaSpeed", number(report.lavaSpeed()), "jumpStrength", number(report.jumpStrength()),
+                "health", number(report.health()), "hunger", number(report.hunger()),
+                "unknown1", number(report.unknown1()), "unknown2", number(report.unknown2()),
+                "unknown3", number(report.unknown3()), "flying", report.flying());
+    }
+
     private long record(String event,Map<String,Object> data,boolean emit){
         var entry=fields("time",java.time.Instant.now().toString(),"session",session,"seq",++sequence,
                 "event",event,"player",player.getName(),"tick",player.tick(),"protocol",player.protocolVersion(),

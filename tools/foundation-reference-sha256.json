@@ -1,0 +1,8 @@
+{
+  "../Navro/src/main/java/ac/navro/anticheat/collision/PlantCollision.java": "55d88f3d6535e29301806502b45b0d38b70875d459987451a7211e498b733ba5",
+  "../Navro/src/main/java/ac/navro/anticheat/util/block/BlockPlacementPhysics.java": "b3c0403cb83f09f7ed332de3ebaeb618a2c9fe07ed0332b22e393db2bdd086d2",
+  "../Navro/src/main/java/ac/navro/anticheat/util/block/BlockUtil.java": "e6e7c3ace35d86a3ae15b6485783a3f3b765e41932ad6985db5134d508010474",
+  "../Navro/src/main/java/ac/navro/anticheat/data/block/NetworkBlockState.java": "846c67bbd43786d61dddc480bead9398812d20f707c93300e02df59dde019304",
+  "../Navro/src/main/java/ac/navro/anticheat/data/block/NetworkBlockStateRegistry.java": "0df960e10b3167f88d9de358dfceb0708bf917553ef7c2899a1608197d91ae3c",
+  "../Navro/Nukkit-MOT-SNAPSHOT.jar": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6"
+}

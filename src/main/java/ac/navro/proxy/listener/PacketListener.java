@@ -31,6 +31,9 @@ public final class PacketListener {
             negativeTimer.onRespawn();
         }
         if (player.isExempted()) return true;
+        if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket sync) {
+            state.observePredictionSync(sync);
+        }
         player.setMaxBalanceAdvantageMs(maxBalanceAdvantageMS);
         BadPacketsC tickOrder = (BadPacketsC) player.getCheckHolder().get(BadPacketsC.class);
         if (packet instanceof PlayerAuthInputPacket input) {

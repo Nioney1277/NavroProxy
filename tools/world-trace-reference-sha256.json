@@ -1,0 +1,98 @@
+{
+  "generatedAt": "2026-11-14T00:13:21.854493+00:00",
+  "nativeJar": {
+    "path": "../Navro/Nukkit-MOT-SNAPSHOT.jar",
+    "sha256": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6"
+  },
+  "originalSources": {
+    "packets/server/ServerChunkPackets.java": "3b875edbac4636724f16cc45a325ed87dab140e5396e89a18b0c35f23e20315c",
+    "compensated/world/base/CompensatedWorld.java": "603125040a5a7bee258c88eede845b83037e70cd225684778032c0eedda87ccb",
+    "check/impl/prediction/Phase.java": "e8726a10d3b45a1a2883cfaea99db8681916ba66b1154f81be2b16ce0f211ac1",
+    "util/LatencyUtil.java": "88bf1d19d3becac14b8b0b4567ec014d9faf03bed942f9395271101b5f540cff"
+  },
+  "nativeSources": {
+    "cn/nukkit/network/protocol/SubChunkPacket.java": "c8b8ce524cbc020d121de91eda7de8fb4e052cd5d91f547b9401ec73e7e3ce06",
+    "cn/nukkit/network/protocol/LevelChunkPacket.java": "4c78b8523d9a835219d72cd38a76bdbca37c913bd42414355554530ee1adeae9"
+  },
+  "artifacts": {
+    "src/test/resources/native-subchunks.bin.gz": "b64ab7da264d76a0650910e239d72f2da575d296584411a62b9d3cb8737d2b50",
+    "src/test/java/ac/navro/proxy/packets/server/WorldPacketLifecycleTest.java": "91ce58ecac111a5bdef8832532347a31452d86074c431deef3e5a0e70338cab9",
+    "src/test/java/ac/navro/proxy/prediction/live/LivePredictionTest.java": "5ae971be1551e217e247d994bb7c284bc54a18c425bef18c49231482fe6389ed",
+    "src/test/java/ac/navro/proxy/check/impl/prediction/WorldCollisionDiagnosticsTest.java": "fdec2997ee5cf31a9507513552a0468327e6a874ad026017d43adb05d689989d",
+    "src/main/java/ac/navro/proxy/SessionState.java": "986266b6d4f07b4abf901430b64fec0ed0dd570933b6c0a09c84751441e648c1",
+    "src/main/java/ac/navro/proxy/ProxySession.java": "1becdcdf182c9aed7094a493f9949ebe787f003397c3a8d300ac1a277b9474e5",
+    "src/main/java/ac/navro/proxy/state/WirePlayerState.java": "f2d6cc253c9be49670eaa92474ffa9306a76188fef6cf691ad11b3a1f546cd25",
+    "src/main/java/ac/navro/proxy/prediction/PredictionSample.java": "39c961f6836818c1d2b399a7782884ccfa458b052d1518a96748560236ea70ed",
+    "src/main/java/ac/navro/proxy/util/LatencyUtil.java": "c6079a94edc8570cc8190d92995db30555776bd8e78b3e33ea6e8cc260dfee77",
+    "src/main/java/ac/navro/proxy/diagnostics/WorldCollisionDiagnostics.java": "a3cdefef14b029bc1eeee9598efb1a60ba810551cbd68f523ccee772090efead",
+    "src/main/java/ac/navro/proxy/compensated/world/base/CompensatedWorld.java": "672beb65379091141f16bdeb4072c3bbeffed4ca26f630c4b5b4a237ba4c7917",
+    "src/main/java/ac/navro/proxy/compensated/world/base/BucketPredictionTracker.java": "1d47a9115f4da883f72be0df1ee8b4c8302ea4ecb419ba70bdba3694ca4f3940",
+    "src/main/java/ac/navro/proxy/packets/server/ServerChunkPackets.java": "3df393ec7ad511a5c0c7b5659e2b67da4a4f7a12ec5b9e9652849fd0dd00f470",
+    "src/main/java/ac/navro/proxy/check/impl/prediction/Phase.java": "e95bf435042cb425633f5018ad8e26b4aedcecc319d185881d23645c213febcb",
+    "src/main/java/ac/navro/proxy/prediction/live/PredictionWorld.java": "3b1727387c848af71845ec93235d2a160b9eec6dc43dd3e2ed3afa682317526e",
+    "src/main/java/ac/navro/proxy/prediction/live/LivePrediction.java": "ec6792fdf0fea2d722fa06bf383731d1786ad40c95889f61a02f07dd843a49c8",
+    "tools/NukkitSubChunkFixture.java": "fd1854f3ed481f24ee145dc49a12df5638423f98f094514e9909c743ae936eec"
+  },
+  "coverage": {
+    "nativeSubChunkEncodings": 56,
+    "protocols": [
+      729,
+      776,
+      975,
+      1001,
+      2168,
+      2193,
+      2225
+    ],
+    "formats": [
+      8,
+      9
+    ],
+    "existingProductionResourcesUnchanged": 16
+  },
+  "backup": "/data/data/com.termux/files/home/navro-proxy-world-trace-20261113-234511",
+  "constraints": {
+    "ignoreDesyncedBlockAlignment": "explicitly deferred by user",
+    "phaseMathThresholdsAlerts": "unchanged; only observer log calls added",
+    "postDeployment": "read-only log inspection; no behavior fixes without further user instructions"
+  },
+  "verification": {
+    "tests": 333,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "command": "JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=4 sh ../Navro/gradlew --offline test installDist --rerun-tasks --console=plain",
+    "log": "build/world-trace-final-verification.log",
+    "focusedTests": 56,
+    "focusedLog": "build/world-trace-focused-verified.log",
+    "jarSha256": "14573cc4ea3fd1e46e24a508d5487dedac5632eda96f019cca492b01cc74793b"
+  },
+  "deployment": {
+    "pid": 24773,
+    "deployment": "/data/data/com.termux/files/home/navro-proxy-backend-test/proxy-dist-world-trace-20261114-001413",
+    "jarSha256": "14573cc4ea3fd1e46e24a508d5487dedac5632eda96f019cca492b01cc74793b",
+    "fullTests": 333,
+    "logOffset": 17901916
+  },
+  "protocolProbes": {
+    "proxy": {
+      "port": 19132,
+      "protocol": 2193,
+      "result": "NetworkSettingsPacket",
+      "log": "build/world-trace-19132-probe.log",
+      "sha256": "73bf83e25c38d3a591d527854b9d477ed21a6f45e412791f3b14018d48dfa65b"
+    },
+    "backend": {
+      "port": 19133,
+      "protocol": 2193,
+      "result": "NetworkSettingsPacket",
+      "log": "build/world-trace-19133-probe.log",
+      "sha256": "9b7f2935741e9538c85b4bc17d7973f5a2696d1b461e9abcf83dbe6539d1a90b"
+    }
+  },
+  "documentation": {
+    "README.md": "a05273f79964ff9cb2e16c8aace53a7eeaeb473d7b161b162016b7c2d0757482",
+    "BOTTOM_LAYER_ALIGNMENT.md": "3bba9cbd67ad830a0d798e491142c4cc5efeed410c2dbb1fd111a57c4b32355e"
+  },
+  "completedAt": "2026-11-14T00:15:23.147154+00:00"
+}

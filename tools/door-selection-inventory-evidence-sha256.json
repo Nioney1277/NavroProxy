@@ -1,0 +1,16 @@
+{
+  "src/main/java/ac/navro/proxy/data/block/NativeDoorSelection.java": "0b83dad9a38153568f29dd1f999dbb0625280be7e9f40109c30f277c0e692636",
+  "src/main/java/ac/navro/proxy/check/impl/place/PlacementPipeline.java": "f5e37f99942df79a3b911683d4dde2d8023cc7d24333a5ba7c93b3dc4b4cf54d",
+  "src/main/java/ac/navro/proxy/compensated/BackendInventorySnapshots.java": "64602cb2e8f084afde68f5700caba9b8ea5602dbe5a838133732e0daae757eb4",
+  "src/main/java/ac/navro/proxy/compensated/InventoryResponseSync.java": "8f6b9ac156673bcae17ab8fccf06936db05588e81daed0e5028cb77c730bd985",
+  "tools/NukkitDoorSelectionExporter.java": "321413b13c0d42d2e9a088e197ba5bd67a700a89892c666f4f6d3636aa3d4383",
+  "src/main/resources/navro/door-selection.bin.gz": "b08cd828f413ff0204b27b00e97cc74168d5077407fe5a1b26deb3a332eb57e3",
+  "src/test/resources/native-door-selection.bin.gz": "a8d1417f85afa8e07d1a12ce70394420bc61c3b7ace727aaf9f7b3ead3cda56b",
+  "src/test/java/ac/navro/proxy/check/impl/place/DoorSelectionReferenceTest.java": "9e324d29657840c8a6e430c683dea0b1565fd124a9d1a3e66d4605019c875e81",
+  "src/test/java/ac/navro/proxy/compensated/InventoryResponseLifecycleTest.java": "7cfbfd33298521ec03a8affe31cd3d79226972ff654d298af4e3d9fa560bd414",
+  "../Navro/Nukkit-MOT-SNAPSHOT.jar": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6",
+  "../Navro/src/main/java/ac/navro/anticheat/compensated/InventoryResponseSync.java": "8fc231e25e7bf32ffa4ab0f7892919d87a2814530882b09c7bbb8882d9277bfd",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/block/BlockDoor.java": "a7607d3be8cc61d719efc12bcebbdb503c0596c48c5581c12df7fb09e95cb7da",
+  "/data/data/com.termux/files/home/Nukkit-MOT-reference/src/main/java/cn/nukkit/inventory/request/TransferItemActionProcessor.java": "62706749b07618da2e0bda2da9a969c4fc3f14e6299e0f02a76aa334c93fe2d1",
+  "build/install/navro-proxy/lib/NavroProxy-0.1.0-SNAPSHOT.jar": "21feab7221df0de44148320f16859854232494f9918493e44f75f9f678718ecc"
+}

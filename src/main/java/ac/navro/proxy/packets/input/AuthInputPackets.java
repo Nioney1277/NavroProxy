@@ -51,7 +51,7 @@ public final class AuthInputPackets {
         session.player().setPredictionInputHandler(input -> LegacyAuthInputPackets.processAuthInput(player, itemUse, input));
         session.player().setMovementMetadataContext(new ac.navro.proxy.state.MovementMetadataAdapter(session, itemUse));
         session.player().setPredictionRewind(session::rewindPrediction);
-        session.player().getCheckHolder().put(Prediction.class,new Prediction(session.player(),player));
+        session.player().getCheckHolder().registerPredictionHandlers(player);
     }
     public PredictionContext context(){return player;}
     public Result lastResult(){return lastResult;}
@@ -176,7 +176,7 @@ public final class AuthInputPackets {
             return;
         }
         boolean checked=!player.insideUnloadedChunk && player.vehicleData==null
-                && session.player().gameType()!=GameType.SPECTATOR && session.teleports().canAcceptClientMovement();
+                && session.player().gameType()!=GameType.SPECTATOR && !session.teleports().isTeleporting();
         boolean inCorrection = session.teleports().hasPendingCorrection() || session.teleports().isCorrectionCooldown();
         for(var check:session.player().getCheckHolder().values()){
             if (inCorrection && check instanceof Prediction) continue;
@@ -218,6 +218,8 @@ public final class AuthInputPackets {
                 ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
                         "inputTick",input.getTick(),"actions",input.getPlayerActions().toString(),
                         "revisionBefore",revision,"revisionAfter",session.world().bucketPredictionRevision()));
+        var report = session.player().predictionSync().consume();
+        if (report != null && log != null) log.predictionSyncAtInput(input.getTick(), report);
     }
 
     public static void onPacketSend(WirePlayerState player, CompensatedWorld world,

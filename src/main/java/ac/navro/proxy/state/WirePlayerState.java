@@ -102,6 +102,8 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
     private long runtimeId = -1;
     public ac.navro.proxy.player.data.VehicleData vehicleData;
     private long uniqueId = -1;
+    private final ac.navro.proxy.prediction.PredictionSyncState predictionSync = new ac.navro.proxy.prediction.PredictionSyncState();
+    public ac.navro.proxy.prediction.PredictionSyncState predictionSync() { return predictionSync; }
     private long tick = -1;
     private long previousTick = -1;
     private long lastCorrectionTick = -1;
@@ -284,6 +286,7 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
     private boolean enforceBoatStep;
 
     public void apply(StartGamePacket packet) {
+        predictionSync.clear();
         uniqueId = packet.getUniqueEntityId();
         runtimeId = packet.getRuntimeEntityId();
         dimension = packet.getDimensionId();

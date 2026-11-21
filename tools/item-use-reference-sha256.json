@@ -1,0 +1,19 @@
+{
+  "../Navro/Nukkit-MOT-SNAPSHOT.jar": "abe758eecc88cdddb3002c8a5731bd387e04847f0c90e5f191df006f48a059d6",
+  "../Navro/src/main/java/ac/navro/anticheat/data/ItemUseTracker.java": "8b7848179575113ce03e262c4b960e13b24bed2e5fcc7672c5b3c7ec3ebac57b",
+  "../Navro/src/main/java/ac/navro/anticheat/data/ItemUseDebug.java": "0d0d03d9f4e45f85825b61cb5cbfb84b64367ef937c0e679825fcfbd8e27f519",
+  "../Navro/src/main/java/ac/navro/anticheat/validator/inventory/ItemTransactionValidator.java": "d6a6e2c8e7f826a3898224ca2af94d8b5f99f809e797523adfe413b2951b6b7d",
+  "../Navro/src/main/java/ac/navro/anticheat/player/NavroPlayer.java": "ce2e82a9cf1eb327ae12fef56fdd6526a58357ce92f0b73406c25b4f61db24f1",
+  "../Navro/src/main/java/ac/navro/anticheat/player/data/PlayerData.java": "28cc1a2a8b3de7b4d7f1bc070ee277f726a89bfea73db6efce997b25b9097804",
+  "../Navro/src/main/java/ac/navro/anticheat/player/data/tracker/FlagTracker.java": "9f8fcc0e33405d8902ab1d75c47e6ff7eac4ee640ff38bff21ffb472150b8488",
+  "../Navro/src/main/java/ac/navro/anticheat/util/ItemUtil.java": "cc46576da259da41a900ede399795ba4e9cca12fe17ba7bbd588c09d0c5ff7dd",
+  "../Navro/src/main/java/ac/navro/anticheat/prediction/RiptidePhysics.java": "ed42c463d5d7316ee6989f8f7c306f2d0269a61f7df8070ab8913ed31c483000",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/item/Item.java": "0ce4f90eb07fc718151338f97a86f86ed767b4c6b8f15d78da4f93b63706951b",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/item/ItemFirework.java": "2d415d7ef3d3d10fc9674a2827cb7bf1068fd41495e60fabb1b1dc73b79626ed",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/item/food/Food.java": "d530d983db231122109445c79d80dc1ced61d18d92eecfbc39d94ac4cf4d8e15",
+  "/data/data/com.termux/files/home/Nukkit-MOT-latest/src/main/java/cn/nukkit/item/customitem/CustomItemDefinition.java": "7d4e75b0f7980f5ccc1754ee7c204fb3530ed23374be4ddb5f6894d47cb9cf93",
+  "tools/NavroItemUseTrackerFixture.java": "20eabd29aa839e76b7a7fdb1738b1a72310e3e140c3d307210433b2e9f3fa64a",
+  "tools/NavroAirReleaseFixture.java": "0706b8be57c08dd6230705d39c21be834359157c87c534405653c55e3767c3d6",
+  "src/test/resources/navro-item-use-tracker.jsonl.gz": "7228319ffde70397e5e41c31e3e3d95543662285b52e83157defa0bd0431f83b",
+  "src/test/resources/navro-air-release.jsonl.gz": "ebef41aa34fc3cd787122934264d394e827ff389a9ee5fc73ad822ea011e19a4"
+}

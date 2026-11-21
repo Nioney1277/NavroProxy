@@ -1,0 +1,180 @@
+{
+  "description": "Align soft-rewind velocity consumption with Navro; no restoration or historical resurrection of consumed velocity candidates",
+  "checkedAt": "2026-11-15T12:14:03.776420+00:00",
+  "deployed": false,
+  "fullRegression": false,
+  "tests": {
+    "tests": 71,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "name": "ac.navro.proxy.collision.CollisionHistoryLifecycleTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.command.AlertCommandTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.nethernet.NetherNetDetectionTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.nethernet.NetherNetSpawnLifecycleTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.packets.input.AuthInputPacketsTest",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.packets.input.PostAuthInputPacketsTest",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.packets.input.PostAuthInputReferenceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.prediction.fluid.SwimmingPosePipelineTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.teleport.PredictionRewindLifecycleTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.teleport.ServerMovementLifecycleTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.teleport.TeleportReferenceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "ac.navro.proxy.teleport.TeleportSenderTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "jarSha256": "8881b4c6edbc7a7bbdb4490e8c09e9b70e58bd4256fa91661e4dc1a4f087cdac",
+  "sourceSha256": {
+    "src/main/java/ac/navro/proxy/teleport/PredictionRewind.java": "8b27057c3da93e794a97f9d37af81f12ce80df293ffc0a14888492bf9cd4cf95",
+    "src/main/java/ac/navro/proxy/data/input/TickData.java": "cd4ff3d4ec3d91195d710084cc149bba29e828f5ee6d19b6c497eb6bcc709082",
+    "src/test/java/ac/navro/proxy/teleport/PredictionRewindLifecycleTest.java": "7a330cdf9fa431a6f90ed9798bcbe82e964bb5e33b3d7af56f609ba89542c5c0",
+    "BACKEND_PREDICTION_ALIGNMENT.md": "42d928e3b9b7a97dce3bf1e86cd182c38743b7dc5f7d3d8061ff0250ef974003"
+  },
+  "protectedSources": {
+    "src/main/java/ac/navro/proxy/check/impl/badpackets/BadPacketsD.java": "6c96291ddbd6eb4ee0b2b60db72a37c846f0b51f64de5b09cc289b421a58ebe3"
+  },
+  "failureSensitivity": [
+    {
+      "test": "acknowledgedKnockbackIsConsumedByTheFirstReplayPredictionAsInNavro()",
+      "message": "org.opentest4j.AssertionFailedError: expected: <64.7136> but was: <64.8>"
+    }
+  ],
+  "endpointDiagnostic": {
+    "input": "/data/data/com.termux/files/home/navro-velocity-alignment-w2v5dw_6/recorded-endpoints.json",
+    "result": "/data/data/com.termux/files/home/navro-velocity-alignment-w2v5dw_6/aligned-endpoints.json",
+    "cases": [
+      {
+        "sourceTick": 291,
+        "liveTick": 293,
+        "oldOffset": 0.3308784,
+        "alignedOffset": 0.5031223,
+        "alignedCandidate": "NORMAL"
+      },
+      {
+        "sourceTick": 311,
+        "liveTick": 313,
+        "oldOffset": 0.34010345,
+        "alignedOffset": 0.52171105,
+        "alignedCandidate": "NORMAL"
+      },
+      {
+        "sourceTick": 333,
+        "liveTick": 335,
+        "oldOffset": 0.34002742,
+        "alignedOffset": 0.52155983,
+        "alignedCandidate": "NORMAL"
+      },
+      {
+        "sourceTick": 395,
+        "liveTick": 397,
+        "oldOffset": 0.33999392,
+        "alignedOffset": 0.52149117,
+        "alignedCandidate": "NORMAL"
+      },
+      {
+        "sourceTick": 415,
+        "liveTick": 417,
+        "oldOffset": 0.3401085,
+        "alignedOffset": 0.5217212,
+        "alignedCandidate": "NORMAL"
+      },
+      {
+        "sourceTick": 438,
+        "liveTick": 440,
+        "oldOffset": 0.34001258,
+        "alignedOffset": 0.5215292,
+        "alignedCandidate": "NORMAL"
+      },
+      {
+        "sourceTick": 458,
+        "liveTick": 460,
+        "oldOffset": 0.34011033,
+        "alignedOffset": 0.5217252,
+        "alignedCandidate": "NORMAL"
+      }
+    ],
+    "continuousRecording": false,
+    "intermediateInputs": "Explicitly constructed stationary conditions, not recorded packets"
+  },
+  "review": "/data/data/com.termux/files/home/navro-velocity-alignment-w2v5dw_6/ALIGNMENT_REVIEW.md",
+  "evidenceDirectory": "/data/data/com.termux/files/home/navro-velocity-alignment-w2v5dw_6",
+  "limitations": [
+    "Only this soft-rewind candidate lifecycle is aligned; full pipeline bitwise parity is not established",
+    "Real endpoint diagnostics still disagree by 0.5031 to 0.5218 blocks; this is not a false-positive fix",
+    "Missing intermediate raw inputs prevent full empirical replay",
+    "The candidate build is intentionally not deployed due to the unresolved endpoint discrepancy"
+  ],
+  "liveArtifactUnchanged": "403cae82233f6c746247901cdaa7e4908ff8766befa003d5e699b17d2b2ab367"
+}

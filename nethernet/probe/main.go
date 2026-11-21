@@ -9,40 +9,13 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"net"
-	"net/url"
 	"os"
 	"time"
 
 	"github.com/helix-bedrock/nethernet"
 	"github.com/helix-bedrock/nethernet/endpoint"
-	"github.com/pion/transport/v5"
-	"github.com/pion/transport/v5/stdnet"
 	"github.com/pion/webrtc/v4"
 )
-
-
-
-type probeNet struct {
-	*stdnet.Net
-	iface *transport.Interface
-}
-
-func (n *probeNet) Interfaces() ([]*transport.Interface, error) {
-	return []*transport.Interface{n.iface}, nil
-}
-func (n *probeNet) InterfaceByIndex(index int) (*transport.Interface, error) {
-	if index == n.iface.Index {
-		return n.iface, nil
-	}
-	return nil, fmt.Errorf("unknown interface")
-}
-func (n *probeNet) InterfaceByName(name string) (*transport.Interface, error) {
-	if name == n.iface.Name {
-		return n.iface, nil
-	}
-	return nil, fmt.Errorf("unknown interface")
-}
 
 func main() {
 	address := flag.String("address", "http://127.0.0.1:19134", "NetherNet HTTP endpoint")
@@ -58,31 +31,10 @@ func main() {
 func run(address string, protocol int, withIdentity bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 	defer cancel()
-	parsed, err := url.Parse(address)
-	if err != nil {
-		return err
-	}
-	remote, err := net.ResolveUDPAddr("udp4", parsed.Host)
-	if err != nil {
-		return err
-	}
-	route, err := net.DialUDP("udp4", nil, remote)
-	if err != nil {
-		return err
-	}
-	local := route.LocalAddr().(*net.UDPAddr).IP
-	route.Close()
-	flags := net.FlagUp | net.FlagRunning
-	if local.IsLoopback() {
-		flags |= net.FlagLoopback
-	}
-	iface := transport.NewInterface(net.Interface{Index: 1, Name: "navro-local-probe", MTU: 1500, Flags: flags})
-	iface.AddAddress(&net.IPNet{IP: local, Mask: net.CIDRMask(32, 32)})
 	var settings webrtc.SettingEngine
 	nethernet.ApplySettings(&settings)
 	settings.SetIncludeLoopbackCandidate(true)
 	settings.SetNetworkTypes([]webrtc.NetworkType{webrtc.NetworkTypeUDP4})
-	settings.SetNet(&probeNet{Net: &stdnet.Net{}, iface: iface})
 	api := webrtc.NewAPI(webrtc.WithSettingEngine(settings))
 	d := nethernet.Dialer{DisableTrickleICE: true, API: api}
 	if withIdentity {
@@ -101,7 +53,6 @@ func run(address string, protocol int, withIdentity bool) error {
 	}
 	defer c.Close()
 	fmt.Println("NETHERNET_WEBRTC_READY")
-
 
 	request := []byte{6, 0xc1, 1, 0, 0, 0, 0}
 	binary.BigEndian.PutUint32(request[3:], uint32(protocol))
