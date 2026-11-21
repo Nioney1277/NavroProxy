@@ -37,6 +37,10 @@ public final class AlertManager {
 
     public void alert(String verbose) {
         String message = getPrefix() + "§3" + verbose;
+        formattedAlert(message);
+    }
+
+    public void formattedAlert(String message) {
         subscriptions.forEachOnline(online.get(), recipient -> recipient.accept(message));
         if (subscriptions.has(CONSOLE_UUID)) console.accept(message);
     }

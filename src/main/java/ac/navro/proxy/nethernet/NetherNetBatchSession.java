@@ -84,6 +84,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
         state.player().setTransportAcknowledgment((packet,task)->pending.add(task));
         if(detect){
             state.player().setAlertSink(NetherNetAlerts.ALERTS::alert);
+            state.player().setFormattedAlertSink(NetherNetAlerts.ALERTS::formattedAlert);
+            state.player().setDisconnectSink(this::kick);
             state.player().setCorrectionRequestSink(message->System.out.println("[NetherNet] "+message));
             state.player().setMaxBalanceAdvantageMs(8500);
             state.setTeleportTransport(packet->{
@@ -126,12 +128,14 @@ public final class NetherNetBatchSession implements AutoCloseable {
     }
     public Result process(boolean backend,byte[] batch)throws Exception{
         if(closed)throw new IOException("Session closed");
+        if(state.player().disconnectRequested())throw new IOException("Player disconnected by Navro punishment");
         byte[] payload=unpack(batch);
         var stream=Unpooled.wrappedBuffer(payload);var kept=Unpooled.buffer();
         var names=new ArrayList<String>();boolean changed=false;
         byte[] forwarded;
         try{
             while(stream.isReadable()){
+                if(state.player().disconnectRequested()){changed=true;break;}
                 int size=VarInts.readUnsignedInt(stream);
                 if(size<=0||size>stream.readableBytes())throw new IOException("Invalid NetherNet packet frame size");
                 var frame=stream.readSlice(size);var original=frame.duplicate();boolean keep=true;
@@ -209,6 +213,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                                     public void sendMessage(String message){NetherNetBatchSession.this.sendMessage(message);}
                                 },NetherNetAlerts.ALERTS,NetherNetAlerts.commands());
                             }
+                            if(state.player().disconnectRequested())keep=false;
                             if(keep){
                                 state.onClientPacketForwarded(packet);
                                 if(packet instanceof PlayerAuthInputPacket||packet instanceof InventoryTransactionPacket)replacement=encodeFrame(packet);
@@ -234,6 +239,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                     }
                 }
             }
+            if(state.player().disconnectRequested())backendQueue.clear();
             correctionAcknowledgments.commit();
             if(!changed)forwarded=batch;
             else if(!kept.isReadable())forwarded=null;
@@ -272,12 +278,13 @@ public final class NetherNetBatchSession implements AutoCloseable {
 
     public Result tick()throws Exception{
         if(closed)throw new IOException("Session closed");
+        if(state.player().disconnectRequested())throw new IOException("Player disconnected by Navro punishment");
         if(detect&&authenticated&&ready()){
             state.placementTick();
             var oldest=state.player().getLatencyUtil().sentQueue().peekFirst();long now=System.currentTimeMillis();
             if(oldest!=null&&now-oldest.ms()>state.maxLatencyWait()
                     &&now-state.player().getLatencyUtil().prevAcceptedTime>state.maxLatencyWait())
-                throw new IOException("NetherNet acknowledgement timed out");
+                state.player().requestDisconnect(state.configuredMessage("disconnect-timeout",Map.of()));
         }
         return flush(null,List.of(),detect&&authenticated&&ready()&&state.player().getLatencyUtil().sentQueue().isEmpty());
     }
@@ -287,7 +294,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
             var packet=new TextPacket();packet.setType(TextPacket.Type.RAW);packet.setMessage(message);packet.setNeedsTranslation(false);
             packet.setSourceName("");packet.setXuid("");packet.setPlatformChatId("");extra.add(encode(packet));
         }
-        if(codec!=null&&(!pending.isEmpty()||!extra.isEmpty()||keepalive)){
+        if(!state.player().disconnectRequested()&&codec!=null&&(!pending.isEmpty()||!extra.isEmpty()||keepalive)){
             var tasks=List.copyOf(pending);pending.clear();
             long id=MARKER.updateAndGet(v->v>=999_000_000L?700_000_000L:v+1);
             state.player().getLatencyUtil().queue(id,true,()->tasks.forEach(Runnable::run));
@@ -300,6 +307,13 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private void queueBackend(BedrockPacket packet){try{backendQueue.add(encode(packet));}catch(Exception e){throw new IllegalStateException("Cannot encode deferred NetherNet transaction",e);}}
     private void sendMessage(String message){
         messages.add(message);
+    }
+    private void kick(String reason){
+        var packet=new DisconnectPacket();
+        packet.setReason(org.cloudburstmc.protocol.bedrock.data.DisconnectFailReason.KICKED);
+        packet.setMessageSkipped(false);packet.setKickMessage(reason);
+        backendQueue.clear();clientQueue.clear();messages.clear();pending.clear();
+        queueClient(packet);
     }
     private LoginPacket verifyLogin(LoginPacket login)throws Exception{
         if(authenticated||transportKey==null||login.getAuthPayload()==null||login.getAuthPayload().getAuthType()==AuthType.GUEST)

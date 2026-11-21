@@ -33,3 +33,7 @@ local.properties
 !/README.md
 
 !/src/main/resources/config.yml
+
+!/src/main/resources/messages.yml
+
+!/src/main/resources/punishments.yml

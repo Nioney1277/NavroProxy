@@ -1,7 +1,5 @@
-# This contains the anti-cheat related configurations.
-
-# This prefix is used in all Navro messages.
-prefix: "&aNavro &7>&r "
+# Detection and movement settings.
+# Messages are in messages.yml; violation actions are in punishments.yml.
 
 # How many ticks of history are contained in the client's rolling window for use when receiving corrections.
 # At 20 ticks per second a history size of 40 means that a correction could still be processed with rewind with

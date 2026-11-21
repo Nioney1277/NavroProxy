@@ -191,6 +191,20 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
     public void setMaxBalanceAdvantageMs(long value) { maxBalanceAdvantageMs = value; }
     public void setAlertSink(java.util.function.Consumer<String> sink) { alerts = java.util.Objects.requireNonNull(sink); }
     public void alert(String message) { alerts.accept(message); }
+    private java.util.function.Consumer<String> formattedAlerts=message->alerts.accept(message);
+    private java.util.function.Consumer<String> punishmentLogs=System.out::println;
+    private java.util.function.Consumer<String> disconnect=message->{ };
+    private boolean disconnectRequested;
+    private java.util.function.Consumer<ac.navro.proxy.check.api.CheckViolation> violations=event->alert(event.legacyMessage());
+    public void setViolationSink(java.util.function.Consumer<ac.navro.proxy.check.api.CheckViolation> sink){violations=java.util.Objects.requireNonNull(sink);}
+    public void violation(ac.navro.proxy.check.api.CheckViolation event){violations.accept(event);}
+    public void setFormattedAlertSink(java.util.function.Consumer<String> sink){formattedAlerts=java.util.Objects.requireNonNull(sink);}
+    public void formattedAlert(String message){formattedAlerts.accept(message);}
+    public void setPunishmentLogSink(java.util.function.Consumer<String> sink){punishmentLogs=java.util.Objects.requireNonNull(sink);}
+    public void punishmentLog(String message){punishmentLogs.accept(message);}
+    public void setDisconnectSink(java.util.function.Consumer<String> sink){disconnect=java.util.Objects.requireNonNull(sink);}
+    public void requestDisconnect(String message){if(disconnectRequested)return;disconnectRequested=true;disconnect.accept(message);}
+    public boolean disconnectRequested(){return disconnectRequested;}
     public void setCorrectionRequestSink(java.util.function.Consumer<String> sink) {
         correctionRequests = java.util.Objects.requireNonNull(sink);
     }

@@ -288,7 +288,14 @@ public final class SessionState {
         bdsCorrectionAcknowledgmentDispatcher = java.util.Objects.requireNonNull(dispatcher);
     }
     private ac.navro.proxy.command.CommandRuntime commandRuntime;
-    public void setCommandRuntime(ac.navro.proxy.command.CommandRuntime runtime) { commandRuntime=runtime; }
+    public void setCommandRuntime(ac.navro.proxy.command.CommandRuntime runtime) {
+        commandRuntime=runtime;
+        player.setViolationSink(event->runtime.violation(this,event));
+    }
+    public String configuredMessage(String key,java.util.Map<String,?> values) {
+        return commandRuntime==null?ac.navro.proxy.config.MessageConfig.defaults("&aNavro &7>&r ").format(key,values)
+                :commandRuntime.message(key,values);
+    }
     private final java.util.Map<java.util.UUID, java.util.function.Consumer<String>> debugSubscribers=new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<java.util.UUID, java.util.function.Consumer<String>> debug2Subscribers=new java.util.concurrent.ConcurrentHashMap<>();
     public boolean toggleDebugSubscriber(boolean second,java.util.UUID id,java.util.function.Consumer<String> recipient) {
@@ -396,6 +403,7 @@ public final class SessionState {
 
 
     public boolean receiveClient(BedrockPacket packet, long maxBalanceAdvantageMs) {
+        if(player.disconnectRequested())return false;
         if(ac.navro.proxy.backend.BackendStateSync.privatePacket(packet))return false;
         refreshExemptionPermission();
         applyCheckConfig();
@@ -418,6 +426,7 @@ public final class SessionState {
             }
             return event==null?false:placementPipeline().finish(event,false);
         }
+        if(player.disconnectRequested())return false;
         if(event==null&&detectionEnabled&&!player.isExempted()) {
             event=placementPipeline().begin(packet);
             if(event.isCancelled()){observeRejectedClient(packet,"placementAwaitingData","Waiting for exact placement facts");return placementPipeline().finish(event,false);}

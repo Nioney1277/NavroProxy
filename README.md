@@ -44,7 +44,19 @@ Windows PowerShell
 
 The backend must accept trusted proxy connections. The client and backend must use compatible Bedrock protocol versions.
 
-Settings are stored in `plugins/Navro/config.yml`, matching Navro's plugin data directory. The bundled default is `src/main/resources/config.yml`, containing only settings implemented by NavroProxy. The distribution includes `plugins/Navro/config.yml`; if it is missing at startup, NavroProxy creates it from the bundled resource without replacing an existing file. Use `/navro reload` to reload configuration changes.
+Settings are stored in `plugins/Navro/`:
+
+| File | Purpose |
+| --- | --- |
+| `config.yml` | Movement tolerances, corrections, disabled checks and latency limits |
+| `punishments.yml` | Check groups, recent violation windows and alert/log/kick thresholds |
+| `messages.yml` | Prefix, alert format, command replies and disconnect messages |
+
+All three files are bundled under `src/main/resources/` and included in the distribution. Missing files are created at startup; existing settings are preserved. A legacy prefix in `config.yml` moves to `messages.yml` when that file is first created. `/navro reload` reloads all three together; an invalid file leaves the previous configuration active.
+
+Punishment rules use `threshold:interval action`. For example, `50:0 kick %player%` kicks at 50 recent violations, once until the group's window expires. `1:1 [alert]` reports each violation. Check selectors support exact names (`RotationPlace`, `Sprint-A`), check families (`Sprint`), `*` wildcards, and `!` exclusions. The default file has a separate section for each of the 23 implemented checks, so Timer, NegativeTimer and each Sprint type have independent counters. Each player's counters are also independent; reloading or reconnecting resets them. Default rules only alert. The proxy supports `[alert]`, `[log]`, and kicks; it does not execute arbitrary backend console commands.
+
+Message placeholders include `%prefix%`, `%player%`, `%check_name%`, `%check%`, `%vl%` (recent group count), `%check_vl%` (individual check count), `%verbose%`, and `%message%` (the original detailed alert). Color codes use `&`.
 
 - `detect` runs the registered checks.
 - `inspect` observes protocol traffic.

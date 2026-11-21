@@ -86,6 +86,8 @@ public final class ProxySession {
         state.setBlockCorrectionTransport((position, blocks) ->
                 blockCorrections.restoreCorrectBlock(position, blocks.layerZero(), blocks.layerOne()));
         state.player().setAlertSink(proxy.getAlertManager()::alert);
+        state.player().setFormattedAlertSink(proxy.getAlertManager()::formattedAlert);
+        state.player().setDisconnectSink(reason->client.getPeer().getChannel().eventLoop().execute(()->disconnect(reason)));
         state.player().setCorrectionRequestSink(this::log);
         state.player().setMaxBalanceAdvantageMs(proxy.config().maxBalanceAdvantageMs());
         state.setDetectionEnabled(proxy.config().mode() == ProxyConfig.Mode.DETECT);
@@ -140,7 +142,7 @@ public final class ProxySession {
         } else if (packet instanceof ServerboundLoadingScreenPacket loading) {
             ServerChunkPackets.finishLoadingScreen(state.player(), loading);
         }
-        if (!state.receiveClient(packet, proxy.config().maxBalanceAdvantageMs())) return;
+        if (!state.receiveClient(packet, proxy.config().maxBalanceAdvantageMs()) || state.player().disconnectRequested()) return;
         logPacket("client -> proxy", packet);
         if (ownLatency) return;
 
@@ -480,7 +482,7 @@ public final class ProxySession {
             if (encoder != null) encoder.keepalive();
             return;
         }
-        if (System.currentTimeMillis() - latency.prevAcceptedTime > state.maxLatencyWait()) disconnect("Timed out!");
+        if (System.currentTimeMillis() - latency.prevAcceptedTime > state.maxLatencyWait()) disconnect(state.configuredMessage("disconnect-timeout",java.util.Map.of()));
     }
 
     private void sendAlertMessage(String message) {

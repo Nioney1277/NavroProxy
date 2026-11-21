@@ -12,20 +12,45 @@ public final class CommandRuntime {
     private final Map<UUID,Target> targets=new ConcurrentHashMap<>();
     private final Path configFile;
     private CheckConfig defaults;
-    private volatile CheckConfig config;
+    private volatile RuntimeConfiguration settings;
+    private final Map<SessionState,PunishmentTracker> punishments=new ConcurrentHashMap<>();
+    private final java.util.function.LongSupplier clock;
     public CommandRuntime(Path file, boolean smooth, long maxBalance) {
-        configFile=file;defaults=CheckConfig.defaults(smooth,maxBalance);config=defaults;
-        try { config=ConfigLoader.load(configFile,defaults); }
+        this(file,smooth,maxBalance,System::currentTimeMillis);
+    }
+    public CommandRuntime(Path file, boolean smooth, long maxBalance,java.util.function.LongSupplier clock) {
+        this.clock=clock;configFile=file;defaults=CheckConfig.defaults(smooth,maxBalance);
+        settings=new RuntimeConfiguration(defaults,MessageConfig.defaults(defaults.prefix()),PunishmentConfig.defaults());
+        try { settings=ConfigLoader.loadAll(configFile,defaults); }
         catch(java.io.IOException e) { System.err.println(e.getMessage()); }
     }
-    public CheckConfig config() { return config; }
+    public CheckConfig config() { return settings.checks(); }
+    public MessageConfig messages() { return settings.messages(); }
+    public String message(String key,Map<String,?> values){return settings.messages().format(key,values);}
     public void useStartupDefaults(boolean smooth,long maxBalance) {
         defaults=CheckConfig.defaults(smooth,maxBalance);
-        try { config=ConfigLoader.load(configFile,defaults); }
+        try { settings=ConfigLoader.loadAll(configFile,defaults); }
         catch(java.io.IOException e) { System.err.println(e.getMessage()); }
     }
     public String reload() throws java.io.IOException {
-        CheckConfig loaded=ConfigLoader.load(configFile,defaults);config=loaded;return loaded.toString();
+        RuntimeConfiguration loaded=ConfigLoader.loadAll(configFile,defaults);settings=loaded;return loaded.checks().toString();
+    }
+    public void violation(SessionState session,ac.navro.proxy.check.api.CheckViolation violation) {
+        RuntimeConfiguration snapshot=settings;
+        var values=new HashMap<String,Object>();
+        values.put("player",session.player().getName());values.put("check_name",violation.displayName());
+        values.put("check",violation.key());values.put("check_vl",violation.checkVl());
+        values.put("experimental",violation.experimental()?" (Experimental)":"");
+        values.put("verbose",violation.verbose());values.put("message",violation.legacyMessage());
+        punishments.computeIfAbsent(session,ignored->new PunishmentTracker()).record(snapshot,violation,clock.getAsLong(),(command,count)->{
+            values.put("vl",count);
+            switch(command.action()) {
+                case ALERT -> session.player().formattedAlert(snapshot.messages().format("alerts-format",values));
+                case LOG -> session.player().punishmentLog(snapshot.messages().format("alerts-format",values));
+                case KICK -> session.player().requestDisconnect(command.text().isBlank()
+                        ?snapshot.messages().format("kick-message",values):snapshot.messages().render(command.text(),values));
+            }
+        });
     }
     public void attach(UUID id,SessionState state) {
         targets.put(id,new Target(id,state));
@@ -33,6 +58,7 @@ public final class CommandRuntime {
     }
     public void detach(UUID id,SessionState state) {
         boolean removed=targets.remove(id,new Target(id,state));state.clearDebugSubscriptions();
+        punishments.remove(state);
         if(!removed)return;
 
         targets.values().forEach(t->t.state().removeDebugSubscriber(id));

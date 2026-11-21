@@ -58,7 +58,10 @@ tasks.jar {
 distributions {
     main {
         contents {
-            from("src/main/resources/config.yml") { into("plugins/Navro") }
+            from("src/main/resources") {
+                include("config.yml", "messages.yml", "punishments.yml")
+                into("plugins/Navro")
+            }
         }
     }
 }

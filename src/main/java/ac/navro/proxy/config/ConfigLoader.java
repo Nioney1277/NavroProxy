@@ -11,6 +11,80 @@ import java.util.*;
 public final class ConfigLoader {
     public static final Path DEFAULT_FILE=Path.of("plugins","Navro","config.yml");
     private ConfigLoader() { }
+    public static RuntimeConfiguration loadAll(Path file,CheckConfig defaults)throws IOException {
+        CheckConfig checks=load(file,defaults);
+        Path messagesFile=file.resolveSibling("messages.yml");
+        boolean migratePrefix=!Files.exists(messagesFile);
+        ensureResource(messagesFile,"messages.yml");
+        ensureResource(file.resolveSibling("punishments.yml"),"punishments.yml");
+        var legacy=read(file);
+        if(migratePrefix && legacy.containsKey("prefix")) {
+            String source=Files.readString(messagesFile);
+            var dumper=new org.yaml.snakeyaml.DumperOptions();
+            dumper.setDefaultScalarStyle(org.yaml.snakeyaml.DumperOptions.ScalarStyle.DOUBLE_QUOTED);
+            String encoded=new Yaml(dumper).dump(checks.prefix()).strip();
+            Files.writeString(messagesFile,source.replaceFirst("(?m)^prefix:.*$",
+                    java.util.regex.Matcher.quoteReplacement("prefix: "+encoded)));
+        }
+        Map<?,?> messageValues=read(messagesFile);
+        var templates=new LinkedHashMap<>(MessageConfig.defaults(checks.prefix()).templates());
+        for(var entry:messageValues.entrySet()) {
+            if(!(entry.getKey() instanceof String key)||!(entry.getValue() instanceof String value))
+                throw new IOException("messages.yml must contain text templates");
+            templates.put(key,value);
+        }
+        if(migratePrefix && legacy.containsKey("prefix"))templates.put("prefix",checks.prefix());
+        MessageConfig messages=new MessageConfig(templates);
+        var punishments=readPunishments(file.resolveSibling("punishments.yml"));
+        if(migratePrefix && legacy.containsKey("prefix")) {
+            Files.writeString(file,Files.readString(file).replaceFirst("(?m)^prefix:[^\\r\\n]*(?:\\r?\\n)?", ""));
+        }
+        checks=new CheckConfig(messages.prefix(),checks.rewindHistory(),checks.smoothSetback(),
+                checks.acceptanceThreshold(),checks.alertThreshold(),checks.disabledChecks(),checks.maxLatencyWait(),checks.maxBalanceAdvantage());
+        return new RuntimeConfiguration(checks,messages,punishments);
+    }
+    private static void ensureResource(Path file,String resourceName)throws IOException {
+        if(Files.exists(file))return;
+        Files.createDirectories(file.toAbsolutePath().getParent());
+        try(var resource=ConfigLoader.class.getResourceAsStream("/"+resourceName)) {
+            if(resource==null)throw new IOException("Missing bundled "+resourceName);
+            Files.copy(resource,file);
+        }
+    }
+    private static Map<?,?> read(Path file)throws IOException {
+        try(var reader=Files.newBufferedReader(file)) {
+            var options=new LoaderOptions();options.setAllowDuplicateKeys(false);
+            Object parsed=new Yaml(new SafeConstructor(options)).load(reader);
+            if(parsed==null)return Map.of();
+            if(!(parsed instanceof Map<?,?> map))throw new IllegalArgumentException("Root must be a mapping");
+            return map;
+        }catch(RuntimeException error){throw new IOException("Could not load "+file.getFileName()+": "+error.getMessage(),error);}
+    }
+    private static PunishmentConfig readPunishments(Path file)throws IOException {
+        try {
+            Object root=read(file).get("Punishments");
+            if(!(root instanceof Map<?,?> groups))throw new IllegalArgumentException("Punishments must be a mapping");
+            var result=new ArrayList<PunishmentConfig.Group>();
+            for(var entry:groups.entrySet()) {
+                if(!(entry.getKey() instanceof String name)||!(entry.getValue() instanceof Map<?,?> group))
+                    throw new IllegalArgumentException("Each punishment group must have a name and settings");
+                Number seconds=number(group,"remove-violations-after",300);
+                long window=Math.multiplyExact(seconds.longValue(),1000);
+                if(window<1000||seconds.doubleValue()!=seconds.longValue())throw new IllegalArgumentException("Violation window must be positive whole seconds");
+                Object checks=group.get("checks"),commands=group.get("commands");
+                if(!(checks instanceof List<?> selectors)||selectors.isEmpty()||selectors.stream().anyMatch(v->!(v instanceof String s)||s.isBlank()||s.equals("!")))
+                    throw new IllegalArgumentException("checks must be a non-empty list of names");
+                if(!(commands instanceof List<?> actions))throw new IllegalArgumentException("commands must be a list");
+                var parsed=new ArrayList<PunishmentConfig.Command>();
+                for(Object action:actions) {
+                    if(!(action instanceof String text))throw new IllegalArgumentException("Punishment commands must be text");
+                    parsed.add(PunishmentConfig.Command.parse(text));
+                }
+                result.add(new PunishmentConfig.Group(name,window,selectors.stream().map(String.class::cast).toList(),parsed));
+            }
+            return new PunishmentConfig(result);
+        }catch(RuntimeException error){throw new IOException("Could not load punishments.yml: "+error.getMessage(),error);}
+    }
     public static CheckConfig load(Path file, CheckConfig defaults) throws IOException {
         if (!Files.exists(file)) {
             Path parent=file.toAbsolutePath().getParent();Files.createDirectories(parent);

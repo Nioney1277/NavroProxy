@@ -53,7 +53,7 @@ public class Check {
     }
 
     public void fail(String verbose) {
-        if (player.isExempted() || !player.checkEnabled(getClass())) return;
+        if (player.isExempted() || player.disconnectRequested() || !player.checkEnabled(getClass())) return;
         vl++;
         StringBuilder builder = new StringBuilder("§f").append(player.getName()).append("§7 failed§f ");
         if ("Bad Packet".equals(name)) builder.append("BadPackets").append(type);
@@ -63,7 +63,9 @@ public class Check {
         }
         if (experimental) builder.append(" §7(Experimental)");
         appendViolationDetails(builder, vl, verbose == null ? "" : verbose);
-        player.alert(builder.toString());
+        String display="Bad Packet".equals(name)?"BadPackets"+type:name+(type.isBlank()?"":" ("+type+")");
+        player.violation(new CheckViolation(type.isBlank()?name:name+"-"+type,name,display,vl,experimental,
+                verbose==null?"":verbose,builder.toString()));
     }
 
     protected void appendViolationDetails(StringBuilder builder, int vl, String verbose) {
