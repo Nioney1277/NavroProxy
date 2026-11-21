@@ -108,9 +108,40 @@ public final class EntityCache {
     private static WireVec3 wire(Vec3 value) { return new WireVec3(value.x, value.y, value.z); }
     public EntityDataMap metadata() { return metadata; }
     public EntityProperties properties() { return properties; }
-    public void properties(EntityProperties value) { if (value != null) properties = value; }
+    public void properties(EntityProperties value) {
+        if (value == null) return;
+        var integers = new java.util.LinkedHashMap<Integer, org.cloudburstmc.protocol.bedrock.data.entity.IntEntityProperty>();
+        var floats = new java.util.LinkedHashMap<Integer, org.cloudburstmc.protocol.bedrock.data.entity.FloatEntityProperty>();
+        for (var property : properties.getIntProperties()) integers.put(property.getIndex(), property);
+        for (var property : properties.getFloatProperties()) floats.put(property.getIndex(), property);
+        for (var property : value.getIntProperties()) integers.put(property.getIndex(), property);
+        for (var property : value.getFloatProperties()) floats.put(property.getIndex(), property);
+        var updated = new EntityProperties();
+        updated.getIntProperties().addAll(integers.values());
+        updated.getFloatProperties().addAll(floats.values());
+        properties = updated;
+    }
+    public static EntityProperties copyProperties(EntityProperties value) {
+        var copy = new EntityProperties();
+        if (value != null) {
+            copy.getIntProperties().addAll(value.getIntProperties());
+            copy.getFloatProperties().addAll(value.getFloatProperties());
+        }
+        return copy;
+    }
     public List<AttributeData> attributes() { return attributes; }
-    public void attributes(List<AttributeData> value) { attributes = value == null ? List.of() : List.copyOf(value); }
+    public void attributes(List<AttributeData> value) {
+        var updated = new java.util.LinkedHashMap<String, AttributeData>();
+        for (var attribute : attributes) updated.put(attribute.getName(), attribute);
+        for (var attribute : copyAttributes(value)) updated.put(attribute.getName(), attribute);
+        attributes = List.copyOf(updated.values());
+    }
+    public static List<AttributeData> copyAttributes(List<AttributeData> value) {
+        if (value == null) return List.of();
+        return value.stream().map(attribute -> new AttributeData(attribute.getName(), attribute.getMinimum(),
+                attribute.getMaximum(), attribute.getValue(), attribute.getDefaultMinimum(), attribute.getDefaultMaximum(),
+                attribute.getDefaultValue(), attribute.getModifiers() == null ? null : List.copyOf(attribute.getModifiers()))).toList();
+    }
     public WireVec3 motion() { return motion; }
     private WireVec3 motion;
     public void motion(WireVec3 value) { motion = value; }

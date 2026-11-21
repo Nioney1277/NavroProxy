@@ -391,7 +391,8 @@ public class CompensatedWorld {
         if (state == null) return null;
         NbtMap tag = state.stateTag();
 
-        List<Box> shape = protocolVersion < 0 ? null : CollisionShapeRegistry.forProtocol(protocolVersion).shapeForState(tag);
+        List<Box> shape = blockStates.hasComponents(state) ? blockStates.declaredCollision(state)
+                : protocolVersion < 0 ? null : CollisionShapeRegistry.forProtocol(protocolVersion).shapeForState(tag);
         WireBlock wire = new WireBlock(state.networkId(), state.identifier(), tag, shape);
         palette.put(networkId, wire);
         return wire;
@@ -449,7 +450,8 @@ public class CompensatedWorld {
     }
     private List<CollisionShapeEntry> fetchCollisionEntries(Box query, int requestedDimension, CollisionPhysicsState state) {
         List<CollisionShapeEntry> result = new java.util.ArrayList<>();
-        CuboidBlockIterator iterator = CuboidBlockIterator.iterator(query);
+        CuboidBlockIterator iterator = CuboidBlockIterator.iterator(
+                blockStates == null ? query : blockStates.declaredCollisionQuery(query));
         while (iterator.step()) {
             int x = iterator.getX(), y = iterator.getY(), z = iterator.getZ();
             BlockUpdate update = block(x, y, z, requestedDimension, 0);
@@ -460,6 +462,7 @@ public class CompensatedWorld {
                 if (floor.intersects(query)) result.add(new CollisionShapeEntry(floor, block));
                 continue;
             }
+            if (addDeclaredCollisions(result, block, update.networkId(), x, y, z, query)) continue;
             if (NativePistonProperties.isMovingBlock(block)) continue;
             if (isShulkerBox(x, y, z)) {
                 for (Box shape : getShulkerCollision(Vector3i.from(x, y, z), state))
@@ -526,6 +529,7 @@ public class CompensatedWorld {
                 if ((query == null || floor.intersects(query))) result.add(new CollisionShapeEntry(floor, block));
                 continue;
             }
+            if (addDeclaredCollisions(result, block, update.networkId(), x, y, z, query)) continue;
             if (NativePistonProperties.isMovingBlock(block)) continue;
             if (isShulkerBox(x, y, z)) {
                 for (Box shape : getShulkerCollision(Vector3i.from(x, y, z), state))
@@ -581,6 +585,17 @@ public class CompensatedWorld {
     }
 
 
+
+    private boolean addDeclaredCollisions(List<CollisionShapeEntry> result, NetworkBlockState block, int networkId,
+                                          int x, int y, int z, Box query) {
+        if (blockStates == null || !blockStates.hasComponents(block)) return false;
+        WireBlock wire = wireBlock(networkId);
+        if (wire != null && wire.collisionKnown()) for (Box shape : wire.collisionShape()) {
+            Box worldShape = shape.offset(x, y, z);
+            if (query == null || worldShape.intersects(query)) result.add(new CollisionShapeEntry(worldShape, block));
+        }
+        return true;
+    }
 
     public Map<Integer, WireBlock> palette() {
         if (blockStates != null) for (int id : blockStates.states().keySet()) wireBlock(id);

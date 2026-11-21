@@ -70,8 +70,6 @@ distributions {
     main {
         contents {
             from("config.example.yml") { rename { "config.yml" } }
-            from("README.md")
-            from("DESKTOP_BUILD_VALIDATION.md")
         }
     }
 }

@@ -20,8 +20,19 @@ public final class NetworkBlockStateRegistry {
     private static final Map<Integer, Tables> REGISTRIES = new ConcurrentHashMap<>();
     private final Tables tables;
     private final boolean hashed;
+    private final NetworkBlockComponents components;
+    private ac.navro.anticheat.util.math.Box declaredBounds;
+    private final Map<Integer, NetworkBlockState> declaredStates = new HashMap<>();
 
-    private NetworkBlockStateRegistry(Tables tables, boolean hashed) { this.tables = tables; this.hashed = hashed; }
+    private NetworkBlockStateRegistry(Tables tables, boolean hashed) {
+        this(tables, hashed, new NetworkBlockComponents(java.util.List.of()));
+    }
+
+    private NetworkBlockStateRegistry(Tables tables, boolean hashed, NetworkBlockComponents components) {
+        this.tables = tables;
+        this.hashed = hashed;
+        this.components = components;
+    }
 
 
     public static int paletteProtocol(int protocol) {
@@ -45,12 +56,63 @@ public final class NetworkBlockStateRegistry {
 
     public static NetworkBlockStateRegistry fromStartGame(int protocol, StartGamePacket packet, RuntimePalette supplied) {
         boolean hashed = packet.isBlockNetworkIdsHashed();
+        var components = new NetworkBlockComponents(packet.getBlockProperties(), protocol);
         NbtList<NbtMap> definitions = packet.getBlockPalette();
-        if (definitions != null && !definitions.isEmpty())
-            return new NetworkBlockStateRegistry(orderedTables(definitions, Map.of()), hashed);
-        if (supplied != null && supplied.protocol() == protocol)
-            return new NetworkBlockStateRegistry(supplied.tables, hashed);
-        return forProtocol(protocol, hashed);
+        Tables tables;
+        if (definitions != null && !definitions.isEmpty()) tables = orderedTables(definitions, knownLegacy(protocol));
+        else if (supplied != null && supplied.protocol() == protocol) tables = supplied.tables;
+        else {
+            if (!hashed && !packet.getBlockProperties().isEmpty()) {
+                throw new IllegalArgumentException("Custom numeric block definitions require the backend's complete runtime palette");
+            }
+            tables = forProtocol(protocol, hashed).tables;
+        }
+        if (hashed && !packet.getBlockProperties().isEmpty()) {
+            var hashes = new HashMap<>(tables.hashStates);
+            for (var state : components.states()) {
+                int hash = Hash.hashBlock(state);
+                var previous = hashes.putIfAbsent(hash, new NetworkBlockState(hash, -1, state));
+                if (previous != null && !StateKey.of(previous.stateTag()).equals(StateKey.of(state))) {
+                    throw new IllegalArgumentException("Ambiguous custom block state hash: " + hash);
+                }
+            }
+            tables = new Tables(tables.runtimeStates, Map.copyOf(hashes), tables.airRuntime, tables.airHash,
+                    tables.legacyRuntime, tables.legacyHashes);
+        }
+        return new NetworkBlockStateRegistry(tables, hashed, components);
+    }
+
+    public boolean hasComponents(NetworkBlockState state) { return state != null && components.contains(state.identifier()); }
+    public java.util.List<ac.navro.anticheat.util.math.Box> declaredCollision(NetworkBlockState state) { return components.collision(state); }
+
+
+    public ac.navro.anticheat.util.math.Box declaredCollisionQuery(ac.navro.anticheat.util.math.Box query) {
+        if (components.isEmpty()) return query;
+        if (declaredBounds == null) {
+            var bounds = new ac.navro.anticheat.util.math.Box(0, 0, 0, 1, 1, 1);
+            for (var state : states().values()) {
+                if (!hasComponents(state)) continue;
+                var boxes = components.collision(state);
+                if (boxes != null) for (var box : boxes) bounds = bounds.union(box);
+            }
+            declaredBounds = bounds;
+        }
+        return new ac.navro.anticheat.util.math.Box(
+                query.minX - Math.max(0F, declaredBounds.maxX - 1F),
+                query.minY - Math.max(0F, declaredBounds.maxY - 1F),
+                query.minZ - Math.max(0F, declaredBounds.maxZ - 1F),
+                query.maxX + Math.max(0F, -declaredBounds.minX),
+                query.maxY + Math.max(0F, -declaredBounds.minY),
+                query.maxZ + Math.max(0F, -declaredBounds.minZ));
+    }
+
+    private static Map<StateKey, Integer> knownLegacy(int protocol) {
+        Map<StateKey, Integer> legacy = new HashMap<>();
+        forProtocol(protocol, false).tables.runtimeStates.values().stream()
+                .filter(state -> state.legacyFullId() >= 0)
+                .sorted(java.util.Comparator.comparingInt(NetworkBlockState::networkId))
+                .forEach(state -> legacy.putIfAbsent(StateKey.of(state.stateTag()), state.legacyFullId()));
+        return legacy;
     }
 
 
@@ -64,11 +126,7 @@ public final class NetworkBlockStateRegistry {
                 throw new IOException("Invalid protocol or state count in " + path);
             if (states.stream().anyMatch(state -> state.getString("name").isBlank()))
                 throw new IOException("Unnamed block state in " + path);
-            Map<StateKey, Integer> legacy = new HashMap<>();
-            forProtocol(protocol, false).tables.runtimeStates.values().stream()
-                    .filter(state -> state.legacyFullId() >= 0)
-                    .sorted(java.util.Comparator.comparingInt(NetworkBlockState::networkId))
-                    .forEach(state -> legacy.putIfAbsent(StateKey.of(state.stateTag()), state.legacyFullId()));
+            Map<StateKey, Integer> legacy = knownLegacy(protocol);
             var tables = orderedTables(states, legacy);
             if (tables.airRuntime == Integer.MIN_VALUE)
                 throw new IOException("Missing air entry in " + path);
@@ -119,6 +177,11 @@ public final class NetworkBlockStateRegistry {
     public NetworkBlockState resolve(int networkId) {
         NetworkBlockState state = (hashed ? tables.hashStates : tables.runtimeStates).get(networkId);
         if (state == null) state = (hashed ? tables.runtimeStates : tables.hashStates).get(networkId);
+        if (hasComponents(state)) {
+            var observed = state;
+            return declaredStates.computeIfAbsent(state.networkId(), ignored -> new NetworkBlockState(observed.networkId(),
+                    observed.legacyFullId(), observed.stateTag(), components.slipperiness(observed)));
+        }
         return state;
     }
     public int airNetworkId() { return hashed ? tables.airHash : tables.airRuntime; }

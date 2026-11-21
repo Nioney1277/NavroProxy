@@ -55,7 +55,7 @@ public final class NavroBlockState {
         return this.networkState.is("minecraft:air")
                 || this.networkState.is("minecraft:cave_air")
                 || this.networkState.is("minecraft:void_air")
-                || nativeId() == NativeIds.BlockID.AIR;
+                || this.networkState.legacyFullId() >= 0 && nativeId() == NativeIds.BlockID.AIR;
     }
     public void onSteppedOn(final PredictionContext player, final org.cloudburstmc.math.vector.Vector3i vector3i) {
         if (nativeId()==NativeIds.BlockID.HONEY_BLOCK || nativeId()==NativeIds.BlockID.SLIME_BLOCK) StickyBlockPhysics.standOn(player);
@@ -107,6 +107,7 @@ public final class NavroBlockState {
         return isHoneyBlock() ? 0.6F : 1;
     }
     public float getFriction() {
+        if (networkState.declaredSlipperiness() != null) return networkState.declaredSlipperiness();
         int id = nativeId();
         if (id == NativeIds.BlockID.ICE || id == NativeIds.BlockID.PACKED_ICE || id == NativeIds.BlockID.FROSTED_ICE) {
             return 0.98F;

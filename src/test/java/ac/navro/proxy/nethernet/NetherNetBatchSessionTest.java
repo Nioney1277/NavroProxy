@@ -22,6 +22,43 @@ class NetherNetBatchSessionTest {
 
         assertEquals(List.of("NetworkSettingsPacket"),s.process(true,hex("0c8f0101000000000000000000")).packets());
     }
+    @Test void remoteEntityRegistryAndMotionUseRealNetherNetFramesAndClosingAcknowledgment() throws Exception {
+        try (var session = new NetherNetBatchSession(null)) {
+            negotiate(session);
+            var start = new StartGamePacket();
+            start.setRuntimeEntityId(7);
+            start.setPlayerPosition(org.cloudburstmc.math.vector.Vector3f.from(8, 64, 8));
+            session.state().observeBackend(start);
+            var identifiers = new AvailableEntityIdentifiersPacket();
+            identifiers.setIdentifiers(org.cloudburstmc.nbt.NbtMap.builder().putList("idlist", org.cloudburstmc.nbt.NbtType.COMPOUND,
+                    List.of(org.cloudburstmc.nbt.NbtMap.builder().putString("id", "minecraft:minecart").putInt("rid", 84).build())).build());
+            session.process(true, session.encode(identifiers));
+            var actor = new AddEntityPacket();
+            actor.setRuntimeEntityId(8);
+            actor.setUniqueEntityId(80);
+            actor.setIdentifier("minecraft:minecart");
+            actor.setPosition(org.cloudburstmc.math.vector.Vector3f.from(1, 64, 1));
+            actor.setMotion(org.cloudburstmc.math.vector.Vector3f.ZERO);
+            actor.setRotation(org.cloudburstmc.math.vector.Vector2f.ZERO);
+            actor.getMetadata().put(EntityDataTypes.WIDTH, .98F);
+            actor.getMetadata().put(EntityDataTypes.HEIGHT, .7F);
+            session.process(true, session.encode(actor));
+            assertTrue(session.state().entity(8).isMinecart());
+
+            var motion = new SetEntityMotionPacket();
+            motion.setRuntimeEntityId(8);
+            motion.setMotion(org.cloudburstmc.math.vector.Vector3f.from(.5F, .25F, -.5F));
+            byte[] encoded = session.encode(motion);
+            var forwarded = session.process(true, encoded);
+            assertArrayEquals(encoded, forwarded.forwarded());
+            assertEquals(0, session.state().entity(8).motion().x());
+            long marker = session.state().player().getLatencyUtil().sentQueue().peekLast().id();
+            var acknowledgment = new NetworkStackLatencyPacket();
+            acknowledgment.setTimestamp(marker * 1_000_000L);
+            session.process(false, session.encode(acknowledgment));
+            assertEquals(new ac.navro.proxy.state.WireVec3(.5F, .25F, -.5F), session.state().entity(8).motion());
+        }
+    }
     @Test void actualBdsNetherNetBatchesNegotiateWithoutAnyRaknetFraming()throws Exception{
         try(var s=new NetherNetBatchSession(null)){
             negotiate(s);assertEquals(2225,s.state().player().protocolVersion());

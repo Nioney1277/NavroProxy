@@ -91,6 +91,232 @@ class EntityPacketLifecycleTest {
         for (int i = 0; i < count; i++) entity.getCurrent().tick();
     }
 
+    @Test void deltaAxesMissingYRetainTheExactSentFootHeightWithoutSubtractingTheBoatOffsetAgain() {
+        try (Fixture fixture = new Fixture()) {
+            fixture.send(add(2, 200, "minecraft:boat", 0, 64.375F, 0));
+            var entity = fixture.state.entity(2);
+            fixture.ack(fixture.flush());
+            for (int mask = 1; mask < 8; mask++) {
+                float previousY = entity.getServerPosition().y;
+                var delta = new MoveEntityDeltaPacket();
+                delta.setRuntimeEntityId(2);
+                if ((mask & 1) != 0) delta.getFlags().add(MoveEntityDeltaPacket.Flag.HAS_X);
+                if ((mask & 2) != 0) delta.getFlags().add(MoveEntityDeltaPacket.Flag.HAS_Y);
+                if ((mask & 4) != 0) delta.getFlags().add(MoveEntityDeltaPacket.Flag.HAS_Z);
+                delta.setX(mask);
+                delta.setY(70.375F + mask);
+                delta.setZ(-mask);
+                fixture.send(delta);
+                float expectedY = (mask & 2) != 0 ? 70F + mask : previousY;
+                assertEquals(Float.floatToRawIntBits(expectedY), Float.floatToRawIntBits(entity.getServerPosition().y));
+                fixture.ack(fixture.flush());
+                tick(entity, 6);
+                assertEquals(expectedY, entity.position().y());
+            }
+        }
+    }
+
+    @Test void wireRegistrySuppliesTheTypeMissingFromModernAddEntityWithoutInventingDimensions() {
+        try (Fixture fixture = new Fixture()) {
+            var identifiers = new AvailableEntityIdentifiersPacket();
+            identifiers.setIdentifiers(org.cloudburstmc.nbt.NbtMap.builder().putList("idlist", org.cloudburstmc.nbt.NbtType.COMPOUND,
+                    List.of(org.cloudburstmc.nbt.NbtMap.builder().putString("id", "minecraft:minecart").putInt("rid", 84).build())).build());
+            fixture.state.observeBackend(identifiers);
+            var spawn = add(2, 200, "minecraft:minecart", 0, 64, 0);
+            spawn.setEntityType(0);
+            fixture.send(spawn);
+            assertEquals(84, fixture.state.entity(2).entityType());
+            assertTrue(fixture.state.entity(2).isMinecart());
+            assertEquals(.6F, fixture.state.entity(2).getDimensions().width());
+            fixture.ack(fixture.flush());
+
+            var unknown = add(3, 300, "minecraft:minecart", 0, 64, 0);
+            unknown.getMetadata().remove(EntityDataTypes.HEIGHT);
+            fixture.state.observeBackend(unknown);
+            assertNull(fixture.state.entity(3));
+        }
+    }
+
+    @Test void remoteAttributesPropertiesAndMotionWaitForTheirOwnClosingMarker() {
+        try (Fixture fixture = new Fixture()) {
+            fixture.send(add(2, 200, "minecraft:zombie", 0, 64, 0));
+            var entity = fixture.state.entity(2);
+            fixture.ack(fixture.flush());
+            var attributes = new UpdateAttributesPacket();
+            attributes.setRuntimeEntityId(2);
+            var modifiers = new java.util.ArrayList<org.cloudburstmc.protocol.bedrock.data.attribute.AttributeModifierData>();
+            modifiers.add(new org.cloudburstmc.protocol.bedrock.data.attribute.AttributeModifierData("test-id", "test", .5F,
+                    org.cloudburstmc.protocol.bedrock.data.attribute.AttributeOperation.ADDITION, 0, false));
+            attributes.getAttributes().add(new org.cloudburstmc.protocol.bedrock.data.AttributeData("minecraft:health", 0, 20, 17, 20, modifiers));
+            var metadata = new SetEntityDataPacket();
+            metadata.setRuntimeEntityId(2);
+            metadata.getProperties().getIntProperties().add(new org.cloudburstmc.protocol.bedrock.data.entity.IntEntityProperty(2, 17));
+            metadata.getProperties().getFloatProperties().add(new org.cloudburstmc.protocol.bedrock.data.entity.FloatEntityProperty(3, .5F));
+            var motion = new SetEntityMotionPacket();
+            motion.setRuntimeEntityId(2);
+            motion.setMotion(Vector3f.from(.25F, .5F, -.75F));
+            fixture.send(attributes);
+            fixture.send(metadata);
+            fixture.send(motion);
+            long marker = fixture.flush();
+            attributes.getAttributes().clear();
+            modifiers.clear();
+            metadata.getProperties().getIntProperties().clear();
+            metadata.getProperties().getFloatProperties().clear();
+            motion.setMotion(Vector3f.ZERO);
+            assertTrue(entity.attributes().isEmpty());
+            assertTrue(entity.properties().getIntProperties().isEmpty());
+            assertTrue(entity.properties().getFloatProperties().isEmpty());
+            assertEquals(0, entity.motion().x());
+            assertEquals(0, entity.motion().y());
+            fixture.ack(marker);
+            assertEquals(17, entity.attributes().getFirst().getValue());
+            assertEquals(.5F, entity.attributes().getFirst().getModifiers().getFirst().getAmount());
+            assertEquals(17, entity.properties().getIntProperties().getFirst().getValue());
+            assertEquals(.5F, entity.properties().getFloatProperties().getFirst().getValue());
+            assertEquals(new ac.navro.proxy.state.WireVec3(.25F, .5F, -.75F), entity.motion());
+        }
+    }
+
+    @Test void partialPropertyAndAttributePacketsPreserveValuesAbsentFromTheUpdate() {
+        try (Fixture fixture = new Fixture()) {
+            var spawn = add(2, 200, "minecraft:zombie", 0, 64, 0);
+            spawn.getAttributes().add(new org.cloudburstmc.protocol.bedrock.data.AttributeData("minecraft:health", 0, 20, 20, 20));
+            spawn.getAttributes().add(new org.cloudburstmc.protocol.bedrock.data.AttributeData("minecraft:movement", 0, 1, .1F, .1F));
+            spawn.getProperties().getIntProperties().add(new org.cloudburstmc.protocol.bedrock.data.entity.IntEntityProperty(0, 1));
+            spawn.getProperties().getFloatProperties().add(new org.cloudburstmc.protocol.bedrock.data.entity.FloatEntityProperty(1, .2F));
+            fixture.send(spawn);
+            fixture.ack(fixture.flush());
+            var entity = fixture.state.entity(2);
+            var update = new UpdateAttributesPacket();
+            update.setRuntimeEntityId(2);
+            update.getAttributes().add(new org.cloudburstmc.protocol.bedrock.data.AttributeData("minecraft:health", 0, 20, 17, 20));
+            var metadata = new SetEntityDataPacket();
+            metadata.setRuntimeEntityId(2);
+            metadata.getProperties().getIntProperties().add(new org.cloudburstmc.protocol.bedrock.data.entity.IntEntityProperty(0, 2));
+            fixture.send(update);
+            fixture.send(metadata);
+            long marker = fixture.flush();
+            assertEquals(20, entity.attributes().getFirst().getValue());
+            assertEquals(1, entity.properties().getIntProperties().getFirst().getValue());
+            fixture.ack(marker);
+            assertEquals(2, entity.attributes().size());
+            assertEquals(17, entity.attributes().getFirst().getValue());
+            assertEquals(.1F, entity.attributes().get(1).getValue());
+            assertEquals(2, entity.properties().getIntProperties().getFirst().getValue());
+            assertEquals(.2F, entity.properties().getFloatProperties().getFirst().getValue());
+
+            update = new UpdateAttributesPacket();
+            update.setRuntimeEntityId(2);
+            metadata = new SetEntityDataPacket();
+            metadata.setRuntimeEntityId(2);
+            metadata.getMetadata().put(EntityDataTypes.NAME, "updated name");
+            fixture.send(update);
+            fixture.send(metadata);
+            fixture.ack(fixture.flush());
+            assertEquals(2, entity.attributes().size());
+            assertEquals(2, entity.properties().getIntProperties().getFirst().getValue());
+            assertEquals(.2F, entity.properties().getFloatProperties().getFirst().getValue());
+        }
+    }
+
+    @Test void positionAndMetadataPacketsCommitInIndependentOutboundBatchOrder() {
+        try (Fixture fixture = new Fixture()) {
+            fixture.send(add(2, 200, "minecraft:zombie", 0, 64, 0));
+            var entity = fixture.state.entity(2);
+            fixture.ack(fixture.flush());
+            var first = new SetEntityMotionPacket();
+            first.setRuntimeEntityId(2);
+            first.setMotion(Vector3f.from(.25F, 0, 0));
+            fixture.send(first);
+            long firstMarker = fixture.flush();
+            var second = new SetEntityMotionPacket();
+            second.setRuntimeEntityId(2);
+            second.setMotion(Vector3f.from(.5F, 0, 0));
+            fixture.send(second);
+            long secondMarker = fixture.flush();
+            fixture.ack(firstMarker);
+            assertEquals(.25F, entity.motion().x());
+            fixture.ack(secondMarker);
+            assertEquals(.5F, entity.motion().x());
+        }
+    }
+
+    @Test void oldMetadataPropertiesAttributesAndMotionCannotMutateAnIdReusedEntity() {
+        try (Fixture fixture = new Fixture()) {
+            fixture.send(add(2, 200, "minecraft:zombie", 0, 64, 0));
+            var previous = fixture.state.entity(2);
+            fixture.ack(fixture.flush());
+            var metadata = new SetEntityDataPacket();
+            metadata.setRuntimeEntityId(2);
+            metadata.getMetadata().put(EntityDataTypes.WIDTH, 4F);
+            metadata.getProperties().getIntProperties().add(new org.cloudburstmc.protocol.bedrock.data.entity.IntEntityProperty(0, 4));
+            fixture.send(metadata);
+            var attributes = new UpdateAttributesPacket();
+            attributes.setRuntimeEntityId(2);
+            attributes.getAttributes().add(new org.cloudburstmc.protocol.bedrock.data.AttributeData("minecraft:health", 0, 20, 3, 20));
+            fixture.send(attributes);
+            var motion = new SetEntityMotionPacket();
+            motion.setRuntimeEntityId(2);
+            motion.setMotion(Vector3f.from(4, 0, 0));
+            fixture.send(motion);
+            long oldMarker = fixture.flush();
+            fixture.send(add(2, 201, "minecraft:zombie", 50, 64, 0));
+            var replacement = fixture.state.entity(2);
+            fixture.flush();
+            fixture.ack(oldMarker);
+            for (var entity : List.of(previous, replacement)) {
+                assertEquals(.6F, entity.getDimensions().width());
+                assertTrue(entity.properties().getIntProperties().isEmpty());
+                assertTrue(entity.attributes().isEmpty());
+                assertEquals(0, entity.motion().x());
+            }
+            assertEquals(50, replacement.position().x());
+        }
+    }
+
+    @Test void spawnPropertiesAreDetachedFromTheReusableWireObject() {
+        try (Fixture fixture = new Fixture()) {
+            var spawn = add(2, 200, "minecraft:zombie", 0, 64, 0);
+            spawn.getProperties().getIntProperties().add(new org.cloudburstmc.protocol.bedrock.data.entity.IntEntityProperty(0, 9));
+            fixture.send(spawn);
+            fixture.flush();
+            spawn.getProperties().getIntProperties().clear();
+            assertEquals(9, fixture.state.entity(2).properties().getIntProperties().getFirst().getValue());
+        }
+    }
+
+    @Test void zeroOffsetMovePlayerUsesTheSameQueuedTargetAndAckInterpolationAsOtherEntityMovement() {
+        try (Fixture fixture = new Fixture()) {
+            fixture.send(add(2, 200, "minecraft:zombie", 0, 64, 0));
+            var entity = fixture.state.entity(2);
+            fixture.ack(fixture.flush());
+            var move = new MovePlayerPacket();
+            move.setRuntimeEntityId(2);
+            move.setPosition(Vector3f.from(6, 64, 0));
+            move.setRotation(Vector3f.ZERO);
+            move.setMode(MovePlayerPacket.Mode.NORMAL);
+            fixture.send(move);
+            long marker = fixture.flush();
+            assertEquals(6, entity.getServerPosition().x);
+            assertEquals(0, entity.position().x());
+            fixture.ack(marker);
+            tick(entity, 1);
+            assertEquals(1, entity.position().x());
+            tick(entity, 5);
+            assertEquals(6, entity.position().x());
+
+            move = new MovePlayerPacket();
+            move.setRuntimeEntityId(2);
+            move.setPosition(Vector3f.from(900, 900, 900));
+            move.setRotation(Vector3f.ZERO);
+            move.setMode(MovePlayerPacket.Mode.HEAD_ROTATION);
+            fixture.send(move);
+            fixture.flush();
+            assertEquals(6, entity.getServerPosition().x);
+        }
+    }
+
     @Test void mountLinkUsesVehicleUniqueIdAndOnlyItsClosingMarkerCanClearPendingTeleports() {
         try(Fixture f=new Fixture()) {
             f.state.observeBackend(add(2,200,"minecraft:boat",0,64,0));

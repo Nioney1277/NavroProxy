@@ -7,6 +7,8 @@ import org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.InteractPacket;
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityLinkPacket;
+import org.cloudburstmc.protocol.bedrock.packet.AddEntityPacket;
+import org.cloudburstmc.protocol.bedrock.packet.AddPlayerPacket;
 
 
 public final class VehiclePackets {
@@ -20,6 +22,13 @@ public final class VehiclePackets {
     public static void onPacketSend(SessionState state, BedrockPacket packet) {
         if (packet instanceof SetEntityLinkPacket link)
             state.player().queueAcknowledgment(packet, () -> applySetEntityLink(state, link));
+        var links = packet instanceof AddEntityPacket entity ? entity.getEntityLinks()
+                : packet instanceof AddPlayerPacket player ? player.getEntityLinks() : null;
+        if (links != null && !links.isEmpty()) {
+            var snapshot = java.util.List.copyOf(links);
+            state.player().queueAcknowledgment(packet, () -> snapshot.forEach(link ->
+                    applyLink(state, link.getFrom(), link.getTo(), link.getType())));
+        }
     }
 
     private static void applySetEntityLink(SessionState state, SetEntityLinkPacket packet) {

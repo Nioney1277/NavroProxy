@@ -10,6 +10,39 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ac.navro.proxy.packets.other.VehicleReferenceTest.*;
 
 class VehicleLifecycleTest {
+    @Test void linksInActorSpawnCommitWithThatSpawnsClosingAck() {
+        var state = session();
+        var spawn = new AddEntityPacket();
+        spawn.setRuntimeEntityId(45);
+        spawn.setUniqueEntityId(450);
+        spawn.setIdentifier("minecraft:chicken");
+        spawn.setPosition(org.cloudburstmc.math.vector.Vector3f.ZERO);
+        spawn.setMotion(org.cloudburstmc.math.vector.Vector3f.ZERO);
+        spawn.getMetadata().put(EntityDataTypes.WIDTH, .4F);
+        spawn.getMetadata().put(EntityDataTypes.HEIGHT, .7F);
+        spawn.getEntityLinks().add(link(420, 450, 1).getEntityLink());
+        queued(state, 20, spawn);
+        assertFalse(state.entity(45).inVehicle());
+        spawn.getEntityLinks().clear();
+        ack(state, 20);
+        assertTrue(state.entity(45).inVehicle());
+    }
+
+    @Test void linksInPlayerSpawnUseTheSameUniqueIdResolutionAsStandaloneLinks() {
+        var state = session();
+        var spawn = new AddPlayerPacket();
+        spawn.setRuntimeEntityId(45);
+        spawn.setUniqueEntityId(450);
+        spawn.setPosition(org.cloudburstmc.math.vector.Vector3f.ZERO);
+        spawn.setMotion(org.cloudburstmc.math.vector.Vector3f.ZERO);
+        spawn.getEntityLinks().add(link(420, 450, 1).getEntityLink());
+        queued(state, 20, spawn);
+        assertFalse(state.entity(45).inVehicle());
+        ack(state, 20);
+        assertTrue(state.entity(45).inVehicle());
+        assertNull(state.player().vehicleData);
+    }
+
     static void teleport(SessionState s) {s.teleports().getQueuedTeleports().add(new TeleportData(Vec3.ZERO));}
     static void ack(SessionState s,long marker) {assertTrue(s.player().getLatencyUtil().onResponse(marker));}
     static InteractPacket exit(long target,InteractPacket.Action action) {var p=new InteractPacket();p.setRuntimeEntityId(target);p.setAction(action);return p;}

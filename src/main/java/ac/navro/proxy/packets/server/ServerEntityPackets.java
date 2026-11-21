@@ -19,6 +19,7 @@ public final class ServerEntityPackets {
     private final CompensatedWorld world;
     private final Map<Long, EntityCache> entities;
     private final Map<Long, Long> uniqueIdToRuntimeId;
+    private final ac.navro.proxy.data.entity.NetworkEntityRegistry registry = new ac.navro.proxy.data.entity.NetworkEntityRegistry();
     private final Map<BedrockPacket, Runnable> queuedCallbacks = new IdentityHashMap<>();
 
     public ServerEntityPackets(WirePlayerState player, CompensatedWorld world, Map<Long, EntityCache> entities,
@@ -30,6 +31,9 @@ public final class ServerEntityPackets {
     }
 
     public void onPacket(BedrockPacket packet) {
+        if (packet instanceof AvailableEntityIdentifiersPacket identifiers) {
+            registry.replace(identifiers.getIdentifiers());
+        }
         if (packet instanceof AddEntityPacket add) {
             EntityCache entity = addToCache(add.getRuntimeEntityId(), add.getUniqueEntityId(), add.getEntityType(),
                     add.getIdentifier(), add.getMetadata(), false);
@@ -63,14 +67,22 @@ public final class ServerEntityPackets {
             boolean hasZ = move.getFlags().contains(MoveEntityDeltaPacket.Flag.HAS_Z);
             if (!hasX && !hasY && !hasZ) return;
             float x = hasX ? move.getX() : entity.getServerPosition().x;
-            float y = hasY ? move.getY() : entity.getServerPosition().y;
+            float y = hasY ? move.getY() - entity.getYOffset() : entity.getServerPosition().y;
             float z = hasZ ? move.getZ() : entity.getServerPosition().z;
-            queuePositionUpdate(packet, entity, new Vec3(x, y, z), true);
+            queuePositionUpdate(packet, entity, new Vec3(x, y, z), true, false);
             entity.lastWireTick(move.getTicks());
         }
         if (packet instanceof MoveEntityAbsolutePacket move) {
             EntityCache entity = entities.get(move.getRuntimeEntityId());
             if (entity != null) queuePositionUpdate(packet, entity, new Vec3(move.getPosition()), false);
+        }
+        if (packet instanceof MovePlayerPacket move && move.getRuntimeEntityId() != player.runtimeId()
+                && move.getMode() != MovePlayerPacket.Mode.HEAD_ROTATION) {
+            EntityCache entity = entities.get(move.getRuntimeEntityId());
+            if (entity != null && entity.getYOffset() == 0F) {
+                queuePositionUpdate(packet, entity, new Vec3(move.getPosition()), move.getMode() == MovePlayerPacket.Mode.NORMAL);
+                entity.lastWireTick(move.getTick());
+            }
         }
         if (packet instanceof RemoveEntityPacket remove) {
             player.queueAcknowledgment(packet, () -> {
@@ -90,6 +102,7 @@ public final class ServerEntityPackets {
         if (playerEntity) identifier = "minecraft:player";
 
         if (identifier == null || identifier.isBlank()) return null;
+        type = registry.type(identifier, type);
         Float width = EntityMetadataUtil.getFloat(metadata, EntityDataTypes.WIDTH);
         Float height = EntityMetadataUtil.getFloat(metadata, EntityDataTypes.HEIGHT);
         boolean boat = "minecraft:boat".equalsIgnoreCase(identifier) || "minecraft:chest_boat".equalsIgnoreCase(identifier);
@@ -105,7 +118,11 @@ public final class ServerEntityPackets {
     }
 
     private void queuePositionUpdate(BedrockPacket packet, EntityCache entity, Vec3 raw, boolean lerp) {
-        Vec3 position = raw.add(0, -entity.getYOffset(), 0);
+        queuePositionUpdate(packet, entity, raw, lerp, true);
+    }
+
+    private void queuePositionUpdate(BedrockPacket packet, EntityCache entity, Vec3 raw, boolean lerp, boolean applyYOffset) {
+        Vec3 position = applyYOffset ? raw.add(0, -entity.getYOffset(), 0) : raw;
         float distance = entity.getServerPosition().squaredDistanceTo(position);
         if (distance < 1.0E-15F) return;
         long[] sequence = {0};

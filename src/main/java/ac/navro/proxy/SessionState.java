@@ -687,17 +687,22 @@ public final class SessionState {
         } else if (packet instanceof SetEntityDataPacket data) {
             EntityCache cached = entities.get(data.getRuntimeEntityId());
             if (cached != null) {
-                var snapshot = new org.cloudburstmc.protocol.bedrock.data.entity.EntityDataMap();
-                data.getMetadata().forEach((type, value) -> snapshot.put(type,
-                        value instanceof java.util.EnumMap<?, ?> flags ? flags.clone() : value));
-                player.queueAcknowledgment(data, () -> cached.metadata(snapshot));
-                cached.properties(data.getProperties());
+                var snapshot = ac.navro.proxy.util.EntityMetadataUtil.copy(data.getMetadata());
+                var properties = EntityCache.copyProperties(data.getProperties());
+                player.queueAcknowledgment(data, () -> {
+                    if (entities.get(cached.runtimeId()) != cached) return;
+                    cached.metadata(snapshot);
+                    cached.properties(properties);
+                });
                 cached.lastWireTick(data.getTick());
             }
         } else if (packet instanceof UpdateAttributesPacket attributes) {
             EntityCache cached = entities.get(attributes.getRuntimeEntityId());
             if (cached != null) {
-                cached.attributes(attributes.getAttributes());
+                var snapshot = EntityCache.copyAttributes(attributes.getAttributes());
+                player.queueAcknowledgment(attributes, () -> {
+                    if (entities.get(cached.runtimeId()) == cached) cached.attributes(snapshot);
+                });
                 cached.lastWireTick(attributes.getTick());
             }
         } else if (packet instanceof MobEffectPacket effect) {
@@ -726,6 +731,14 @@ public final class SessionState {
             lastVelocityEntityId = motion.getRuntimeEntityId();
             serverVelocity = motion.getMotion();
             entityMotions.put(motion.getRuntimeEntityId(), motion.getMotion());
+            EntityCache cached = entities.get(motion.getRuntimeEntityId());
+            if (cached != null) {
+                var snapshot = WireVec3.of(motion.getMotion());
+                player.queueAcknowledgment(motion, () -> {
+                    if (entities.get(cached.runtimeId()) == cached) cached.motion(snapshot);
+                });
+                cached.lastWireTick(motion.getTick());
+            }
             if(detectionEnabled && motion.getRuntimeEntityId()==player.runtimeId())authInputPackets().velocityPackets().onPacketSend(motion);
             else player.apply(motion);
             if (motion.getRuntimeEntityId() == player.runtimeId() && motion.getMotion() != null) {

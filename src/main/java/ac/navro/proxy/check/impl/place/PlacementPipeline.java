@@ -293,6 +293,7 @@ public final class PlacementPipeline
                 world().networkBlockState(
                                 world().getRawBlockAt(position.x(), position.y(), position.z(), 0));
         if (network == null) throw new MissingFact("unknown_block_definition");
+        if (network.legacyFullId() < 0) throw new MissingFact("unknown_native_block_behavior");
 
         var facts = NativeSelectionProperties.get(network.blockId(), network.blockData());
         Box outline;
