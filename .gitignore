@@ -31,3 +31,5 @@ local.properties
 **/test_*.py
 /tools/
 !/README.md
+
+!/src/main/resources/config.yml

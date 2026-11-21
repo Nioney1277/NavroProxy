@@ -1,8 +1,0 @@
-prefix: '&aNavro &7>&r '
-player-rewind-history-size-ticks: 20
-smooth-setback: false
-player-position-acceptance-threshold: 1.0E-4
-differ-till-alert: 0.0
-disabled-checks: []
-max-latency-wait: 15000
-max-balance-advantage: 8500

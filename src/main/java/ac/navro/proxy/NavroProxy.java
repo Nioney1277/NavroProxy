@@ -36,7 +36,7 @@ public final class NavroProxy {
 
     public NavroProxy(ProxyConfig config) {
         this.config = config;
-        commands=new ac.navro.proxy.command.CommandRuntime(java.nio.file.Path.of("config.yml"),config.smoothSetback(),config.maxBalanceAdvantageMs());
+        commands=new ac.navro.proxy.command.CommandRuntime(ac.navro.proxy.config.ConfigLoader.DEFAULT_FILE,config.smoothSetback(),config.maxBalanceAdvantageMs());
         java.nio.file.Path subscriptions = java.nio.file.Path.of("alert-subscriptions.json");
         boolean firstRun = !java.nio.file.Files.exists(subscriptions);
         alertManager = new ac.navro.proxy.alert.AlertManager(subscriptions, ()->commands.config().prefix(),

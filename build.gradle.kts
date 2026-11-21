@@ -58,7 +58,7 @@ tasks.jar {
 distributions {
     main {
         contents {
-            from("config.example.yml") { rename { "config.yml" } }
+            from("src/main/resources/config.yml") { into("plugins/Navro") }
         }
     }
 }

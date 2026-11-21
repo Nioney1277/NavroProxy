@@ -9,17 +9,15 @@ import java.util.*;
 
 
 public final class ConfigLoader {
+    public static final Path DEFAULT_FILE=Path.of("plugins","Navro","config.yml");
     private ConfigLoader() { }
     public static CheckConfig load(Path file, CheckConfig defaults) throws IOException {
         if (!Files.exists(file)) {
             Path parent=file.toAbsolutePath().getParent();Files.createDirectories(parent);
-            var values=new LinkedHashMap<String,Object>();
-            values.put("prefix",defaults.prefix());values.put("player-rewind-history-size-ticks",defaults.rewindHistory());
-            values.put("smooth-setback",defaults.smoothSetback());
-            values.put("player-position-acceptance-threshold",defaults.acceptanceThreshold());
-            values.put("differ-till-alert",defaults.alertThreshold());values.put("disabled-checks",new ArrayList<>(defaults.disabledChecks()));
-            values.put("max-latency-wait",defaults.maxLatencyWait());values.put("max-balance-advantage",defaults.maxBalanceAdvantage());
-            Files.writeString(file,"# Reload with /navro reload. Proxy transport addresses remain startup options.\n"+new Yaml().dump(values),StandardOpenOption.CREATE_NEW);
+            try(var resource=ConfigLoader.class.getResourceAsStream("/config.yml")) {
+                if(resource==null)throw new IOException("Missing bundled Navro config.yml");
+                Files.copy(resource,file);
+            }
         }
         try (var reader=Files.newBufferedReader(file)) {
             var options=new LoaderOptions();options.setAllowDuplicateKeys(false);

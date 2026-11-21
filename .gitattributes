@@ -5,3 +5,4 @@ gradlew text eol=lf
 *.jar binary
 *.gz binary
 *.bin binary
+/src/main/resources/config.yml -text
