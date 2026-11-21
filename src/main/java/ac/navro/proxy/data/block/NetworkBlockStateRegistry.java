@@ -36,13 +36,9 @@ public final class NetworkBlockStateRegistry {
 
 
     public static int paletteProtocol(int protocol) {
-        if (protocol >= 2192) return 2193;
-        if (protocol >= 2168) return 2168;
-        if (protocol >= 1001) return 1001;
-        if (protocol >= 974) return 975;
-        if (protocol >= 944) return 944;
-        if (protocol >= 843) return 844;
-        return -1;
+        if (NetworkBlockStateRegistry.class.getResource("/navro/palette/runtime_block_states_" + protocol + ".dat") == null)
+            throw new IllegalArgumentException("No built-in block palette for protocol " + protocol);
+        return protocol;
     }
 
     public static NetworkBlockStateRegistry forProtocol(int protocol, boolean hashed) {
@@ -62,9 +58,6 @@ public final class NetworkBlockStateRegistry {
         if (definitions != null && !definitions.isEmpty()) tables = orderedTables(definitions, knownLegacy(protocol));
         else if (supplied != null && supplied.protocol() == protocol) tables = supplied.tables;
         else {
-            if (!hashed && !packet.getBlockProperties().isEmpty()) {
-                throw new IllegalArgumentException("Custom numeric block definitions require the backend's complete runtime palette");
-            }
             tables = forProtocol(protocol, hashed).tables;
         }
         if (hashed && !packet.getBlockProperties().isEmpty()) {
@@ -204,7 +197,6 @@ public final class NetworkBlockStateRegistry {
     }
 
     private static Tables load(int protocol) {
-        if (protocol < 0) return new Tables(Map.of(), Map.of(), Integer.MIN_VALUE, Integer.MIN_VALUE, Map.of(), Map.of());
         Map<Integer, NetworkBlockState> runtime = new HashMap<>(), hashes = new HashMap<>();
         Map<Integer, Integer> legacyRuntime = new HashMap<>(), legacyHashes = new HashMap<>();
         var overloads = new java.util.ArrayList<ForwardState>();
@@ -217,13 +209,13 @@ public final class NetworkBlockStateRegistry {
                 if (!(root instanceof NbtList<?> states)) throw new IllegalStateException("Invalid protocol block states: " + resource);
                 for (Object value : states) {
                     if (!(value instanceof NbtMap source)) continue;
-                    int legacy = legacyId(source);
+                    int legacy = source.containsKey("id") ? legacyId(source) : -1;
                     int runtimeId = source.getInt("runtimeId");
                     NbtMap state = networkTag(source);
                     int hash = Hash.hashBlock(state);
                     runtime.putIfAbsent(runtimeId, new NetworkBlockState(runtimeId, legacy, state));
                     hashes.putIfAbsent(hash, new NetworkBlockState(hash, legacy, state));
-                    registerForward(source, legacy, runtimeId, hash, legacyRuntime, legacyHashes, overloads);
+                    if (legacy >= 0) registerForward(source, legacy, runtimeId, hash, legacyRuntime, legacyHashes, overloads);
                     if ("minecraft:air".equals(state.getString("name"))) { airRuntime = runtimeId; airHash = hash; }
                 }
             }

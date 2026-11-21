@@ -1,6 +1,10 @@
 package ac.navro.proxy.compensated.world.base;
 
 import ac.navro.proxy.data.FluidState;
+import ac.navro.proxy.data.block.NativeFluidBlockProperties;
+import ac.navro.proxy.prediction.fluid.FluidBlockCollision;
+import ac.navro.anticheat.util.math.Direction;
+import ac.navro.proxy.prediction.live.NativeIds.BlockID;
 
 
 import ac.navro.anticheat.collision.CollisionShapeRegistry;
@@ -350,23 +354,23 @@ public class CompensatedWorld {
     public void setRadiusCenter(org.cloudburstmc.math.vector.Vector3i value) { radiusCenter = value; }
     public org.cloudburstmc.math.vector.Vector3i getRadiusCenter() { return radiusCenter; }
     public FluidState fluidAt(int x, int y, int z, int dimension) {
-        BlockUpdate extra = block(x, y, z, dimension, 1);
-        FluidState fluid = fluidState(extra);
-        return fluid.isFluid() ? fluid : fluidState(block(x, y, z, dimension, 0));
+        FluidState overlay = fluidState(block(x, y, z, dimension, 1));
+        return overlay.type() == FluidState.Type.WATER ? overlay : fluidState(block(x, y, z, dimension, 0));
     }
 
     private FluidState fluidState(BlockUpdate update) {
         if (update == null) return FluidState.EMPTY;
-        WireBlock wire = wireBlock(update.networkId());
-        if (wire == null || wire.definition() == null) return FluidState.EMPTY;
-        String name = wire.identifier();
-        FluidState.Type type = name.equals("minecraft:water") || name.equals("minecraft:flowing_water") || name.equals("minecraft:bubble_column")
-                ? FluidState.Type.WATER : name.equals("minecraft:lava") || name.equals("minecraft:flowing_lava") ? FluidState.Type.LAVA : FluidState.Type.EMPTY;
-        if (type == FluidState.Type.EMPTY) return FluidState.EMPTY;
-        org.cloudburstmc.nbt.NbtMap states = wire.definition().getCompound("states");
-        int level = states == null ? 0 : states.getInt("liquid_depth", states.getInt("liquid_depth", 0));
+        NetworkBlockState state = networkBlockState(update.networkId());
+        if (state == null) return FluidState.EMPTY;
+        var nativeState = NativeFluidBlockProperties.forState(protocolVersion, state);
+        boolean water = nativeState != null && nativeState.has(NativeFluidBlockProperties.WATER)
+                || state.is("minecraft:water") || state.is("minecraft:flowing_water") || state.is("minecraft:bubble_column");
+        boolean lava = nativeState != null && nativeState.has(NativeFluidBlockProperties.LAVA)
+                || state.is("minecraft:lava") || state.is("minecraft:flowing_lava");
+        if (!water && !lava) return FluidState.EMPTY;
+        int level = state.intProperty("liquid_depth", nativeState == null ? state.blockData() : nativeState.damage());
         float height = level == 0 || level >= 8 ? 8.0F / 9.0F : (8.0F - level) / 9.0F;
-        return new FluidState(type, height, level);
+        return new FluidState(water ? FluidState.Type.WATER : FluidState.Type.LAVA, height, level);
     }
 
     public boolean hasChunksAt(int minX, int minZ, int maxX, int maxZ, int dimension) {
@@ -374,15 +378,76 @@ public class CompensatedWorld {
         return true;
     }
 
+
     public Vec3 flowAt(int x, int y, int z, int dimension) {
-        FluidState current=fluidAt(x,y,z,dimension); if(!current.isFluid())return Vec3.ZERO;
-        Vec3 flow=Vec3.ZERO; int decay=current.effectiveFlowDecay();
-        int[][] dirs={{-1,0,0},{1,0,0},{0,0,-1},{0,0,1}};
-        for(int[] d:dirs){FluidState next=fluidAt(x+d[0],y+d[1],z+d[2],dimension);int j=next.type()==current.type()?next.effectiveFlowDecay():-1;if(j<0){if(!blocksMotion(x+d[0],y+d[1],z+d[2],dimension)){FluidState below=fluidAt(x+d[0],y-1,z+d[2],dimension);if(below.type()==current.type()&&below.effectiveFlowDecay()>=0){int k=below.effectiveFlowDecay()-(decay-8);flow=flow.add(d[0]*k,d[1]*k,d[2]*k);}}}else{int l=j-decay;flow=flow.add(d[0]*l,d[1]*l,d[2]*l);}}
+        FluidState current = fluidAt(x, y, z, dimension);
+        if (!current.isFluid()) return Vec3.ZERO;
+        NetworkBlockState base = networkBlockState(getRawBlockAt(x, y, z, 0));
+        var nativeBase = NativeFluidBlockProperties.forState(protocolVersion, base);
+        if (nativeBase != null && nativeBase.id() == BlockID.BUBBLE_COLUMN) return new Vec3(0, 0, 0);
+        Vec3 flow = new Vec3(0, 0, 0);
+        int decay = current.effectiveFlowDecay();
+        for (Direction direction : FLUID_HORIZONTAL_DIRECTIONS) {
+            int nx = x + direction.getXOffset(), nz = z + direction.getZOffset();
+            FluidState next = fluidAt(nx, y, nz, dimension);
+            int neighborDecay = next.type() == current.type() ? next.effectiveFlowDecay() : -1;
+            if (neighborDecay < 0) {
+                if (!blocksMotion(nx, y, nz, dimension)) {
+                    FluidState below = fluidAt(nx, y - 1, nz, dimension);
+                    if (below.type() == current.type()) {
+                        neighborDecay = below.effectiveFlowDecay();
+                        if (neighborDecay >= 0) {
+                            int difference = neighborDecay - (decay - 8);
+                            flow = flow.add(direction.getXOffset() * difference,
+                                    direction.getYOffset() * difference, direction.getZOffset() * difference);
+                        }
+                    }
+                }
+            } else {
+                int difference = neighborDecay - decay;
+                flow = flow.add(direction.getXOffset() * difference,
+                        direction.getYOffset() * difference, direction.getZOffset() * difference);
+            }
+        }
+        if (current.level() >= 8) {
+            for (Direction direction : FLUID_HORIZONTAL_DIRECTIONS) {
+                int nx = x + direction.getXOffset(), nz = z + direction.getZOffset();
+                if (isSolidFluidFace(current, nx, y, nz, dimension, direction)
+                        || isSolidFluidFace(current, nx, y + 1, nz, dimension, direction)) {
+                    flow = flow.normalize().add(0, -6, 0);
+                    break;
+                }
+            }
+        }
         return flow.normalize();
     }
 
-    private boolean blocksMotion(int x,int y,int z,int dimension){WireBlock wire=wireBlock(block(x,y,z,dimension,0)==null?-1:block(x,y,z,dimension,0).networkId());return wire!=null&&wire.collisionKnown()&&!wire.collisionShape().isEmpty();}
+    private static final Direction[] FLUID_HORIZONTAL_DIRECTIONS = {
+            Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.EAST
+    };
+
+    private boolean blocksMotion(int x, int y, int z, int dimension) {
+        BlockUpdate update = block(x, y, z, dimension, 0);
+        return update != null && FluidBlockCollision.blocksMotion(this, networkBlockState(update.networkId()));
+    }
+
+    private boolean isSolidFluidFace(FluidState fluid, int x, int y, int z, int dimension, Direction direction) {
+        if (fluidAt(x, y, z, dimension).type() == fluid.type()) return false;
+        if (direction == Direction.UP) return true;
+        BlockUpdate update = block(x, y, z, dimension, 0);
+        if (update == null) return false;
+        NetworkBlockState state = networkBlockState(update.networkId());
+        var nativeState = NativeFluidBlockProperties.forState(protocolVersion, state);
+        if (nativeState != null) {
+            int id = nativeState.id();
+            if (id == BlockID.ICE || id == BlockID.FROSTED_ICE || id == BlockID.BLUE_ICE || id == BlockID.PACKED_ICE) return false;
+        }
+        return FluidBlockCollision.isFaceSturdy(this, state);
+    }
+
+    public ac.navro.proxy.collision.BedrockCollision.Actor fluidCollisionActor() {
+        return collisionActor.get();
+    }
 
     public WireBlock wireBlock(int networkId) {
         WireBlock cached = palette.get(networkId);

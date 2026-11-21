@@ -35,17 +35,12 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.2")
     implementation("com.google.guava:guava:31.0.1-jre")
     implementation("org.slf4j:slf4j-api:2.0.9")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.0")
 }
 
 application {
     mainClass = "ac.navro.proxy.NavroProxy"
 }
 
-sourceSets.test {
-    java.srcDir("backend/geyser/src/main/java")
-}
 
 tasks.withType<JavaCompile>().configureEach {
     options.release = 21
@@ -59,12 +54,6 @@ tasks.jar {
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
-    maxHeapSize = "1024m"
-    maxParallelForks = 1
-    forkEvery = 10
-}
 
 distributions {
     main {

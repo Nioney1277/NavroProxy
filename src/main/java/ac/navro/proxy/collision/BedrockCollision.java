@@ -54,8 +54,13 @@ public final class BedrockCollision {
         if(state==null||state.stateTag()==null)return null;
         Shape shape=table(world.protocolVersion()).get(key(state));
         if(shape==null)return null;
-        return switch(shape.kind()){
-            case 1 -> shape.boxes();
+        return resolveCollision(world,x,y,z,state,actor,shape.kind(),shape.boxes());
+    }
+
+    public static List<Box> resolveCollision(CompensatedWorld world,int x,int y,int z,
+                                             NetworkBlockState state,Actor actor,int kind,List<Box> boxes) {
+        return switch(kind){
+            case 1 -> boxes;
             case 2 -> door(world,x,y,z,state);
             case 3 -> actor!=null&&actor.minY()>=y+1F-Box.COLLISION_EPSILON&&!actor.descendScaffolding()
                     ? List.of(new Box(0,.875F,0,1,1,1)):List.of();

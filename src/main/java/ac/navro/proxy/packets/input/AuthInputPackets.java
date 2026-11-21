@@ -75,7 +75,7 @@ public final class AuthInputPackets {
     public void run(PlayerAuthInputPacket input){
         if (session.player().awaitingRespawnHealth() || session.awaitingBackendSpawnPosition()) return;
         player.begin();
-        if(session.teleports().isHardTeleporting() || session.teleports().hasPendingBackendRewind() || !session.spawned())return;
+        if(session.teleports().isTeleporting() || session.teleports().hasPendingBackendRewind() || !session.spawned())return;
         if(player.vehicleData!=null){
             session.player().setResolvedPosition(player.unvalidatedPosition,player.boundingBox,false,true);
             return;
@@ -97,7 +97,7 @@ public final class AuthInputPackets {
 
     public void processExemptedMovement(){
         var wire=session.player();
-        if (wire.awaitingRespawnHealth() || session.awaitingBackendSpawnPosition() || !session.spawned()
+        if (session.teleports().isTeleporting() || wire.awaitingRespawnHealth() || session.awaitingBackendSpawnPosition() || !session.spawned()
                 || wire.vehicleData!=null || wire.predictionFlag(org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag.SLEEPING)) return;
         player.begin();
         processExemptedMovement(wire);
@@ -183,8 +183,6 @@ public final class AuthInputPackets {
             if(check instanceof OffsetHandlerCheck handler && session.player().checkEnabled(check.getClass()))
                 handler.onPredictionComplete(offset,checked);
         }
-        if(!player.disabledChecks.contains("DebugOffset"))
-            ac.navro.proxy.check.impl.prediction.DebugOffsetA.onPredictionComplete(session,player,offset);
         boolean blockPush=player.collisionPhysics.pushedByBlock();
         boolean canAcceptClientMovement=session.teleports().canAcceptClientMovement();
         if(player.entityTolerance.collided()){

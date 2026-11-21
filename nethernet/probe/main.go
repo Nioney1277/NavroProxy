@@ -54,6 +54,7 @@ func run(address string, protocol int, withIdentity bool) error {
 	defer c.Close()
 	fmt.Println("NETHERNET_WEBRTC_READY")
 
+
 	request := []byte{6, 0xc1, 1, 0, 0, 0, 0}
 	binary.BigEndian.PutUint32(request[3:], uint32(protocol))
 	if _, err = c.Write(request); err != nil {

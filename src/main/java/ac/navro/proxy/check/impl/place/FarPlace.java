@@ -1,5 +1,7 @@
 package ac.navro.proxy.check.impl.place;
 
+import ac.navro.proxy.packets.player.PlacementPipeline;
+
 import ac.navro.proxy.check.api.annotations.CheckInfo;
 import ac.navro.proxy.check.api.impl.PacketCheck;
 import ac.navro.proxy.state.WirePlayerState;

@@ -1,4 +1,6 @@
 package ac.navro.proxy;
+
+import ac.navro.proxy.packets.player.PlacementPipeline;
 import ac.navro.proxy.packets.input.AuthInputPackets;
 
 
@@ -110,6 +112,8 @@ public final class SessionState {
     private final Map<Long, EntityCache> entities = new HashMap<>();
     private final Map<Long, Long> uniqueIdToRuntimeId = new HashMap<>();
     private final WirePlayerState player = new WirePlayerState();
+    private final ac.navro.proxy.packets.player.InventoryInteractionPackets inventoryInteractions =
+            new ac.navro.proxy.packets.player.InventoryInteractionPackets(player);
     private final ac.navro.proxy.packets.input.teleport.TeleportHandler teleportHandler =
             new ac.navro.proxy.packets.input.teleport.TeleportHandler(this);
     private final CompensatedWorld world = new CompensatedWorld(player.collisionPhysics);
@@ -123,9 +127,9 @@ public final class SessionState {
     public ac.navro.proxy.compensated.world.BackendBlockSnapshots.Blocks backendBlocksAt(Vector3i position) {
         return acknowledgedTerrainGeneration==backendBlocks.generation()?backendBlocks.at(position):null;
     }
-    private ac.navro.proxy.check.impl.place.PlacementPipeline placementPipeline;
-    public ac.navro.proxy.check.impl.place.PlacementPipeline placementPipeline() {
-        if(placementPipeline==null)placementPipeline=new ac.navro.proxy.check.impl.place.PlacementPipeline(this);
+    private PlacementPipeline placementPipeline;
+    public PlacementPipeline placementPipeline() {
+        if(placementPipeline==null)placementPipeline=new PlacementPipeline(this);
         return placementPipeline;
     }
     public void placementTick(){if(placementPipeline!=null)placementPipeline.tick();}
@@ -426,7 +430,11 @@ public final class SessionState {
 
 
             var embedded = placementPipeline().embeddedTransaction(input);
-            if (embedded == null || !placementPipeline().handleTransaction(embedded)) {
+            boolean accepted = embedded != null && placementPipeline().handleTransaction(embedded);
+            if (embedded != null && player.worldDiagnostics() != null) {
+                authInputPackets().itemUse().traceTransaction(embedded, "auth_input", accepted ? "ACCEPTED" : "REJECTED");
+            }
+            if (!accepted) {
                 observeRejectedClient(packet, "inventoryPredictionRejected", "Embedded item-use transaction rejected");
                 event.setCancelled(true);
                 return placementPipeline().finish(event, false);
@@ -450,6 +458,7 @@ public final class SessionState {
 
     private boolean observeClient(BedrockPacket packet, boolean checked) {
         applyCheckConfig();
+        if (!(packet instanceof PlayerAuthInputPacket)) inventoryInteractions.onPacketReceive(packet, checked);
         boolean forward = true;
         if (detectionEnabled && !checked && !player.isExempted()
                 && packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket sync) {
@@ -492,6 +501,7 @@ public final class SessionState {
 
 
             player.apply(input, world, detectionEnabled ? null : fluidState, movementCoordinates ? playerYOffset() : 0);
+            inventoryInteractions.onPacketReceive(input, checked);
             if (spawned) {
                 world.tickCollisionBlockActors();
                 if(detectionEnabled)player.tickPredictionEffects();
@@ -502,7 +512,7 @@ public final class SessionState {
             boolean skipTravel=teleportHandler.processTeleport(input);
             if (spawned && !detectionEnabled) player.collisionPhysics.begin(world, entities, input.getTick(), null);
             if(detectionEnabled && !teleports.isHardTeleporting()) {
-                if(skipTravel || wasHardTeleporting || (wasTeleporting && player.isMovementExempted())) authInputPackets().finishTeleportConfirmation(input);
+                if(skipTravel || wasHardTeleporting || wasTeleporting) authInputPackets().finishTeleportConfirmation(input);
                 else authInputPackets().run(input);
             }
             tickSnapshots.addLast(player.snapshot(fluidState));
@@ -513,6 +523,9 @@ public final class SessionState {
         }
         if(detectionEnabled && packet instanceof org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket transaction) {
             var result=PlayerInventoryPackets.onTransactionReceive(this,transaction);
+            if (player.worldDiagnostics() != null) {
+                authInputPackets().itemUse().traceTransaction(transaction, "standalone", result.name());
+            }
             if(result==PlayerInventoryPackets.TransactionResult.REJECTED) {
                 forward=false;
                 recordAnomaly(WireEvent.Direction.CLIENT,sequence,"inventoryPredictionRejected","Navro transaction validator rejected");
@@ -608,6 +621,7 @@ public final class SessionState {
         serverEntityPackets.onPacket(packet);
         ac.navro.proxy.packets.other.VehiclePackets.onPacketSend(this, packet);
         PlayerInventoryPackets.onPacketSend(player, inventory, packet);
+        inventoryInteractions.onPacketSend(packet);
         packetsFromBackend++;
         packetCounts.merge("backend:" + packet.getClass().getSimpleName(), 1, Integer::sum);
         long sequence = recordEvent(WireEvent.Direction.BACKEND, packet);

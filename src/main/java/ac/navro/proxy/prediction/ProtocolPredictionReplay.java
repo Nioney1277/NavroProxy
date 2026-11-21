@@ -63,7 +63,7 @@ public final class ProtocolPredictionReplay {
                 : maxDepenetration;
         SweptMovement.MoveResult result = ProtocolCollisionSolver.solveResolved(
                 requestedMovement, actor, collisions, depenetration, step,
-                snapshot.onGround() || snapshot.flying(), context.collisionPhysics().resolveAcceptedOverlaps());
+                snapshot.onGround() || snapshot.flying());
         Vec3 postCollisionVelocity = applyInsideEffects(snapshot, result);
         return new CandidateResult(snapshot.tick(), result, collisions.size(), postCollisionVelocity);
     }

@@ -44,6 +44,7 @@ func stockBridge(front, back *nethernet.Conn, ipc net.Conn, in *bufio.Reader, ou
 	const maxGroupCount = 64
 	const maxGroupBytes = 2 << 20
 
+
 	events := make(chan event)
 	done := make(chan struct{})
 	defer close(done)

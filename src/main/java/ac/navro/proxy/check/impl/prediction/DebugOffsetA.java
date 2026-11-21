@@ -1,14 +1,27 @@
 package ac.navro.proxy.check.impl.prediction;
 
 import ac.navro.proxy.SessionState;
+import ac.navro.proxy.check.api.annotations.CheckInfo;
+import ac.navro.proxy.check.api.impl.OffsetHandlerCheck;
+import ac.navro.proxy.state.WirePlayerState;
 import ac.navro.proxy.prediction.live.PredictionContext;
 import ac.navro.anticheat.util.math.Vec3;
 import java.util.Locale;
 
 
-public final class DebugOffsetA {
-    private DebugOffsetA() { }
-    public static void onPredictionComplete(SessionState session,PredictionContext player,float offset) {
+@CheckInfo(name = "DebugOffset")
+public final class DebugOffsetA extends OffsetHandlerCheck {
+    private final PredictionContext prediction;
+
+    public DebugOffsetA(WirePlayerState player, PredictionContext prediction) {
+        super(player, prediction);
+        this.prediction = prediction;
+    }
+
+    @Override
+    public void onPredictionComplete(float offset) {
+        SessionState session = prediction.session;
+        PredictionContext player = prediction;
         if(!session.hasDebugSubscribers())return;
         float maxOffset=player.getMaxOffset();float eotOffset=player.unvalidatedTickEnd.distanceTo(player.velocity);
         Vec3 predicted=player.position.subtract(player.prevUnvalidatedPosition);

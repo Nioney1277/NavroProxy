@@ -21,7 +21,10 @@ public final class BackendInventorySnapshots {
     private final Set<Integer> completeContainers = new HashSet<>();
     private final Set<SlotKey> invalidatedSlots = new HashSet<>();
     private final Map<Integer, InventoryContentPacket> templates = new HashMap<>();
+    private final Map<SlotKey, Long> fullSlotRevisions = new HashMap<>();
+    private final Map<Integer, Long> fullContainerRevisions = new HashMap<>();
     private long generation;
+    private long wireRevision;
 
     public long generation() {
         return generation;
@@ -47,6 +50,8 @@ public final class BackendInventorySnapshots {
         completeContainers.clear();
         invalidatedSlots.clear();
         templates.clear();
+        fullSlotRevisions.clear();
+        fullContainerRevisions.clear();
     }
 
     private void forgetDynamicContainer(int containerId) {
@@ -54,6 +59,8 @@ public final class BackendInventorySnapshots {
         containers.remove(containerId);
         completeContainers.remove(containerId);
         templates.remove(containerId);
+        fullContainerRevisions.remove(containerId);
+        fullSlotRevisions.keySet().removeIf(key -> key.containerId() == containerId);
         invalidatedSlots.removeIf(key -> key.containerId() == containerId);
     }
 
@@ -68,6 +75,8 @@ public final class BackendInventorySnapshots {
         invalidatedSlots.removeIf(key -> key.containerId() == containerId && key.slot() != 0);
         completeContainers.remove(containerId);
         templates.remove(containerId);
+        fullContainerRevisions.remove(containerId);
+        fullSlotRevisions.keySet().removeIf(key -> key.containerId() == containerId && key.slot() != 0);
     }
 
     private void observeContent(InventoryContentPacket content) {
@@ -80,6 +89,8 @@ public final class BackendInventorySnapshots {
         }
 
         containers.put(containerId, snapshot);
+        fullContainerRevisions.put(containerId, ++wireRevision);
+        fullSlotRevisions.keySet().removeIf(key -> key.containerId() == containerId);
         completeContainers.add(containerId);
         invalidatedSlots.removeIf(key -> key.containerId() == containerId);
 
@@ -95,13 +106,30 @@ public final class BackendInventorySnapshots {
         containers
                 .computeIfAbsent(containerId, ignored -> new HashMap<>())
                 .put(slot, ItemUtil.copy(packet.getItem()));
+        var key = new SlotKey(containerId, slot);
+        invalidatedSlots.remove(key);
+        fullSlotRevisions.put(key, ++wireRevision);
+    }
+
+    void confirmSlot(int containerId, int slot, ItemData item) {
+        containers.computeIfAbsent(containerId, ignored -> new HashMap<>()).put(slot, ItemUtil.copy(item));
         invalidatedSlots.remove(new SlotKey(containerId, slot));
     }
 
+    long wireRevision() {
+        return wireRevision;
+    }
 
-    void confirmEmptySlot(int containerId, int slot) {
-        containers.computeIfAbsent(containerId, ignored -> new HashMap<>()).put(slot, ItemData.AIR);
-        invalidatedSlots.remove(new SlotKey(containerId, slot));
+    long fullRevision(int containerId, int slot) {
+        return Math.max(fullContainerRevisions.getOrDefault(containerId, 0L),
+                fullSlotRevisions.getOrDefault(new SlotKey(containerId, slot), 0L));
+    }
+
+
+
+    ItemData lastKnownSlot(int containerId, int slot) {
+        var items = containers.get(containerId);
+        return items == null || !items.containsKey(slot) ? null : ItemUtil.copy(items.get(slot));
     }
 
     public ItemData slot(int containerId, int slot) {

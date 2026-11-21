@@ -1,5 +1,7 @@
 package ac.navro.proxy.check.impl.place;
 
+import ac.navro.proxy.util.block.PlacementContext;
+
 import ac.navro.anticheat.util.Pair;
 import ac.navro.anticheat.util.math.Box;
 import ac.navro.anticheat.util.math.Vec3;
@@ -11,7 +13,7 @@ import ac.navro.proxy.data.vanilla.GameType;
 import ac.navro.proxy.packets.input.PacketEvent;
 import ac.navro.proxy.util.reach.CameraCandidates;
 import ac.navro.proxy.util.reach.PlacementCameraSnapshot;
-import ac.navro.proxy.check.impl.place.PlacementContext.*;
+import ac.navro.proxy.util.block.PlacementContext.*;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import org.cloudburstmc.protocol.bedrock.data.InputMode;
 import org.cloudburstmc.protocol.bedrock.data.InputInteractionModel;
@@ -46,7 +48,8 @@ public class RotationPlace extends PacketCheck {
         boolean finite() { return Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z); }
     }
     private record Frame(long tick, Point position, InputMode inputMode, InputInteractionModel interactionModel,
-                         RotationPlaceInterpolation.Rotation camera, Point motion, boolean sneaking, PlacementCameraSnapshot selectionCamera) { }
+                         RotationPlaceInterpolation.Rotation camera, Point motion, boolean sneaking,
+                         PlacementCameraSnapshot selectionCamera, double cameraYOffset) { }
     private record Staged(long generation, Frame frame, Point direction, Placement placement) { }
     private record Pending(Placement placement, InventoryTransactionPacket transaction, Object level) { }
     private record Placement(long tick, Point from, Point to, Cell target,
@@ -56,7 +59,8 @@ public class RotationPlace extends PacketCheck {
                              Cell placed, int hotbarSlot, InputMode inputMode,
                              InputInteractionModel interactionModel, RotationPlaceInterpolation.Rotation camera,
                              double uiSelectionRange, double alternateUiRange, RotationPlaceBridge bridge,
-                             Point motion, boolean sneaking, PredictionEvidence prediction, CameraCandidates.Result cameraCandidates) { }
+                             Point motion, boolean sneaking, PredictionEvidence prediction, CameraCandidates.Result cameraCandidates,
+                             double cameraYOffsetA, double cameraYOffsetB) { }
     private static final class PredictionEvidence {
         final UseItemData transaction;
         final boolean failed;
@@ -133,7 +137,7 @@ public class RotationPlace extends PacketCheck {
                     input.getInputData().contains(PlayerAuthInputData.SNEAKING),
                     new PlacementCameraSnapshot(input.getTick(), latest == null ? -1 : latest.tick,
                             input.getInputMode(), input.getInputInteractionModel(), input.getPlayMode(),
-                            input.getCameraOrientation() == null ? null : new Vec3(input.getCameraOrientation()), null)) : null;
+                            input.getCameraOrientation() == null ? null : new Vec3(input.getCameraOrientation()), null), 0) : null;
             stagedEvent = event;
             staged = new Staged(generation, frame, direction, capture(context.embeddedTransaction(input), "embedded", frame));
         } else if (event.getPacket() instanceof InventoryTransactionPacket transaction) {
@@ -191,8 +195,14 @@ public class RotationPlace extends PacketCheck {
 
 
             final var motion = context.acceptedMotion();
-            latest = new Frame(frame.tick, frame.position, frame.inputMode, frame.interactionModel, frame.camera,
-                    motion == null ? null : new Point(motion.x, motion.y, motion.z), frame.sneaking, frame.selectionCamera);
+
+
+
+            double cameraYOffset = cameraYOffset(player, frame.sneaking);
+            Point cameraPosition = new Point(frame.position.x, frame.position.y + cameraYOffset, frame.position.z);
+            latest = new Frame(frame.tick, cameraPosition, frame.inputMode, frame.interactionModel, frame.camera,
+                    motion == null ? null : new Point(motion.x, motion.y, motion.z), frame.sneaking,
+                    frame.selectionCamera, cameraYOffset);
         } else if (observation.placement != null) {
             InventoryTransactionPacket transaction = (InventoryTransactionPacket) event.getPacket();
             boolean failed = observation.placement.prediction.failed;
@@ -213,6 +223,16 @@ public class RotationPlace extends PacketCheck {
                 }
             });
         }
+    }
+
+
+
+
+
+
+    static double cameraYOffset(WirePlayerState player, boolean sneaking) {
+        if (player.horizontalPoseApplied()) return .42D - 1.62D;
+        return sneaking ? -.35D : 0D;
     }
 
     public void onPacketSend(PacketEvent event) {
@@ -341,7 +361,7 @@ public class RotationPlace extends PacketCheck {
                     source, describeState(state), List.of(), data.triggerType, click, null,
                     placed, data.hotbarSlot, inputMode, interactionModel, latest.camera,
                     Double.NaN, Double.NaN, bridge, latest.motion, latest.sneaking,
-                    new PredictionEvidence(data), candidates);
+                    new PredictionEvidence(data), candidates, previous.cameraYOffset, latest.cameraYOffset);
         }
 
 
@@ -411,7 +431,8 @@ public class RotationPlace extends PacketCheck {
                 inputMode, interactionModel, latest.camera,
                 uiSelectionRange(selectionModel(inputMode, interactionModel), context.gameType()),
                 interactionModel == InputInteractionModel.CLASSIC ? (double) 5.6F : Double.NaN,
-                bridge, latest.motion, latest.sneaking, new PredictionEvidence(data), null);
+                bridge, latest.motion, latest.sneaking, new PredictionEvidence(data), null,
+                previous.cameraYOffset, latest.cameraYOffset);
     }
 
 
@@ -486,6 +507,7 @@ public class RotationPlace extends PacketCheck {
                     + " inputMode=" + placement.inputMode + " interactionModel=" + placement.interactionModel
                     + " selectionModel=" + selectionModel(placement.inputMode, placement.interactionModel)
                     + " selection=" + "interaction_rotation"
+                    + " cameraYOffsetA=" + placement.cameraYOffsetA + " cameraYOffsetB=" + placement.cameraYOffsetB
                     + " cameraStart=" + placement.camera + " cameraEnd=" + nextCamera
                     + " rotationResult=" + trace.rotationResult + " rotationNodes=" + trace.rotationNodes
                     + " originTicks=" + (placement.tick - 1) + "," + placement.tick

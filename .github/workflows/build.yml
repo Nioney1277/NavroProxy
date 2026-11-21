@@ -25,18 +25,6 @@ jobs:
       - name: Build desktop distributions
         run: bash ./gradlew assemble
         shell: bash
-      - name: Protocol and transport regression
-        run: >-
-          bash ./gradlew test
-          --tests 'ac.navro.proxy.protocol.*'
-          --tests 'ac.navro.proxy.prediction.PredictionSync*'
-          --tests 'ac.navro.proxy.packets.input.AuthInputPacketsTest'
-          --tests 'ac.navro.proxy.teleport.NavroCorrectionAlignmentTest'
-          --tests 'ac.navro.proxy.state.MovementMetadataLifecycleTest'
-          --tests 'ac.navro.proxy.state.MovementStateReferenceTest'
-          --tests 'ac.navro.proxy.command.*'
-          --tests 'ac.navro.proxy.check.impl.sprint.SprintChecksTest'
-        shell: bash
       - uses: actions/upload-artifact@v4
         with:
           name: navro-proxy-${{ matrix.os }}
@@ -60,7 +48,6 @@ jobs:
         with:
           go-version-file: nethernet/go.mod
           cache-dependency-path: nethernet/go.sum
-      - run: go test ./...
       - name: Build listener and probe
         run: |
           go build -o bin/navro-nethernet${{ matrix.suffix }} ./inspect

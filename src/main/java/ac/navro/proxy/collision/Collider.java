@@ -112,8 +112,10 @@ public final class Collider {
         boolean rememberedOneWay = player.collisionPhysics.hasOneWayCollision(box, commitState);
         boolean oneWay = player.collisionPenetratingFrames() >= 2 || rememberedOneWay;
         Vec3 minimum = oneWay ? nearby.isEmpty() ? Vec3.ZERO : EntityCollisionPhysics.SOLID_DEPENETRATION.clone() : new Vec3(1, 1, 1);
+
+
         return ProtocolCollisionSolver.solveResolvedDetailed(submitted, box, collisions, minimum, step,
-                player.onGround() || player.flying(), player.collisionPhysics.resolveAcceptedOverlaps());
+                player.onGround() || player.flying());
     }
 
  public static Vec3 maybeBackOffFromEdge(PredictionContext p,Vec3 v){p.syncWire();return ac.navro.proxy.collision.Collider.maybeBackOffFromEdge(p.wire,p.session.collisionWorld(),v);}

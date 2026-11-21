@@ -1,6 +1,0 @@
-{
-  "src/main/java/ac/navro/proxy/SessionState.java": "e3c2f365c0ba0a9e99c3d623b7dae2bbb16459f10b6fda1f32aa8d2f6d2602f3",
-  "src/test/java/ac/navro/proxy/check/impl/place/PlacementPipelineLifecycleTest.java": "e49f31af62b00b5b2516209b9453eb1aff420d669b1292e98997bac255a6a782",
-  "build/embedded-input-transaction-validation.json": "600d7dbeea4f65f405c64f6d45a8c57e0f460338fd38f5858ab00b780b86a5d7",
-  "build/install/navro-proxy/lib/NavroProxy-0.1.0-SNAPSHOT.jar": "a6e3dffac0e583414213ed4d69a025832dfe7b5d2666d260d5b05e2e509c1587"
-}

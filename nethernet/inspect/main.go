@@ -224,6 +224,7 @@ func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, of
 		}
 	}
 
+
 	identity, err := nethernet.SelfSignedIdentity(key, "https://authorization.franchise.minecraft-services.net/")
 	if err != nil {
 		return err

@@ -7,6 +7,9 @@ import ac.navro.proxy.check.impl.badpackets.BadPacketA;
 import ac.navro.proxy.check.impl.badpackets.BadPacketB;
 import ac.navro.proxy.check.impl.badpackets.BadPacketsD;
 import ac.navro.proxy.check.impl.prediction.Prediction;
+import ac.navro.proxy.check.impl.prediction.DebugOffsetA;
+import ac.navro.proxy.check.impl.multiactions.MultiActionsA;
+import ac.navro.proxy.check.impl.multiactions.MultiActionsB;
 import ac.navro.proxy.check.impl.sprint.SprintA;
 import ac.navro.proxy.check.impl.sprint.SprintB;
 import ac.navro.proxy.check.impl.sprint.SprintC;
@@ -29,6 +32,8 @@ public final class CheckHolder extends LinkedHashMap<Class<?>, Check> {
         put(BadPacketA.class, new BadPacketA(player));
         put(BadPacketB.class, new BadPacketB(player));
         put(BadPacketsD.class, new BadPacketsD(player));
+        put(MultiActionsA.class, new MultiActionsA(player));
+        put(MultiActionsB.class, new MultiActionsB(player));
     }
 
     public void registerPredictionHandlers(PredictionContext prediction) {
@@ -37,6 +42,7 @@ public final class CheckHolder extends LinkedHashMap<Class<?>, Check> {
         put(SprintC.class, new SprintC(player, prediction));
         put(SprintD.class, new SprintD(player, prediction));
         put(Prediction.class, new Prediction(player, prediction));
+        put(DebugOffsetA.class, new DebugOffsetA(player, prediction));
     }
 
     public boolean enabled(Class<?> type) { return player.checkEnabled(type); }

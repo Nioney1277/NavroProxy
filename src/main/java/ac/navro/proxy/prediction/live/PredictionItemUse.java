@@ -10,8 +10,11 @@ import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import java.util.*;
+
+import static ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields;
 
 
 public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>,FlagTracker.Context<ItemData>,
@@ -90,6 +93,58 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
     }
     public ac.navro.anticheat.util.math.Vec3 position(){return session.player().position();}
     public boolean validate(ItemData predicted,ItemData claimed){return ItemUtil.sameDefinition(nativeItem(predicted),NativeItemDecoder.decode(session.player().protocolVersion(),claimed,NativeItemDecoder.Format.TRANSACTION));}
+    @Override
+    public void validatorDecision(InventoryTransactionPacket packet, String reason) {
+        traceTransaction(packet, "validator", reason);
+    }
+
+    public void traceTransaction(InventoryTransactionPacket packet, String source, String result) {
+        if (session.player().worldDiagnostics() == null) return;
+        var type = packet.getTransactionType();
+        if (type != InventoryTransactionType.ITEM_USE && type != InventoryTransactionType.ITEM_RELEASE) return;
+        traceUse("item_use_transaction", fields(
+                "source", source, "result", result, "type", type.name(), "action", packet.getActionType(),
+                "claimedSlot", packet.getHotbarSlot(), "claimedItem", describeItem(packet.getItemInHand()),
+                "actionCount", packet.getActions().size()));
+    }
+
+    private void traceUse(String event, Map<String, Object> details) {
+        var trace = session.player().worldDiagnostics();
+        if (trace == null) return;
+        try {
+            int slot = session.inventory().heldItemSlot;
+            var pending = session.inventoryResponseSync().pending().stream()
+                    .filter(entry -> entry.slot() == slot)
+                    .filter(entry -> switch (entry.type()) {
+                        case HOTBAR, HOTBAR_AND_INVENTORY, INVENTORY -> true;
+                        default -> false;
+                    })
+                    .map(entry -> fields("requestId", entry.requestId(), "count", entry.count(), "stackId", entry.stackId()))
+                    .toList();
+            details.put("heldSlot", slot);
+            details.put("cachedItem", describeItem(session.inventory().inventoryContainer.getHeldItemData()));
+            details.put("backendItem", describeItem(session.backendInventories().slot(0, slot)));
+            details.put("pendingIdentity", pending);
+            details.put("usedItem", describeItem(tracker.getUsedItem()));
+            details.put("dirtyUsing", tracker.getDirtyUsing().name());
+            details.put("usingItem", usingItemFlag());
+            details.put("serverUsingItem", serverUsing);
+            details.put("awaitingMetadata", tracker.isAwaitingMetadataStartConfirmation());
+            details.put("slowdown", tracker.getPredictionItemSlowdownFactor());
+            trace.event(event, details);
+        } catch (RuntimeException ignored) {
+
+        }
+    }
+
+    private static Map<String, Object> describeItem(ItemData item) {
+        if (item == null) return null;
+        var definition = item.getDefinition();
+        return fields("identifier", definition == null ? null : definition.getIdentifier(),
+                "runtimeId", definition == null ? null : definition.getRuntimeId(),
+                "count", item.getCount(), "damage", item.getDamage());
+    }
+
     public boolean handleClickBlock(InventoryTransactionPacket data){throw new IllegalStateException("Block transactions use their own complete dispatcher");}
     public boolean handleClickAir(InventoryTransactionPacket data){return session.transactionValidator().handleClickAir(data,this);}
     public boolean handleRelease(InventoryTransactionPacket packet){return session.transactionValidator().handleRelease(packet,this);}
@@ -107,25 +162,44 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
     public void beginInput(PlayerAuthInputPacket packet){
         if(!flags.has(-1))sinceTridentUse=0;
         boolean start=packet.getInputData().contains(PlayerAuthInputData.START_USING_ITEM);
+        var before = tracker.getDirtyUsing();
+        float previousSlowdown = tracker.getPredictionItemSlowdownFactor();
+        String decision = "no_start_edge";
         var iterator=packet.getInputData().iterator();
         while(iterator.hasNext()){
             var action=iterator.next();if(action!=PlayerAuthInputData.START_USING_ITEM)continue;
             ItemData item=nativeItem(session.inventory().inventoryContainer.getHeldItemData());
             if(tracker.getDirtyUsing()==ItemUseTracker.DirtyUsing.NONE){
-                if(tracker.resumeLatchedUse(item))break;
+                if(tracker.resumeLatchedUse(item)){
+                    decision = "resumed";
+                    break;
+                }
+                decision = "no_pending_use";
                 iterator.remove();continue;
             }
-            if(isNull(item)){iterator.remove();continue;}
+            if(isNull(item)){
+                decision = "cached_item_empty";
+                iterator.remove();continue;
+            }
             tracker.use(item,nativeItemId(item),true);
             boolean await=tracker.isAwaitingMetadataStartConfirmation();tracker.applyPredictedUseStart();
             if(!await)tracker.setDirtyUsing(ItemUseTracker.DirtyUsing.NONE);
+            decision = await ? "waiting_for_metadata" : "started";
         }
         tracker.finishAuthInput(start);
         var dirty=tracker.getDirtyUsing();
         if(dirty!=ItemUseTracker.DirtyUsing.NONE && dirty==ItemUseTracker.DirtyUsing.METADATA && !flags.has(-1)){
             flags.set(-1,false);tracker.setDirtyUsing(ItemUseTracker.DirtyUsing.NONE);
         }
-        tracker.snapshotPredictionUseState();tracker.preTick();
+        tracker.snapshotPredictionUseState();
+        if (session.player().worldDiagnostics() != null
+                && (start || previousSlowdown != tracker.getPredictionItemSlowdownFactor())) {
+            traceUse("item_use_input", fields("inputTick", packet.getTick(), "decision", decision,
+                    "startReceived", start, "startKept", packet.getInputData().contains(PlayerAuthInputData.START_USING_ITEM),
+                    "dirtyBefore", before.name(), "previousSlowdown", previousSlowdown,
+                    "motion", String.valueOf(packet.getMotion()), "rawMoveVector", String.valueOf(packet.getRawMoveVector())));
+        }
+        tracker.preTick();
     }
     public void finishInput(){tracker.postTick();}
 }
