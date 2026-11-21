@@ -30,3 +30,4 @@ local.properties
 **/*_test.go
 **/test_*.py
 /tools/
+!/README.md
