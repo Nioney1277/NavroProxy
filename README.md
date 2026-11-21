@@ -44,7 +44,7 @@ Windows PowerShell
 
 The backend must accept trusted proxy connections. The client and backend must use compatible Bedrock protocol versions.
 
-Settings are stored in `plugins/Navro/config.yml`, matching Navro's plugin data directory. The bundled default is `src/main/resources/config.yml`, copied unchanged from Navro. The distribution includes `plugins/Navro/config.yml`; if it is missing at startup, NavroProxy creates it from the bundled resource without replacing an existing file. Use `/navro reload` to reload configuration changes.
+Settings are stored in `plugins/Navro/config.yml`, matching Navro's plugin data directory. The bundled default is `src/main/resources/config.yml`, containing only settings implemented by NavroProxy. The distribution includes `plugins/Navro/config.yml`; if it is missing at startup, NavroProxy creates it from the bundled resource without replacing an existing file. Use `/navro reload` to reload configuration changes.
 
 - `detect` runs the registered checks.
 - `inspect` observes protocol traffic.
