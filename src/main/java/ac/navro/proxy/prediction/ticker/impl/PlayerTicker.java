@@ -40,15 +40,6 @@ public class PlayerTicker extends LivingTicker {
 
     public static Vec3 scaleMovementInput(final PredictionContext player, final Vec3 rawInput, final boolean commit) {
         Vec3 input = rawInput;
-
-
-
-        if (player.isPredictionSprinting() && !player.isPredictionSwimming()
-                && !player.doingInventoryAction && input.z <= 0) {
-            final float forward = 1.0F;
-            final double length = Math.sqrt((double) input.x * input.x + forward * forward);
-            input = new Vec3(input.x / length, input.y, forward / length);
-        }
         input = input.multiply(0.98F);
         boolean swiftSneak = false;
         if (SneakInputPhysics.shouldScale(player) && player.ticksSinceCanSlowdown >= 2) {
