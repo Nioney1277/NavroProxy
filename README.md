@@ -87,7 +87,7 @@ AirLiquidPlace and RotationPlace require a valid native server tick from the bac
 
 ## Contributors
 
-- [nioney1277](https://github.com/nioney1277-lab)
+- [Nioney1277](https://github.com/nioney1277-lab)
 - [GLOBEsg](https://github.com/globesg)
 - [GhostNgEnd](https://github.com/GhostNgEnd)
 - [huangyxHUTAO](https://github.com/huangyxHUTAO)
