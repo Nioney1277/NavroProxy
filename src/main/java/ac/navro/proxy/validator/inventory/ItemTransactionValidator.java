@@ -454,6 +454,7 @@ public class ItemTransactionValidator {
     }
 
     private void setHeldBucket(BucketContext context, int damage) {
+        if (player.gameType() == GameType.CREATIVE) return;
         final int slot = inventory.heldItemSlot;
         inventory.inventoryContainer.set(slot, context.createNativeBucket(damage));
     }

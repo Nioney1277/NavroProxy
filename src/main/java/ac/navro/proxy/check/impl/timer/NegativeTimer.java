@@ -23,8 +23,8 @@ public final class NegativeTimer extends Timer {
     }
 
     @Override
-    protected void acknowledgeLatency(final LatencyUtil.Latency latency, final long now) {
-        budget.acknowledgeNegative(latency.ns(), now);
+    public void onLatencyAccepted(final LatencyUtil.Latency latency) {
+        budget.acknowledgeNegative(latency.ns(), clock.getAsLong());
     }
 
     public void onDeath() {
