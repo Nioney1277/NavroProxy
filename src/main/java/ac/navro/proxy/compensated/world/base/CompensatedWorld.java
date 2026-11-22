@@ -458,6 +458,10 @@ public class CompensatedWorld {
 
         List<Box> shape = blockStates.hasComponents(state) ? blockStates.declaredCollision(state)
                 : protocolVersion < 0 ? null : CollisionShapeRegistry.forProtocol(protocolVersion).shapeForState(tag);
+        if (shape == null && protocolVersion >= 0 && !blockStates.hasComponents(state)) {
+            var nativeState = NativeFluidBlockProperties.forState(protocolVersion, state);
+            if (nativeState != null) shape = nativeState.generic();
+        }
         WireBlock wire = new WireBlock(state.networkId(), state.identifier(), tag, shape);
         palette.put(networkId, wire);
         return wire;
@@ -547,6 +551,14 @@ public class CompensatedWorld {
                 }
                 continue;
             }
+            List<Box> dynamic = FluidBlockCollision.movementCollision(this,Vector3i.from(x,y,z),block);
+            if (dynamic != null) {
+                for (Box shape : dynamic) {
+                    Box worldShape = shape.offset(x,y,z);
+                    if (worldShape.intersects(query)) result.add(new CollisionShapeEntry(worldShape,block));
+                }
+                continue;
+            }
             List<Box> plant = null;
             boolean air = block != null && (block.blockId() == 0 || block.is("minecraft:air")
                     || block.is("minecraft:cave_air") || block.is("minecraft:void_air"));
@@ -611,6 +623,14 @@ public class CompensatedWorld {
                 for (Box shape : piston) {
                     Box worldShape = shape.offset(x, y, z);
                     if ((query == null || worldShape.intersects(query))) result.add(new CollisionShapeEntry(worldShape, block));
+                }
+                continue;
+            }
+            List<Box> dynamic = FluidBlockCollision.movementCollision(this,Vector3i.from(x,y,z),block);
+            if (dynamic != null) {
+                for (Box shape : dynamic) {
+                    Box worldShape = shape.offset(x,y,z);
+                    if (query == null || worldShape.intersects(query)) result.add(new CollisionShapeEntry(worldShape,block));
                 }
                 continue;
             }

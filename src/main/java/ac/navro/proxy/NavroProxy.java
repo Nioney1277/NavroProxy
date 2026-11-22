@@ -9,7 +9,6 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.cloudburstmc.netty.channel.raknet.RakChannelFactory;
 import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
 import org.cloudburstmc.netty.channel.raknet.config.RakServerCookieMode;
-import org.cloudburstmc.protocol.bedrock.BedrockPong;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockServerInitializer;
 
@@ -33,6 +32,7 @@ public final class NavroProxy {
     private final EventLoopGroup childGroup = new NioEventLoopGroup();
     private final EventLoopGroup backendGroup = new NioEventLoopGroup();
     private Channel serverChannel;
+    private ac.navro.proxy.protocol.BackendAdvertisement backendAdvertisement;
 
     public NavroProxy(ProxyConfig config) {
         this.config = config;
@@ -95,13 +95,8 @@ public final class NavroProxy {
             floodgateForwarding = ac.navro.proxy.protocol.FloodgateForwarding.load(config.floodgateForwardingKey());
         }
         if(config.mode()==ProxyConfig.Mode.DETECT)ac.navro.proxy.data.inventory.NativePredictionItems.initialize();
-        var latestCodec = SupportedCodecs.fallback(2225);
         long guid = ThreadLocalRandom.current().nextLong();
-        var advertisement = new BedrockPong().edition("MCPE").motd("NavroProxy")
-                .subMotd("Navro").protocolVersion(latestCodec.getProtocolVersion())
-                .version(latestCodec.getMinecraftVersion()).playerCount(0).maximumPlayerCount(50)
-                .serverId(guid).gameType("Survival").nintendoLimited(false)
-                .ipv4Port(config.listenPort()).ipv6Port(config.listenPort()).toByteBuf();
+        backendAdvertisement = new ac.navro.proxy.protocol.BackendAdvertisement(guid);
         BedrockServerInitializer initializer = new BedrockServerInitializer() {
             @Override
             protected void postInitChannel(Channel channel) {
@@ -125,18 +120,21 @@ public final class NavroProxy {
                 .group(bossGroup, childGroup)
                 .channelFactory(RakChannelFactory.server(NioDatagramChannel.class))
                 .option(RakChannelOption.RAK_GUID, guid)
-                .option(RakChannelOption.RAK_ADVERTISEMENT, advertisement)
+                .option(RakChannelOption.RAK_HANDLE_PING, true)
                 .option(RakChannelOption.RAK_SERVER_COOKIE_MODE, RakServerCookieMode.INVALID)
                 .childHandler(initializer);
 
         InetSocketAddress address = new InetSocketAddress(config.listenHost(), config.listenPort());
         ChannelFuture future = bootstrap.bind(address).sync();
         serverChannel = future.channel();
+        backendAdvertisement.attach(serverChannel);
+        backendAdvertisement.start(backendGroup, new InetSocketAddress(config.backendHost(), config.backendPort()));
         log("listening on " + address + ", backend " + config.backendHost() + ":" + config.backendPort()
                 + ", fallback protocol " + config.fallbackProtocolVersion() + ", mode " + config.mode());
     }
 
     public void shutdown() {
+        if (backendAdvertisement != null) backendAdvertisement.close();
         if (serverChannel != null) {
             serverChannel.close();
         }

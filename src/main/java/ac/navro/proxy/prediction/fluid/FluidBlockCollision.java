@@ -39,6 +39,15 @@ public final class FluidBlockCollision {
         return new State(network,properties);
     }
     public static boolean isFaceSturdy(CompensatedWorld world,NetworkBlockState network){return state(world,network).nativeState.has(STURDY);}
+
+    public static List<Box> movementCollision(CompensatedWorld world,Vector3i pos,NetworkBlockState network){
+        Properties properties=NativeFluidBlockProperties.forState(world.protocolVersion(),network);
+        if(properties==null)return null;
+        if(properties.has(PASS_THROUGH))return List.of();
+        if(!properties.has(FENCE|PANE|STAIRS|WALL|CHORUS)
+                && !network.identifier().endsWith("_fence") && !network.identifier().endsWith("_wall"))return null;
+        return FluidDynamicCollision.getCollisionBox(new Context(world),pos,new State(network,properties));
+    }
     public static boolean blocksMotion(CompensatedWorld world,NetworkBlockState network){
         State block=state(world,network);
         if(block.nativeState.has(PASS_THROUGH)||block.nativeState.has(BAMBOO_SAPLING))return false;

@@ -88,6 +88,7 @@ public final class SessionState {
     }
     private long lastInputTick = -1;
     private boolean spawned;
+    private Vec3 pendingStartGamePosition;
     private boolean awaitingBackendSpawnPosition;
     private long backendSpawnRevision;
 
@@ -481,6 +482,28 @@ public final class SessionState {
         if (log != null) log.predictionSyncReceived(packet, accepted);
     }
 
+    private void resolveStartGamePosition(PlayerAuthInputPacket input) {
+        if (!spawned || pendingStartGamePosition == null || !finite(input.getPosition())) return;
+        Vec3 start = pendingStartGamePosition;
+        pendingStartGamePosition = null;
+        if (awaitingBackendSpawnPosition || teleports.isTeleporting() || player.vehicleData != null) return;
+
+
+        float inputFeetY = input.getPosition().getY() - playerYOffset();
+        float zeroDistance = Math.abs(inputFeetY - start.y);
+        float eyeDistance = Math.abs(inputFeetY - (start.y - 1.62001F));
+        float offset = eyeDistance < zeroDistance ? 1.62001F : 0;
+        if (offset != 0) {
+            player.acceptPosition(start.down(offset));
+            resetMovementHistory();
+            teleports.setLastKnowValid(player.position().up(playerYOffset()));
+        }
+        if (player.worldDiagnostics() != null) player.worldDiagnostics().event("spawn_position_selected",
+                ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
+                        "offset", offset, "zeroDistance", zeroDistance, "eyeDistance", eyeDistance,
+                        "feet", player.position().toVector3f().toString()));
+    }
+
     private boolean observeClient(BedrockPacket packet, boolean checked) {
         applyCheckConfig();
         if (!(packet instanceof PlayerAuthInputPacket)) inventoryInteractions.onPacketReceive(packet, checked);
@@ -514,6 +537,7 @@ public final class SessionState {
             boolean movementCoordinates = ac.navro.proxy.packets.input.legacy.InputPositionDecoder
                     .usesMovementCoordinates(spawned, input.getInputData().contains(
                             org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.HANDLE_TELEPORT));
+            resolveStartGamePosition(input);
             if(detectionEnabled)authInputPackets();
 
 
@@ -644,11 +668,13 @@ public final class SessionState {
             world.apply(start);
             acknowledgedTerrainGeneration = backendBlocks.generation();
             player.apply(start);
+            pendingStartGamePosition = finite(start.getPlayerPosition()) ? player.position().clone() : null;
             teleports.setLastKnowValid(player.position().up(playerYOffset()));
             backendProfile = BackendProtocolProfile.from(start);
             backendSyncTransport.accept(backendSync.begin());
         } else if (backendType == ac.navro.proxy.protocol.BackendType.BDS && packet instanceof org.cloudburstmc.protocol.bedrock.packet.RespawnPacket respawn
                 && (respawn.getRuntimeEntityId() == 0 || respawn.getRuntimeEntityId() == player.runtimeId())) {
+            pendingStartGamePosition = null;
             if (respawn.getState() == org.cloudburstmc.protocol.bedrock.packet.RespawnPacket.State.SERVER_SEARCHING) {
                 awaitingBackendSpawnPosition = true;
                 backendSpawnRevision++;
@@ -681,6 +707,7 @@ public final class SessionState {
                 });
             }
         } else if (packet instanceof ChangeDimensionPacket change) {
+            pendingStartGamePosition = null;
             if(authInputPackets!=null)authInputPackets.velocityPackets().clearExternalMotion();
 
             final ChangeDimensionPacket snapshot = change.clone();
@@ -742,10 +769,12 @@ public final class SessionState {
         if (packet instanceof MovePlayerPacket move
                 && move.getRuntimeEntityId() == player.runtimeId()
                 && move.getMode() != MovePlayerPacket.Mode.HEAD_ROTATION) {
+            pendingStartGamePosition = null;
             serverPosition = move.getPosition();
             player.apply(move);
             queueMovementTeleport(move, true);
         } else if (packet instanceof CorrectPlayerMovePredictionPacket correction) {
+            pendingStartGamePosition = null;
             backendCorrectionPackets++;
             lastCorrectionTick = correction.getTick();
             serverPosition = correction.getPosition();

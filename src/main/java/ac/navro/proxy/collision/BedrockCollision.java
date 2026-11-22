@@ -24,8 +24,8 @@ public final class BedrockCollision {
         return new Key(state.identifier(),state.stateTag().getCompound("states"));
     }
     private static synchronized Map<Key,Shape> table(int protocol) {
-        int palette=NetworkBlockStateRegistry.paletteProtocol(protocol);
-        return TABLES.computeIfAbsent(palette, BedrockCollision::load);
+        return TABLES.computeIfAbsent(protocol,
+                version -> load(NetworkBlockStateRegistry.paletteProtocol(version)));
     }
     private static Map<Key,Shape> load(int palette) {
         if(palette<0)return Map.of();

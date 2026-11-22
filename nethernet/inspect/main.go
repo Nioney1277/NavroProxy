@@ -115,18 +115,18 @@ func run(listen, backend, adapter, local, keyPath string, offline, detect, stock
 	if detect {
 		mode = "DETECT"
 	}
-	h.Status(endpoint.Status{ServerName: "Navro NetherNet " + mode, Protocol: 2225, Version: "1.26.63.1", MaxPlayerCount: 10, OnlineAuth: true})
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	go mirrorBackendStatus(ctx, h, backend)
 	l, err := (nethernet.ListenConfig{API: api, DisableTrickleICE: true, AllowAnonymous: false,
 		IssueServerIdentity: func(context.Context) (*nethernet.Identity, error) {
-			return nethernet.ServerIdentity(key, "Navro NetherNet "+mode)
+			return nethernet.ServerIdentity(key, "")
 		},
 	}).Listen(h)
 	if err != nil {
 		return err
 	}
 	defer l.Close()
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
 	go func() { <-ctx.Done(); l.Close(); h.Close() }()
 	slog.Info("NETHERNET_TERMINATING_READY", "listen", listen, "backend", backend, "adapter", adapter, "mode", mode, "raknet", false)
 	for {
@@ -223,7 +223,6 @@ func session(front *nethernet.Conn, backend, adapter string, api *webrtc.API, of
 			return errors.New("stock Geyser adapter did not confirm detection")
 		}
 	}
-
 
 	identity, err := nethernet.SelfSignedIdentity(key, "https://authorization.franchise.minecraft-services.net/")
 	if err != nil {
