@@ -30,8 +30,7 @@ public final class StickyBlockPhysics {
                 collisionY ? 0 : velocity.y, collisionZ ? 0 : velocity.z);
         float bounceY = 0;
 
-        if (!sneaking && velocity.y < 0 && Math.abs(velocity.y) >= MIN_DOWNWARD_IMPACT
-                && ((Math.abs(velocity.y) > 0 && collisionY) || collisionX || collisionZ)) {
+        if (collisionY && !sneaking && velocity.y < 0 && Math.abs(velocity.y) >= MIN_DOWNWARD_IMPACT) {
             final CollisionShapeEntry support = selectRestitutionShape(actorBox, entries);
             final float coefficient = support == null || support.block() == null
                     ? 0 : new NavroBlockState(support.block()).getBlockBounciness();
