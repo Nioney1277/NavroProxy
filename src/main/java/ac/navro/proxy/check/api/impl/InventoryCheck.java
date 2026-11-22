@@ -8,5 +8,5 @@ public abstract class InventoryCheck extends Check {
         super(player);
     }
 
-    public abstract void onInventoryClick();
+    public abstract boolean onInventoryClick();
 }

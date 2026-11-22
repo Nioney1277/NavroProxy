@@ -11,7 +11,9 @@ public final class MultiActionsA extends InventoryCheck {
     }
 
     @Override
-    public void onInventoryClick() {
-        if (player.predictionSprinting()) fail("sprinting=true");
+    public boolean onInventoryClick() {
+        if (!player.predictionSprinting()) return false;
+        fail("sprinting=true");
+        return true;
     }
 }
