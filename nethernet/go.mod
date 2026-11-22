@@ -3,12 +3,13 @@ module ac.navro/nethernet-probe
 go 1.26.0
 
 require (
+	github.com/go-jose/go-jose/v4 v4.1.8
 	github.com/helix-bedrock/nethernet v0.0.0-20261109175854-3c60f0396e41
 	github.com/pion/webrtc/v4 v4.2.21-0.20260920133716-91bfc6c2039f
+	github.com/sandertv/go-raknet v1.15.2
 )
 
 require (
-	github.com/go-jose/go-jose/v4 v4.1.8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/pion/datachannel v1.6.3 // indirect
 	github.com/pion/dtls/v3 v3.1.9 // indirect

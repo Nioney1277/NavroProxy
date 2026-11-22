@@ -8,10 +8,17 @@ import org.cloudburstmc.protocol.bedrock.util.ChainValidationResult;
 import org.cloudburstmc.protocol.bedrock.util.EncryptionUtils;
 import org.jose4j.jws.JsonWebSignature;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 
@@ -39,6 +46,50 @@ public final class RakNetBackendEncryption {
     public void complete(BedrockClientSession backend, String jwt) throws Exception {
         backend.enableEncryption(sessionKey(jwt));
         backend.sendPacketImmediately(new ClientToServerHandshakePacket());
+    }
+
+    public BatchCipher completeBatchHandshake(String jwt) throws Exception {
+        return new BatchCipher(sessionKey(jwt));
+    }
+
+    public static final class BatchCipher {
+        private static final int TRAILER_SIZE = 8;
+        private final Cipher encoder;
+        private final Cipher decoder;
+        private final byte[] key;
+        private final MessageDigest digest;
+        private long sent;
+        private long received;
+
+        private BatchCipher(SecretKey secret) throws NoSuchAlgorithmException {
+            encoder = EncryptionUtils.createCipher(true, true, secret);
+            decoder = EncryptionUtils.createCipher(true, false, secret);
+            key = secret.getEncoded();
+            digest = MessageDigest.getInstance("SHA-256");
+        }
+
+        public byte[] encrypt(byte[] batch) {
+            byte[] framed = Arrays.copyOf(batch, batch.length + TRAILER_SIZE);
+            System.arraycopy(trailer(sent++, batch, batch.length), 0, framed, batch.length, TRAILER_SIZE);
+            return encoder.update(framed);
+        }
+
+        public byte[] decrypt(byte[] batch) throws IOException {
+            if (batch.length <= TRAILER_SIZE) throw new IOException("Truncated encrypted RakNet batch");
+            byte[] clear = decoder.update(batch);
+            int size = clear.length - TRAILER_SIZE;
+            byte[] checksum = Arrays.copyOfRange(clear, size, clear.length);
+            if (!MessageDigest.isEqual(checksum, trailer(received++, clear, size))) {
+                throw new IOException("Invalid encrypted RakNet batch checksum");
+            }
+            return Arrays.copyOf(clear, size);
+        }
+
+        private byte[] trailer(long counter, byte[] batch, int size) {
+            digest.update(ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(counter).array());
+            digest.update(batch, 0, size);
+            return Arrays.copyOf(digest.digest(key), TRAILER_SIZE);
+        }
     }
 
     SecretKey sessionKey(String jwt) throws Exception {

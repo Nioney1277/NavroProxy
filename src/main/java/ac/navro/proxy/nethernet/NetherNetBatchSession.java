@@ -38,6 +38,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private final java.util.Queue<String> messages=new java.util.concurrent.ConcurrentLinkedQueue<>();
     private final PublicKey transportKey;
     private final KeyPair backendKey;
+    private final ac.navro.proxy.protocol.RakNetBackendEncryption rakNetEncryption;
+    private ac.navro.proxy.protocol.RakNetBackendEncryption.BatchCipher rakNetCipher;
     private final InetAddress forwardedPeer;
     private final boolean detect;
     private BedrockCodec codec;
@@ -74,7 +76,14 @@ public final class NetherNetBatchSession implements AutoCloseable {
     NetherNetBatchSession(PublicKey transportKey, KeyPair backendKey, boolean detect,
                           ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
                           boolean backendStateSync, InetAddress forwardedPeer) {
+        this(transportKey, backendKey, detect, backendType, smoothSetback, backendStateSync, forwardedPeer, false);
+    }
+
+    NetherNetBatchSession(PublicKey transportKey, KeyPair backendKey, boolean detect,
+                          ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
+                          boolean backendStateSync, InetAddress forwardedPeer, boolean rakNetBackend) {
         this.forwardedPeer = forwardedPeer;
+        this.rakNetEncryption = rakNetBackend ? new ac.navro.proxy.protocol.RakNetBackendEncryption() : null;
         this.state = new SessionState(backendType);
         state.setSmoothSetback(smoothSetback);
         this.transportKey=transportKey;this.backendKey=backendKey;this.detect=detect;
@@ -133,6 +142,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
     public Result process(boolean backend,byte[] batch)throws Exception{
         if(closed)throw new IOException("Session closed");
         if(state.player().disconnectRequested())throw new IOException("Player disconnected by Navro punishment");
+        if (backend && rakNetCipher != null) batch = rakNetCipher.decrypt(batch);
         byte[] payload=unpack(batch);
         var stream=Unpooled.wrappedBuffer(payload);var kept=Unpooled.buffer();
         var names=new ArrayList<String>();boolean changed=false;
@@ -158,6 +168,11 @@ public final class NetherNetBatchSession implements AutoCloseable {
                     if(ac.navro.proxy.backend.BackendStateSync.privatePacket(packet)) {
                         if(backend)state.consumeBackendSync(packet);
                         keep=false;
+                    }else if (backend && rakNetEncryption != null && packet instanceof ServerToClientHandshakePacket handshake) {
+                        if (!authenticated || rakNetCipher != null) throw new IOException("Unexpected RakNet encryption handshake");
+                        rakNetCipher = rakNetEncryption.completeBatchHandshake(handshake.getJwt());
+                        queueBackend(new ClientToServerHandshakePacket());
+                        keep = false;
                     }else if(backend){
                         if (packet instanceof StartGamePacket start && !runtimePalettes.isEmpty()
                                 && !start.isBlockNetworkIdsHashed() && (start.getBlockPalette() == null || start.getBlockPalette().isEmpty())
@@ -306,6 +321,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
             var marker=new NetworkStackLatencyPacket();marker.setTimestamp(id);marker.setFromServer(true);extra.add(encode(marker));
         }
         var upstream=List.copyOf(backendQueue);backendQueue.clear();
+        if (rakNetCipher != null) upstream = upstream.stream().map(rakNetCipher::encrypt).toList();
         return new Result(forwarded,List.copyOf(extra),upstream,List.copyOf(names),authenticated);
     }
     private void queueClient(BedrockPacket packet){try{clientQueue.add(encode(packet));}catch(Exception e){throw new IllegalStateException("Cannot encode NetherNet correction",e);}}
@@ -325,6 +341,10 @@ public final class NetherNetBatchSession implements AutoCloseable {
             throw new IOException("NetherNet login has no authenticated transport identity");
         var chain=EncryptionUtils.validatePayload(login.getAuthPayload());
         if(!chain.signed())throw new IOException("Invalid NetherNet login signature");
+        if (rakNetEncryption != null && (login.getAuthPayload().getAuthType() != AuthType.FULL
+                || chain.identityClaims().extraData.xuid == null || !chain.identityClaims().extraData.xuid.matches("[0-9]{1,20}"))) {
+            throw new IOException("RakNet forwarding requires a verified Xbox login with an XUID");
+        }
         var key=chain.identityClaims().parsedIdentityPublicKey();
         if(!MessageDigest.isEqual(key.getEncoded(),transportKey.getEncoded()))throw new IOException("NetherNet transport public key differs from login key");
         byte[] clientData=EncryptionUtils.verifyClientData(login.getClientJwt(),key);
@@ -335,6 +355,9 @@ public final class NetherNetBatchSession implements AutoCloseable {
         try{state.player().setDeviceOs(com.google.gson.JsonParser.parseString(new String(clientData,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject().get("DeviceOS").getAsInt());}
         catch(RuntimeException e){state.player().setDeviceOs(-1);}
         if(detect){NetherNetAlerts.register(identity,alertRecipient);NetherNetAlerts.commands().attach(identity,state);}
+        if (rakNetEncryption != null) {
+            return rakNetEncryption.login(login.getProtocolVersion(), verified, chain.rawIdentityClaims(), clientData);
+        }
         if(backendKey==null)return null;
         if(forwardedPeer!=null){
             String xuid=chain.identityClaims().extraData.xuid;

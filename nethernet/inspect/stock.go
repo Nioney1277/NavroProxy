@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -40,15 +41,20 @@ func stockSignaling() *endpoint.Client {
 	}}).New()
 }
 
-func stockBridge(front, back *nethernet.Conn, ipc net.Conn, in *bufio.Reader, out *bufio.Writer) error {
+type batchConn interface {
+	Context() context.Context
+	ReadPacket() ([]byte, error)
+	Write([]byte) (int, error)
+}
+
+func bridgeBatches(front, back batchConn, ipc net.Conn, in *bufio.Reader, out *bufio.Writer) error {
 	const maxGroupCount = 64
 	const maxGroupBytes = 2 << 20
-
 
 	events := make(chan event)
 	done := make(chan struct{})
 	defer close(done)
-	read := func(conn *nethernet.Conn, backend bool) {
+	read := func(conn batchConn, backend bool) {
 		for {
 			batch, err := conn.ReadPacket()
 			select {
@@ -101,14 +107,14 @@ func stockBridge(front, back *nethernet.Conn, ipc net.Conn, in *bufio.Reader, ou
 				break drain
 			}
 		}
-		if err := exchangeStockGroup(front, back, ipc, in, out, group); err != nil {
+		if err := exchangeBatchGroup(front, back, ipc, in, out, group); err != nil {
 			return err
 		}
 		clear(group)
 	}
 }
 
-func exchangeStockGroup(front, back *nethernet.Conn, ipc net.Conn, in *bufio.Reader, out *bufio.Writer, group []event) error {
+func exchangeBatchGroup(front, back batchConn, ipc net.Conn, in *bufio.Reader, out *bufio.Writer, group []event) error {
 	const maxBatch = 16 << 20
 	if err := ipc.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
 		return err
@@ -142,7 +148,7 @@ func exchangeStockGroup(front, back *nethernet.Conn, ipc net.Conn, in *bufio.Rea
 	for _, item := range group {
 		var size int32
 		if err := binary.Read(in, binary.BigEndian, &size); err != nil {
-			return fmt.Errorf("stock Geyser adapter reply: %w", err)
+			return fmt.Errorf("native batch adapter reply: %w", err)
 		}
 		if size != -1 {
 			if item.tick {
@@ -152,23 +158,23 @@ func exchangeStockGroup(front, back *nethernet.Conn, ipc net.Conn, in *bufio.Rea
 			if item.backend {
 				dst = front
 			}
-			if err := forwardStockBatch(in, dst, size); err != nil {
+			if err := forwardBatch(in, dst, size); err != nil {
 				return err
 			}
 		}
-		for _, dst := range []*nethernet.Conn{front, back} {
+		for _, dst := range []batchConn{front, back} {
 			var count uint32
 			if err := binary.Read(in, binary.BigEndian, &count); err != nil {
 				return err
 			}
 			if count > 4096 {
-				return errors.New("too many stock Geyser adapter outputs")
+				return errors.New("too many native batch adapter outputs")
 			}
 			for range count {
 				if err := binary.Read(in, binary.BigEndian, &size); err != nil {
 					return err
 				}
-				if err := forwardStockBatch(in, dst, size); err != nil {
+				if err := forwardBatch(in, dst, size); err != nil {
 					return err
 				}
 			}
@@ -177,9 +183,9 @@ func exchangeStockGroup(front, back *nethernet.Conn, ipc net.Conn, in *bufio.Rea
 	return nil
 }
 
-func forwardStockBatch(in io.Reader, dst *nethernet.Conn, size int32) error {
+func forwardBatch(in io.Reader, dst batchConn, size int32) error {
 	if size <= 0 || size > 16<<20 {
-		return errors.New("invalid stock Geyser adapter output size")
+		return errors.New("invalid native batch adapter output size")
 	}
 	batch := make([]byte, int(size))
 	if _, err := io.ReadFull(in, batch); err != nil {

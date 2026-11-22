@@ -23,6 +23,7 @@ public final class NetherNetInspectServer {
     private static final int DETECT_BRIDGE_MAGIC = 0x4e564234;
     private static final int GROUPED_BRIDGE_MAGIC = 0x4e564235;
     private static final int STOCK_BACKEND_MAGIC = 0x4e564236;
+    private static final int RAKNET_BACKEND_MAGIC = 0x4e564237;
     private static final int MAX_GROUP_COUNT = 64;
     private static final int MAX_GROUP_BYTES = 2 * 1024 * 1024;
 
@@ -82,8 +83,9 @@ public final class NetherNetInspectServer {
             socket.setSoTimeout(30000);
             int magic=in.readInt();
             boolean stockBackend=magic==STOCK_BACKEND_MAGIC;
+            boolean rakNetBackend=magic==RAKNET_BACKEND_MAGIC;
             if(stockBackend&&!allowStockBackend)throw new IOException("Stock Geyser backend mode is disabled");
-            boolean grouped=stockBackend||magic==GROUPED_BRIDGE_MAGIC;
+            boolean grouped=stockBackend||rakNetBackend||magic==GROUPED_BRIDGE_MAGIC;
             boolean detectBridge=grouped||magic==DETECT_BRIDGE_MAGIC;
             boolean duplex=magic==0x4e564233||detectBridge;
             if(magic!=0x4e564231&&magic!=0x4e564232&&!duplex)throw new IOException("Invalid NetherNet IPC handshake");
@@ -110,7 +112,8 @@ public final class NetherNetInspectServer {
                     throw new IOException("Invalid frontend address");
             }
             boolean detect=detectBridge||magic==0x4e564233&&in.readBoolean();
-            try(var session=new NetherNetBatchSession(key,backendKey,detect,backendType,smoothSetback,!detectBridge || stockBackend && allowBackendStateSync,peerAddress)){
+            boolean backendStateSync = !detectBridge || rakNetBackend || stockBackend && allowBackendStateSync;
+            try(var session=new NetherNetBatchSession(key,backendKey,detect,backendType,smoothSetback,backendStateSync,peerAddress,rakNetBackend)){
                 session.setRuntimePalettes(palettes);
                 session.setOperatorCommandTable(restrictCommandTable);
                 if(detectBridge){out.writeInt(magic);out.flush();}
