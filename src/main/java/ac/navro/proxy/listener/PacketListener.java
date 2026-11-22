@@ -40,6 +40,7 @@ public final class PacketListener {
             Timer timer = (Timer) player.getCheckHolder().get(Timer.class);
             if (player.checkEnabled(Timer.class) && timer.isInvalid()) {
                 state.observeRejectedClient(packet, "Timer", "rejected tick=" + input.getTick());
+                state.correctRejectedTimerInput();
                 return false;
             }
             if(player.checkEnabled(NegativeTimer.class))negativeTimer.onAuthInput(input);

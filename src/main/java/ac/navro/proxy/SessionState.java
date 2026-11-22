@@ -362,6 +362,19 @@ public final class SessionState {
         predictionHistory.put(tick, frame);
         teleports.setLastKnowValid(frame.position());
     }
+    public void correctRejectedTimerInput() {
+        if (player.disconnectRequested() || !spawned || awaitingBackendSpawnPosition || player.awaitingRespawnHealth()
+                || teleports.isTeleporting() || teleports.hasPendingCorrection()
+                || player.isMovementExempted() || predictionHistory.isEmpty()) return;
+        var source = predictionHistory.lastEntry();
+        rewindPrediction(source.getKey());
+        if (player.worldDiagnostics() != null && (teleports.isTeleporting() || teleports.hasPendingCorrection()))
+            player.worldDiagnostics().event("timer_movement_correction",
+                    ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
+                            "sourceTick", source.getKey(), "clientFrame", player.simulationFrame(),
+                            "hard", teleports.isHardTeleporting(), "target", source.getValue().position().toVector3f()));
+    }
+
     public void rewindPrediction(long tick){
         if(teleports.isTeleporting() || teleports.hasPendingCorrection() || player.isMovementExempted())return;
         var frame=predictionHistory.get(tick);

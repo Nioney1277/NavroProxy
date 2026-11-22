@@ -21,7 +21,6 @@ import ac.navro.proxy.check.api.impl.OffsetHandlerCheck;
 
 import ac.navro.anticheat.util.math.*;
 import ac.navro.proxy.SessionState;
-import ac.navro.proxy.check.impl.prediction.Prediction;
 import ac.navro.proxy.collision.ProtocolEntityTolerance;
 import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData;
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
@@ -177,9 +176,7 @@ public final class AuthInputPackets {
         }
         boolean checked=!player.insideUnloadedChunk && player.vehicleData==null
                 && session.player().gameType()!=GameType.SPECTATOR && !session.teleports().isTeleporting();
-        boolean inCorrection = session.teleports().hasPendingCorrection() || session.teleports().isCorrectionCooldown();
         for(var check:session.player().getCheckHolder().values()){
-            if (inCorrection && check instanceof Prediction) continue;
             if(check instanceof OffsetHandlerCheck handler && session.player().checkEnabled(check.getClass()))
                 handler.onPredictionComplete(offset,checked);
         }
