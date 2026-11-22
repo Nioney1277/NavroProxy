@@ -29,12 +29,15 @@ public final class ServerChunkPackets {
     private final LinkedHashMap<Long,byte[]> blobs=new LinkedHashMap<>(16,.75F,true);
     private final LinkedHashMap<SectionKey,Pending> pending=new LinkedHashMap<>();
     private int blobBytes,overlayCount;
+    private long paletteGeneration;
     private static final int MAX_BLOB_BYTES=16*1024*1024,MAX_PENDING=4096;
     private void trace(String event,Object... values){var log=player.worldDiagnostics();if(log!=null)log.event(event,WorldCollisionDiagnostics.fields(values));}
     private void queueAck(BedrockPacket packet,Map<String,Object> fields,Runnable task){
+        long generation = paletteGeneration;
         String kind=packet.getClass().getSimpleName();fields.put("packet",kind);fields.put("encoderAttached",player.getEntityBatchEncoder()!=null);
         var log=player.worldDiagnostics();long id=log==null?-1:log.event("world_queued",fields);
         player.queueAcknowledgment(packet,()->{
+            if (generation != paletteGeneration) return;
             trace("world_ack","worldEvent",id,"packet",kind,"ackId",player.getLatencyUtil().currentAcknowledgmentId());
             try{task.run();}catch(RuntimeException|Error error){trace("world_task_error","worldEvent",id,"error",error.toString());throw error;}
         });
@@ -53,6 +56,14 @@ public final class ServerChunkPackets {
     public ServerChunkPackets(WirePlayerState player, CompensatedWorld world) {
         this.player = player;
         this.world = world;
+    }
+
+    public void resetPalette() {
+        paletteGeneration++;
+        blobs.clear();
+        pending.clear();
+        blobBytes = 0;
+        overlayCount = 0;
     }
 
     public void onPacket(BedrockPacket packet) {

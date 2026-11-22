@@ -30,10 +30,11 @@ final class NativeStateSync{
     private const CHANNEL = "navro:backend_sync_v1";
     private const MAX_ALERT_BYTES = 4096;
     private const MAX_PALETTE_BYTES = 512 * 1024;
+    private const PALETTE_PART_BYTES = 30_000;
 
     /** @var WeakMap<NetworkSession, BackendPlayerSync> */
     private WeakMap $sessions;
-    /** @var WeakMap<object, array<int, string>> */
+    /** @var WeakMap<object, array<int, array{states: array, message: string}>> */
     private WeakMap $palettes;
 
     public function __construct(private readonly NavroBridge $plugin){
@@ -126,7 +127,8 @@ final class NativeStateSync{
 
     private function beforeWorldPacket(DataPacketSendEvent $event) : void{
         foreach($event->getPackets() as $packet){
-            if($packet instanceof StartGamePacket && !$packet->blockNetworkIdsAreHashes && $packet->blockPalette !== []){
+            // StartGame's blockPalette contains custom definitions, not the ordered runtime ID table.
+            if($packet instanceof StartGamePacket && !$packet->blockNetworkIdsAreHashes){
                 foreach($event->getTargets() as $session){
                     if($this->plugin->trusts($session)){
                         $this->sendRuntimePalette($session);
@@ -149,15 +151,17 @@ final class NativeStateSync{
     private function sendRuntimePalette(NetworkSession $session) : void{
         $dictionary = $session->getTypeConverter()->getBlockTranslator()->getBlockStateDictionary();
         $protocol = method_exists($session, "getProtocolId") ? $session->getProtocolId() : ProtocolInfo::CURRENT_PROTOCOL;
-        $message = $this->palettes[$dictionary][$protocol] ?? null;
-        if($message === null){
+        $states = $dictionary->getStates();
+        $cached = $this->palettes[$dictionary][$protocol] ?? null;
+        $message = $cached["message"] ?? "";
+        if($cached === null || $cached["states"] !== $states){
             try{
-                $states = $dictionary->getStates();
-                ksort($states, SORT_NUMERIC);
-                if(!array_is_list($states) || count($states) > 131072){
+                $ordered = $states;
+                ksort($ordered, SORT_NUMERIC);
+                if(!array_is_list($ordered) || count($ordered) > 131072){
                     throw new \RuntimeException("Invalid runtime block state table");
                 }
-                $serialized = array_map(static fn($entry) => $entry->generateStateData()->toNbt(), $states);
+                $serialized = array_map(static fn($entry) => $entry->generateStateData()->toNbt(), $ordered);
                 $root = CompoundTag::create()->setInt("protocol", $protocol)->setTag("states", new ListTag($serialized));
                 $compressed = gzencode((new BigEndianNbtSerializer())->write(new TreeRoot($root)));
                 if($compressed === false){
@@ -172,11 +176,23 @@ final class NativeStateSync{
                 $message = "";
             }
             $entries = $this->palettes[$dictionary] ?? [];
-            $entries[$protocol] = $message;
+            $entries[$protocol] = ["states" => $states, "message" => $message];
             $this->palettes[$dictionary] = $entries;
         }
-        if($message !== ""){
+        if($message === ""){
+            return;
+        }
+        if(strlen($message) <= self::PALETTE_PART_BYTES){
             $session->sendDataPacket(ScriptMessagePacket::create(self::CHANNEL, $message));
+            return;
+        }
+        $parts = str_split($message, self::PALETTE_PART_BYTES);
+        foreach($parts as $index => $part){
+            if(!$session->sendDataPacket(ScriptMessagePacket::create(
+                self::CHANNEL, "palette_part|" . $index . "|" . count($parts) . "|" . $part
+            ))){
+                break;
+            }
         }
     }
 

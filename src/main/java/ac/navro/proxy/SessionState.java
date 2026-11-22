@@ -134,7 +134,14 @@ public final class SessionState {
         return placementPipeline;
     }
     public void placementTick(){if(placementPipeline!=null)placementPipeline.tick();}
-    public void closePlacement(){if(placementPipeline!=null)placementPipeline.close();}
+    public void closeBackendWorld() {
+        if (placementPipeline != null) placementPipeline.close();
+        backendSync.reset();
+        configuredRuntimePalette = null;
+        serverChunkPackets.resetPalette();
+        world.clear();
+        backendBlocks.clear();
+    }
 
     public void onClientPacketForwarded(BedrockPacket packet) {
         boolean inventoryAction = packet instanceof ItemStackRequestPacket
@@ -303,9 +310,9 @@ public final class SessionState {
         backendBlocks.setProtocolVersion(protocolVersion);
     }
 
+    private ac.navro.proxy.data.block.NetworkBlockStateRegistry.RuntimePalette configuredRuntimePalette;
     public void setRuntimeBlockPalette(ac.navro.proxy.data.block.NetworkBlockStateRegistry.RuntimePalette palette) {
-        world.setRuntimeBlockPalette(palette);
-        backendBlocks.setRuntimeBlockPalette(palette);
+        configuredRuntimePalette = palette;
     }
 
     private boolean detectionEnabled;
@@ -690,6 +697,13 @@ public final class SessionState {
 
     public void observeBackend(BedrockPacket packet) {
         if(consumeBackendSync(packet))return;
+        if (packet instanceof StartGamePacket) {
+            var supplied = backendSync.takeRuntimePalette();
+            var palette = supplied != null ? supplied : configuredRuntimePalette;
+            world.setRuntimeBlockPalette(palette);
+            backendBlocks.setRuntimeBlockPalette(palette);
+            serverChunkPackets.resetPalette();
+        }
         serverRewindPackets.capture(player, packet);
         backendBlocks.observe(packet);
         backendInventories.observe(packet);

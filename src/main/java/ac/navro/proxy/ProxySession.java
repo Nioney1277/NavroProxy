@@ -468,7 +468,7 @@ public final class ProxySession {
         backendEncryptionTimeout = null;
         backendEncryption = null;
         pendingLogin = null;
-        state.closePlacement();
+        state.closeBackendWorld();
         if(state.player().worldDiagnostics()!=null)state.player().worldDiagnostics().event("session_close",java.util.Map.of());
         if (identity != null) { proxy.removeAlertRecipient(identity, alertRecipient);proxy.commands().detach(identity,state); }
         if (serverTickTask != null) serverTickTask.cancel(false);

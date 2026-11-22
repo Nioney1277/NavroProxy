@@ -20,11 +20,12 @@ public final class BackendBlockSnapshots {
     public void setProtocolVersion(int protocol) { world.setProtocolVersion(protocol); }
     public void setRuntimeBlockPalette(RuntimePalette palette) { world.setRuntimeBlockPalette(palette); }
     public long generation() { return generation; }
+    public void clear() { generation++; packets.resetPalette(); world.clear(); }
 
     public void observe(BedrockPacket packet) {
         if (packet instanceof StartGamePacket start) {
             generation++;
-            world.clearChunks();
+            packets.resetPalette();
             world.apply(start);
         } else if (packet instanceof ChangeDimensionPacket change) {
             generation++;

@@ -376,7 +376,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
         }finally{frame.release();}
     }
     @Override public void close(){
-        closed=true;withheldCommandTable=null;state.closePlacement();state.player().getLatencyUtil().close();pending.clear();clientQueue.clear();backendQueue.clear();messages.clear();
+        closed=true;withheldCommandTable=null;state.closeBackendWorld();state.player().getLatencyUtil().close();pending.clear();clientQueue.clear();backendQueue.clear();messages.clear();
         if(identity!=null&&detect){NetherNetAlerts.remove(identity,alertRecipient);NetherNetAlerts.commands().detach(identity,state);}
     }
 }
