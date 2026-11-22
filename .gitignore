@@ -1,6 +1,10 @@
 .gradle/
 build/
 out/
+*.phar
+NavroProxy-*.jar
+NavroBackendBridge.jar
+NavroFireworkBridge.jar
 *.iml
 .idea/
 .vscode/
@@ -37,3 +41,4 @@ local.properties
 !/src/main/resources/messages.yml
 
 !/src/main/resources/punishments.yml
+!/backend/pocketmine-mp/resources/config.yml

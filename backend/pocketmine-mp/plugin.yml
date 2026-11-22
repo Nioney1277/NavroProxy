@@ -1,0 +1,15 @@
+name: NavroBridge
+version: 1.0.0
+main: ac\navro\bridge\NavroBridge
+api: [5.0.0]
+description: Bridges NavroProxy alerts and server state on PocketMine-MP
+softdepend: [Customies, Customies-NG]
+commands:
+  navroalerts:
+    description: Toggle your NavroProxy alerts in chat
+    usage: "/navroalerts"
+    permission: navrobridge.alerts
+permissions:
+  navrobridge.alerts:
+    description: Receive NavroProxy alerts in chat
+    default: op

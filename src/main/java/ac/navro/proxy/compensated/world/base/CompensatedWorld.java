@@ -169,11 +169,12 @@ public class CompensatedWorld {
     public void setProtocolVersion(int version) { protocolVersion = version; }
     public void setRuntimeBlockPalette(NetworkBlockStateRegistry.RuntimePalette palette) { runtimeBlockPalette = palette; }
     public void apply(StartGamePacket packet) {
+        var registry = NetworkBlockStateRegistry.fromStartGame(protocolVersion, packet, runtimeBlockPalette);
+        clear();
         dimension = packet.getDimensionId();
         blockRegistryChecksum = packet.getBlockRegistryChecksum();
         hashedBlockIds = packet.isBlockNetworkIdsHashed();
-        palette.clear();
-        blockStates = NetworkBlockStateRegistry.fromStartGame(protocolVersion, packet, runtimeBlockPalette);
+        blockStates = registry;
         airNetworkId = blockStates.airNetworkId();
     }
 
@@ -708,7 +709,19 @@ public class CompensatedWorld {
                 if (layer != null) count += layer.length;
         return count;
     }
-    public void clear() { clearChunks(); palette.clear(); blockStates = null; }
+    public void clear() {
+        clearChunks();
+        palette.clear();
+        shulkerCollisions.clear();
+        collisionPhysics.reset();
+        runtimeBlockPalette = null;
+        blockStates = null;
+        blockRegistryChecksum = 0;
+        hashedBlockIds = false;
+        airNetworkId = 0;
+        radius = 0;
+        radiusCenter = null;
+    }
     public void changeDimension(int value) { clearChunks(); setDimension(value); }
     public void setDimension(int value) {
         if (dimension != value) {

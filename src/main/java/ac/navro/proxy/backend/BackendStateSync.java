@@ -2,23 +2,39 @@ package ac.navro.proxy.backend;
 
 import ac.navro.proxy.SessionState;
 import org.cloudburstmc.protocol.bedrock.packet.*;
+import ac.navro.proxy.data.block.NetworkBlockStateRegistry;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.UUID;
 
 
 public final class BackendStateSync {
     public static final String CHANNEL="navro:backend_sync_v1";
+    private static final int MAX_PALETTE_MESSAGE = 512 * 1024;
+    private static final int PALETTE_PART_BYTES = 30_000;
+    private static final int MAX_PALETTE_PARTS = (MAX_PALETTE_MESSAGE + PALETTE_PART_BYTES - 1) / PALETTE_PART_BYTES;
+    private static final int MAX_ALERT_BYTES = 4096;
     private final SessionState state;
     private final java.util.function.LongSupplier clock;
     private String nonce;
     private long sequence=-1, receivedAt;
     private int tick;
     private boolean active;
+    private boolean pocketMineAlerts;
+    private NetworkBlockStateRegistry.RuntimePalette pendingPalette;
+    private StringBuilder paletteParts;
+    private int expectedPart, palettePartCount;
     public BackendStateSync(SessionState state) { this(state,System::nanoTime); }
     BackendStateSync(SessionState state,java.util.function.LongSupplier clock) {
         this.state=state;this.clock=clock;
     }
     public void reset() {
-        nonce=null;sequence=-1;active=false;receivedAt=0;
+        nonce=null;sequence=-1;tick=0;active=false;pocketMineAlerts=false;receivedAt=0;
+        pendingPalette = null;
+        paletteParts = null;
+        expectedPart = palettePartCount = 0;
         state.world().clearNativeServerClock();
     }
     public ScriptMessagePacket begin() {
@@ -30,10 +46,80 @@ public final class BackendStateSync {
         return packet instanceof ScriptMessagePacket message && CHANNEL.equals(message.getChannel());
     }
 
+    public ScriptMessagePacket alert(String message) {
+        if (!pocketMineAlerts || !available() || message.getBytes(StandardCharsets.UTF_8).length > MAX_ALERT_BYTES)
+            return null;
+        var packet = new ScriptMessagePacket();
+        packet.setChannel(CHANNEL);
+        packet.setMessage("alert|" + nonce + "|" + message);
+        return packet;
+    }
+
+    private void receivePalette(String message) {
+        if (pendingPalette != null || message.length() > MAX_PALETTE_MESSAGE) return;
+        try {
+            byte[] compressed = Base64.getDecoder().decode(message.substring("palette|".length()));
+            var palette = NetworkBlockStateRegistry.readRuntimePalette(new ByteArrayInputStream(compressed));
+            if (palette.protocol() == state.world().protocolVersion()) {
+                pendingPalette = palette;
+            }
+        } catch (IOException | IllegalArgumentException error) {
+            System.err.println("[NavroProxy] Invalid PM block palette: " + error.getMessage());
+        }
+    }
+
+    private void receivePalettePart(String message) {
+        if (pendingPalette != null || message.length() > PALETTE_PART_BYTES + 32) return;
+        String[] fields = message.split("\\|", 4);
+        if (fields.length != 4) return;
+        try {
+            int index = Integer.parseInt(fields[1]);
+            int count = Integer.parseInt(fields[2]);
+            String part = fields[3];
+            if (count < 2 || count > MAX_PALETTE_PARTS || index < 0 || index >= count
+                    || part.isEmpty() || part.length() > PALETTE_PART_BYTES
+                    || index < count - 1 && part.length() != PALETTE_PART_BYTES) {
+                paletteParts = null;
+                return;
+            }
+            if (index == 0) {
+                paletteParts = new StringBuilder();
+                palettePartCount = count;
+                expectedPart = 0;
+            }
+            if (paletteParts == null || index != expectedPart || count != palettePartCount
+                    || (long) paletteParts.length() + part.length() > MAX_PALETTE_MESSAGE) {
+                paletteParts = null;
+                return;
+            }
+            paletteParts.append(part);
+            if (++expectedPart == count) {
+                String complete = paletteParts.toString();
+                paletteParts = null;
+                if (complete.startsWith("palette|")) receivePalette(complete);
+            }
+        } catch (NumberFormatException ignored) {
+            paletteParts = null;
+        }
+    }
+
     public boolean receive(BedrockPacket packet) {
         if(!privatePacket(packet))return false;
         var message=((ScriptMessagePacket)packet).getMessage();
-        if(nonce==null||message==null||message.length()>256)return true;
+        if (message == null) return true;
+        if (message.startsWith("palette_part|")) {
+            receivePalettePart(message);
+            return true;
+        }
+        if (message.startsWith("palette|")) {
+            receivePalette(message);
+            return true;
+        }
+        if (nonce == null || message.length() > 256) return true;
+        if (message.equals("pm_ready|" + nonce)) {
+            pocketMineAlerts = true;
+            return true;
+        }
         String[] fields=message.split("\\|",-1);
         if(fields.length!=4||!"tick".equals(fields[0])||!nonce.equals(fields[1]))return true;
         try {
@@ -48,5 +134,12 @@ public final class BackendStateSync {
         return true;
     }
     public boolean available() { return active&&clock.getAsLong()-receivedAt<1_000_000_000L; }
+    public boolean isPocketMine() { return pocketMineAlerts; }
+    public boolean hasRuntimePalette() { return pendingPalette != null; }
+    public NetworkBlockStateRegistry.RuntimePalette takeRuntimePalette() {
+        var palette = pendingPalette;
+        pendingPalette = null;
+        return palette;
+    }
     public int tick() { return tick; }
 }

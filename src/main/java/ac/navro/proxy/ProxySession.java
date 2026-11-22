@@ -66,6 +66,7 @@ public final class ProxySession {
     private io.netty.util.concurrent.ScheduledFuture<?> backendEncryptionTimeout;
     private io.netty.util.concurrent.ScheduledFuture<?> serverTickTask;
     private java.util.UUID identity;
+    private java.util.Set<String> proxyCommandNames = ac.navro.proxy.command.NavroCommand.NAMES;
     private final java.util.function.Consumer<String> alertRecipient = this::sendAlertMessage;
 
     public ProxySession(NavroProxy proxy, BedrockServerSession client) {
@@ -85,8 +86,12 @@ public final class ProxySession {
                 state.player(), () -> !closed.get() && clientHandshakeAccepted, state::onProxyBlockCorrection);
         state.setBlockCorrectionTransport((position, blocks) ->
                 blockCorrections.restoreCorrectBlock(position, blocks.layerZero(), blocks.layerOne()));
-        state.player().setAlertSink(proxy.getAlertManager()::alert);
-        state.player().setFormattedAlertSink(proxy.getAlertManager()::formattedAlert);
+        var alerts = proxy.getAlertManager();
+        state.player().setFormattedAlertSink(message -> {
+            alerts.formattedAlert(message);
+            state.forwardBackendAlert(message);
+        });
+        state.player().setAlertSink(message -> state.player().formattedAlert(alerts.getPrefix() + "§3" + message));
         state.player().setDisconnectSink(reason->client.getPeer().getChannel().eventLoop().execute(()->disconnect(reason)));
         state.player().setCorrectionRequestSink(this::log);
         state.player().setMaxBalanceAdvantageMs(proxy.config().maxBalanceAdvantageMs());
@@ -209,7 +214,7 @@ public final class ProxySession {
                     public String name(){return state.player().getName();}
                     public boolean hasPermission(String node){return proxy.permissions().hasPermission(identity,node,permissions.isOperator());}
                     public void sendMessage(String message){sendAlertMessage(message);}
-                },proxy.getAlertManager(),proxy.commands()))return;
+                },proxy.getAlertManager(),proxy.commands(),proxyCommandNames))return;
         forwardToBackend(packet);
     }
 
@@ -374,7 +379,9 @@ public final class ProxySession {
         PacketListener.onPacketSent(state.player(), packet);
         state.observeBackend(packet);
         if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands)
-            ac.navro.proxy.command.NavroCommand.advertise(commands);
+            proxyCommandNames = state.isPocketMineBackend()
+                    ? ac.navro.proxy.command.NavroCommand.unclaimedNames(commands)
+                    : ac.navro.proxy.command.NavroCommand.advertise(commands);
         if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.StartGamePacket && serverTickTask == null) {
             serverTickTask = client.getPeer().getChannel().eventLoop().scheduleAtFixedRate(this::serverTick,
                     50, 50, java.util.concurrent.TimeUnit.MILLISECONDS);
@@ -404,7 +411,8 @@ public final class ProxySession {
         } else if (packet instanceof NetworkStackLatencyPacket latency) {
 
             client.sendPacket(latency.clone());
-        } else if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands){
+        } else if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands
+                && !state.isPocketMineBackend()){
             client.sendPacket(commands);
         } else if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket move
                 &&move.getRuntimeEntityId()==state.player().runtimeId()
@@ -460,7 +468,7 @@ public final class ProxySession {
         backendEncryptionTimeout = null;
         backendEncryption = null;
         pendingLogin = null;
-        state.closePlacement();
+        state.closeBackendWorld();
         if(state.player().worldDiagnostics()!=null)state.player().worldDiagnostics().event("session_close",java.util.Map.of());
         if (identity != null) { proxy.removeAlertRecipient(identity, alertRecipient);proxy.commands().detach(identity,state); }
         if (serverTickTask != null) serverTickTask.cancel(false);

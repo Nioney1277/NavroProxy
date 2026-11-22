@@ -1,0 +1,6 @@
+# Source addresses of NavroProxy's game connections to PocketMine-MP.
+trusted-proxy-addresses:
+  - "127.0.0.1"
+  - "::1"
+console-alerts: true
+staff-chat-alerts: true

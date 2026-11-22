@@ -136,6 +136,14 @@ public final class SessionState {
     }
     public void placementTick(){if(placementPipeline!=null)placementPipeline.tick();}
     public void closePlacement(){if(placementPipeline!=null)placementPipeline.close();}
+    public void closeBackendWorld() {
+        if (placementPipeline != null) placementPipeline.close();
+        backendSync.reset();
+        configuredRuntimePalette = null;
+        serverChunkPackets.resetPalette();
+        world.clear();
+        backendBlocks.clear();
+    }
 
     public void onClientPacketForwarded(BedrockPacket packet) {
         boolean inventoryAction = packet instanceof ItemStackRequestPacket
@@ -191,6 +199,16 @@ public final class SessionState {
     }
     public ac.navro.proxy.backend.BackendStateSync backendSync() { return backendSync; }
     public boolean consumeBackendSync(BedrockPacket packet) { return backendSync.receive(packet); }
+
+    public boolean isPocketMineBackend() {
+        return backendSync.isPocketMine() || backendProfile != null && backendProfile.serverEngine() != null
+                && backendProfile.serverEngine().toLowerCase(java.util.Locale.ROOT).contains("pocketmine");
+    }
+
+    public void forwardBackendAlert(String message) {
+        var packet = backendSync.alert(message);
+        if (packet != null) backendSyncTransport.accept(packet);
+    }
     private final CompensatedInventory inventory = new CompensatedInventory(player);
     private final ac.navro.proxy.validator.inventory.ItemTransactionValidator transactionValidator =
             new ac.navro.proxy.validator.inventory.ItemTransactionValidator(player, inventory);
@@ -294,7 +312,9 @@ public final class SessionState {
         backendBlocks.setProtocolVersion(protocolVersion);
     }
 
+    private ac.navro.proxy.data.block.NetworkBlockStateRegistry.RuntimePalette configuredRuntimePalette;
     public void setRuntimeBlockPalette(ac.navro.proxy.data.block.NetworkBlockStateRegistry.RuntimePalette palette) {
+        configuredRuntimePalette = palette;
         world.setRuntimeBlockPalette(palette);
         backendBlocks.setRuntimeBlockPalette(palette);
     }
@@ -681,6 +701,13 @@ public final class SessionState {
 
     public void observeBackend(BedrockPacket packet) {
         if(consumeBackendSync(packet))return;
+        if (packet instanceof StartGamePacket) {
+            var supplied = backendSync.takeRuntimePalette();
+            var palette = supplied != null ? supplied : configuredRuntimePalette;
+            world.setRuntimeBlockPalette(palette);
+            backendBlocks.setRuntimeBlockPalette(palette);
+            serverChunkPackets.resetPalette();
+        }
         serverRewindPackets.capture(player, packet);
         backendBlocks.observe(packet);
         backendInventories.observe(packet);
