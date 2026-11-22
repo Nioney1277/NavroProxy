@@ -80,6 +80,29 @@ The NetherNet frontend requires Go 1.26 or later and runs alongside the Java pro
 - Nukkit bridge source and build script: `backend/nukkit/`.
 - PocketMine-MP 5 bridge source and build script: `backend/pocketmine-mp/`.
 
+### PocketMine-MP-NG over NetherNet
+
+Install `NavroBackendBridge.phar` and generate a signing key on the proxy host. Copy `navro-backend.pub.pem` to the bridge's data directory and set `private-nethernet.enabled: true` in its `config.yml`. Keep the private PEM on Navro. The bridge listens on `127.0.0.1:19608` over TCP and uses loopback UDP 20000–20127 by default. Disable `network.nethernet.enabled` in PocketMine's `pocketmine.yml` if the bridge is the sole NetherNet listener. `network.raklib.enabled` can also be disabled for a NetherNet-only setup.
+
+```powershell
+.\navro-nethernet.exe -init-backend-signing-key .\keys\navro-backend.pem
+java -cp ".\lib\*" ac.navro.proxy.nethernet.NetherNetInspectServer 19138
+.\navro-nethernet.exe -listen 0.0.0.0:19132 -backend http://127.0.0.1:19608 -adapter 127.0.0.1:19138 -detect -offline-backend -backend-signing-key .\keys\navro-backend.pem
+```
+
+### PocketMine-MP-NG over RakNet
+
+Keep the PocketMine-MP-NG RakLib listener on loopback (`server-ip=127.0.0.1`, `server-port=19608`, and `network.raklib.enabled: true`). This mode uses PocketMine-MP-NG's existing local proxy login support. Xbox authentication and backend encryption can stay enabled.
+
+Start the Java adapter from the NavroProxy distribution directory, then start the Go frontend:
+
+```powershell
+java -cp ".\lib\*" ac.navro.proxy.nethernet.NetherNetInspectServer 19138
+.\navro-nethernet.exe -listen 0.0.0.0:19132 -backend raknet://127.0.0.1:19608 -adapter 127.0.0.1:19138 -detect
+```
+
+26.60 clients connect to the Go frontend over NetherNet. TCP 19132 is used for signaling and UDP 19210–19273 for ICE in either backend mode. The RakNet backend uses loopback UDP 19608.
+
 AirLiquidPlace and RotationPlace require a valid native server tick from the backend bridge. They automatically disable when samples are missing, stale, or reset; FarPlace and ordinary inventory validation remain active. RotationPlace timeouts use only backend ticks. Missing selection data skips local placement prediction without a confirmation wait or timeout cancellation.
 
 

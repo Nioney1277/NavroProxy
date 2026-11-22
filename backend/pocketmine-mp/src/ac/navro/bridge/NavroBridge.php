@@ -7,6 +7,7 @@ namespace ac\navro\bridge;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\network\mcpe\nethernet\NetherNetInterface;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
@@ -19,6 +20,7 @@ final class NavroBridge extends PluginBase{
     private bool $staffChatAlerts;
     private Config $mutedPlayers;
     private ?FireworkBridge $fireworks = null;
+    private ?NetherNetInterface $privateNetherNet = null;
 
     protected function onEnable() : void{
         $this->saveDefaultConfig();
@@ -34,9 +36,22 @@ final class NavroBridge extends PluginBase{
             $this->fireworks = new FireworkBridge($stateSync);
             $this->fireworks->register($this);
         }
+        $netherNet = $config->get("private-nethernet", []);
+        if(is_array($netherNet) && ($netherNet["enabled"] ?? false) === true){
+            try{
+                $this->privateNetherNet = PrivateNetherNet::start($this, $netherNet);
+                $this->getLogger()->info("Private NetherNet listening on " . $this->privateNetherNet->getAddress());
+            }catch(\Exception $error){
+                $this->getLogger()->error("Private NetherNet could not start: " . $error->getMessage());
+            }
+        }
     }
 
     protected function onDisable() : void{
+        if($this->privateNetherNet !== null){
+            PrivateNetherNet::stop($this->getServer(), $this->privateNetherNet);
+            $this->privateNetherNet = null;
+        }
         $this->fireworks?->clear();
         $this->fireworks = null;
     }

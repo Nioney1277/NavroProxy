@@ -4,3 +4,11 @@ trusted-proxy-addresses:
   - "::1"
 console-alerts: true
 staff-chat-alerts: true
+
+# Optional PocketMine-MP-NG NetherNet backend for Navro on the same machine.
+private-nethernet:
+  enabled: false
+  signaling-port: 19608
+  ice-port-range: [20000, 20127]
+  max-connections: 128
+  proxy-public-key-file: navro-backend.pub.pem
