@@ -178,10 +178,15 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
     public boolean isAlive() { return !acknowledgedDead; }
     public boolean isExempted() { return exempted; }
     private java.util.Set<String> disabledChecks=java.util.Set.of();
+    private java.util.function.BooleanSupplier nativeServerTickAvailable=()->false;
+    public void setNativeServerTickAvailable(java.util.function.BooleanSupplier available) {
+        nativeServerTickAvailable=java.util.Objects.requireNonNull(available);
+    }
     public void setDisabledChecks(java.util.Set<String> names) { disabledChecks=java.util.Set.copyOf(names); }
     public boolean checkEnabled(Class<?> type) {
         var info=type.getDeclaredAnnotation(ac.navro.proxy.check.api.annotations.CheckInfo.class);
         if(info==null)return true;
+        if(info.requiresServerTick()&&!nativeServerTickAvailable.getAsBoolean())return false;
         String key=info.type().isEmpty()?info.name():info.name()+"-"+info.type();
         if(type==ac.navro.proxy.check.impl.badpackets.BadPacketsC.class
                 &&disabledChecks.contains("BadPacketsC"))return false;

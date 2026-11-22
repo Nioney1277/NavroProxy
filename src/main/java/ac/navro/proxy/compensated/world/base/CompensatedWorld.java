@@ -53,6 +53,12 @@ public class CompensatedWorld {
         nativeClockAvailable=java.util.Objects.requireNonNull(available);
     }
     public boolean hasNativeServerTick(){return nativeServerTick!=null&&nativeClockAvailable.getAsBoolean();}
+    public int nativeServerTick(){return java.util.Objects.requireNonNull(nativeServerTick).getAsInt();}
+    public void clearNativeServerClock() {
+        nativeServerTick=null;
+        recentPlacementSupports.clear();
+        placementSupportHistoryTick=Integer.MIN_VALUE;
+    }
     private final Map<Vector3i, Integer> recentPlacementSupports = new HashMap<>();
     private int placementSupportHistoryTick = Integer.MIN_VALUE;
 

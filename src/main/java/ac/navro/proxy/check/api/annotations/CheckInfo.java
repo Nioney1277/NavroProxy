@@ -14,4 +14,6 @@ public @interface CheckInfo {
     double setback() default 25;
 
     double decay() default 0.05;
+
+    boolean requiresServerTick() default false;
 }

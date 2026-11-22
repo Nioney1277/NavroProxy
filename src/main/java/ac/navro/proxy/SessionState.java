@@ -70,6 +70,7 @@ public final class SessionState {
 
     public SessionState(ac.navro.proxy.protocol.BackendType backendType) {
         this.backendType = java.util.Objects.requireNonNull(backendType);
+        player.setNativeServerTickAvailable(world::hasNativeServerTick);
         player.setNativeSprintSynchronization(backendType == ac.navro.proxy.protocol.BackendType.BDS);
         player.getCheckHolder().put(ac.navro.proxy.check.impl.elytra.ElytraA.class,
                 new ac.navro.proxy.check.impl.elytra.ElytraA(this));

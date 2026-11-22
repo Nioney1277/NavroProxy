@@ -48,13 +48,11 @@ public final class PlacementPipeline
     private final IdentityHashMap<PlayerAuthInputPacket, InventoryTransactionPacket> embedded =
             new IdentityHashMap<>();
     private final ArrayList<Expiry> expiries = new ArrayList<>();
-    private final ArrayList<InventoryTransactionPacket> awaitingFacts = new ArrayList<>();
+    private final Set<InventoryTransactionPacket> skippedPredictions = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<Integer> pendingSlotCorrections = new LinkedHashSet<>();
     private final Map<Cell, Cell> pendingBlockCorrections = new LinkedHashMap<>();
     private final Object[] level = {new Object()};
-    private long ticks;
-
-    private record Expiry(long due, Runnable task) {}
+    private record Expiry(int due, Runnable task) {}
 
     private Function<InventoryTransactionPacket, Boolean> forward = packet -> false;
     private Consumer<BedrockPacket> sendClient = packet -> {};
@@ -89,12 +87,8 @@ public final class PlacementPipeline
                                 return gameType();
                             }
 
-                            public AirLiquidPlace.Support support(Vector3i p) {
-                                return !world().hasNativeServerTick()
-                                        ? AirLiquidPlace.Support.UNKNOWN
-                                        : world().hadRecentPlacementSupport(p)
-                                                ? AirLiquidPlace.Support.RECENT
-                                                : AirLiquidPlace.Support.ABSENT;
+                            public boolean hadRecentPlacementSupport(Vector3i p) {
+                                return world().hadRecentPlacementSupport(p);
                             }
 
                             public int clickedBlockId(Vector3i p) {
@@ -136,33 +130,32 @@ public final class PlacementPipeline
 
 
     private boolean airLiquidCheckAvailable() {
-        return state.player().checkEnabled(AirLiquidPlace.class)&&world().hasNativeServerTick();
+        return state.player().checkEnabled(AirLiquidPlace.class);
+    }
+
+    private boolean rotationCheckAvailable() {
+        if (state.player().checkEnabled(RotationPlace.class)) return true;
+        rotation.disable();
+        expiries.clear();
+        return false;
     }
 
     public PacketEvent begin(BedrockPacket packet) {
         current = new PacketEvent(packet);
         try {
             if (packet instanceof PlayerAuthInputPacket input) {
-                far.onInput(input, false);
+                if(state.player().checkEnabled(FarPlace.class))far.onInput(input, false);
                 if(airLiquidCheckAvailable())air.onInput(input, false);
             }
-            rotation.onPacketReceive(current);
+            if(rotationCheckAvailable())rotation.onPacketReceive(current);
         } catch (MissingFact missing) {
-            if (packet instanceof PlayerAuthInputPacket input) {
-                var transaction = embeddedTransaction(input);
-                if (transaction != null) restoreTransaction(transaction);
-                input.setItemUseTransaction(null);
-                input.getInputData()
-                        .remove(
-                                org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData
-                                        .PERFORM_ITEM_INTERACTION);
-                rotation.onPacketReceive(current);
-            } else awaitData(current, missing);
+            skipIncompletePrediction(packet, missing);
         }
         return current;
     }
 
     public boolean handleTransaction(InventoryTransactionPacket packet) {
+        if (skippedPredictions.contains(packet)) return true;
         if (current != null && current.getPacket() == packet && current.isCancelled()) return false;
         try {
             boolean accepted = state.transactionValidator().handle(packet, this);
@@ -172,41 +165,35 @@ public final class PlacementPipeline
             }
             return accepted;
         } catch (MissingFact missing) {
-            if (current != null) awaitData(current, missing);
-            return false;
+            skipIncompletePrediction(packet, missing);
+            return true;
         }
     }
 
     public boolean finish(PacketEvent event, boolean accepted) {
         if (!accepted) event.setCancelled(true);
         if (event.getPacket() instanceof InventoryTransactionPacket transaction
-                && !state.player().isExempted())
+                && !state.player().isExempted() && state.player().checkEnabled(FarPlace.class))
             event.setCancelled(far.onTransaction(transaction, event.isCancelled()));
-        rotation.finishPacket(event);
+        if(rotationCheckAvailable())rotation.finishPacket(event);
         views.clear();
         embedded.clear();
+        skippedPredictions.clear();
         current = null;
         return !event.isCancelled();
     }
 
-    private void awaitData(PacketEvent event, MissingFact missing) {
-        event.setCancelled(true);
-        if (event.getPacket() instanceof InventoryTransactionPacket transaction) {
-            if (awaitingFacts.size() >= 64) {
-                restoreTransaction(transaction);
-                return;
-            }
-            awaitingFacts.add(transaction);
-            scheduleExpiry(
-                    () -> {
-                        if (awaitingFacts.remove(transaction)) restoreTransaction(transaction);
-                    },
-                    20);
+    private void skipIncompletePrediction(BedrockPacket packet, MissingFact missing) {
+        if (current != null) rotation.skipPacket(current);
+        if (packet instanceof InventoryTransactionPacket transaction) skippedPredictions.add(transaction);
+        else if (packet instanceof PlayerAuthInputPacket input) {
+            var transaction = embeddedTransaction(input);
+            if (transaction != null) skippedPredictions.add(transaction);
         }
         var trace = state.player().worldDiagnostics();
         if (trace != null)
             trace.event(
-                    "placement_confirmation_pending",
+                    "placement_prediction_skipped",
                     ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
                             "reason", missing.getMessage()));
     }
@@ -231,16 +218,18 @@ public final class PlacementPipeline
     }
 
     public void tick() {
-        ticks++;
-        var due = expiries.stream().filter(e -> e.due <= ticks).toList();
-        expiries.removeAll(due);
-        due.forEach(e -> e.task.run());
+        if (rotationCheckAvailable()) {
+            int now = world().nativeServerTick();
+            var due = expiries.stream().filter(e -> now - e.due >= 0).toList();
+            expiries.removeAll(due);
+            due.forEach(e -> e.task.run());
+        }
         flushCorrections();
     }
 
     public void close() {
         expiries.clear();
-        awaitingFacts.clear();
+        skippedPredictions.clear();
         views.clear();
         embedded.clear();
         pendingSlotCorrections.clear();
@@ -252,10 +241,6 @@ public final class PlacementPipeline
             level[0] = new Object();
         rotation.onPacketSend(new PacketEvent(packet));
         flushCorrections();
-    }
-
-    public int awaitingDataCount() {
-        return awaitingFacts.size();
     }
 
     public int pendingSlotCorrectionCount() {
@@ -500,7 +485,8 @@ public final class PlacementPipeline
     }
 
     public void scheduleExpiry(Runnable task, int delay) {
-        expiries.add(new Expiry(ticks + delay, task));
+        if (state.player().checkEnabled(RotationPlace.class))
+            expiries.add(new Expiry(world().nativeServerTick() + delay, task));
     }
 
     public void applyPlacement(InventoryTransactionPacket packet) {
@@ -606,6 +592,7 @@ public final class PlacementPipeline
                 }
 
                 public ItemTransactionValidator.PlacementObserver rotationPlace() {
+                    if(!rotationCheckAvailable())return null;
                     return (data, target, id) ->
                             rotation.predictedPlacement(placementData(data), cell(target), id);
                 }

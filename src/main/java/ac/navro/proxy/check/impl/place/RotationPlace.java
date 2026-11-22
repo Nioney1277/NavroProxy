@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Locale;
 
 
-@CheckInfo(name = "RotationPlace")
+@CheckInfo(name = "RotationPlace", requiresServerTick = true)
 public class RotationPlace extends PacketCheck {
     private static final double EPSILON = 1.0E-5;
     private static final int MAX_PENDING = 64, MAX_CELLS = 8192;
@@ -253,6 +253,27 @@ public class RotationPlace extends PacketCheck {
         previous = latest = null;
         bridge = new RotationPlaceBridge();
         bridgeSlot = -1;
+    }
+
+
+    public void disable() {
+        var released = new ArrayList<Pending>(pending);
+        pending.clear();
+        for (Pending held : released) {
+            held.placement.bridge.stop();
+            if (held.level == context.levelIdentity() && held.transaction != null && !held.placement.prediction.failed)
+                applyPlacement(held.transaction);
+        }
+        reset();
+        stagedEvent = null;
+        staged = null;
+    }
+
+    public void skipPacket(PacketEvent event) {
+        if (stagedEvent == event) {
+            stagedEvent = null;
+            staged = null;
+        }
     }
 
 

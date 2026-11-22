@@ -17,7 +17,10 @@ public final class BackendStateSync {
     BackendStateSync(SessionState state,java.util.function.LongSupplier clock) {
         this.state=state;this.clock=clock;
     }
-    public void reset() { nonce=null;sequence=-1;active=false;receivedAt=0; }
+    public void reset() {
+        nonce=null;sequence=-1;active=false;receivedAt=0;
+        state.world().clearNativeServerClock();
+    }
     public ScriptMessagePacket begin() {
         reset();nonce=UUID.randomUUID().toString();
         var hello=new ScriptMessagePacket();hello.setChannel(CHANNEL);hello.setMessage("hello|"+nonce);

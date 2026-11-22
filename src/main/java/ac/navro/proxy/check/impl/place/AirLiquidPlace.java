@@ -13,15 +13,14 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTra
 import org.cloudburstmc.protocol.bedrock.packet.*;
 
 
-@CheckInfo(name="AirLiquidPlace")
+@CheckInfo(name="AirLiquidPlace",requiresServerTick=true)
 public final class AirLiquidPlace extends PacketCheck {
-    public enum Support { RECENT, ABSENT, UNKNOWN }
     public interface Context {
         boolean placeable(ItemData item);
         boolean validate(ItemData held,ItemData claimed);
         ItemData held();
         GameType serverGameType();
-        Support support(Vector3i position);
+        boolean hadRecentPlacementSupport(Vector3i position);
         int clickedBlockId(Vector3i position);
         void restore(Vector3i position);
         void resendInventory();
@@ -38,10 +37,9 @@ public final class AirLiquidPlace extends PacketCheck {
         }
     }
     public boolean reject(InventoryTransactionPacket data,ItemData held,int clickedId) {
-        if(!validPlacement(data)||!context.placeable(held)||player.isExempted()||context.serverGameType()==GameType.CREATIVE)return false;
-        var pos=data.getBlockPosition();var support=context.support(pos);
-        if(support==Support.RECENT||!BlockPlacementPhysics.isAirOrLiquid(clickedId))return false;
-        if(support==Support.UNKNOWN)return false;
+        if(!player.checkEnabled(getClass())||!validPlacement(data)||!context.placeable(held)||player.isExempted()||context.serverGameType()==GameType.CREATIVE)return false;
+        var pos=data.getBlockPosition();
+        if(context.hadRecentPlacementSupport(pos)||!BlockPlacementPhysics.isAirOrLiquid(clickedId))return false;
         fail();context.restore(pos);context.restore(BlockUtil.getBlockPosition(pos,data.getBlockFace()));player.tickSinceBlockResync=5;
         context.resendInventory();return true;
     }
