@@ -23,7 +23,8 @@ public final class InventoryInteractionPackets {
         this.player = player;
     }
 
-    public void onPacketReceive(BedrockPacket packet, boolean checked) {
+    public boolean onPacketReceive(BedrockPacket packet, boolean checked) {
+        boolean rejected = false;
         if (packet instanceof InteractPacket interact && interact.getAction() == InteractPacket.Action.OPEN_INVENTORY) {
             open = true;
             window = 0;
@@ -31,7 +32,7 @@ public final class InventoryInteractionPackets {
         if (checked && !openingGrace && isInventoryClick(packet)) {
             for (var check : player.getCheckHolder().values()) {
                 if (check instanceof InventoryCheck inventoryCheck && player.checkEnabled(check.getClass())) {
-                    inventoryCheck.onInventoryClick();
+                    rejected |= inventoryCheck.onInventoryClick();
                 }
             }
         }
@@ -39,6 +40,7 @@ public final class InventoryInteractionPackets {
         if (packet instanceof ContainerClosePacket close && (close.getId() == -1 || close.getId() == window)) {
             reset();
         }
+        return !rejected;
     }
 
     public void onPacketSend(BedrockPacket packet) {

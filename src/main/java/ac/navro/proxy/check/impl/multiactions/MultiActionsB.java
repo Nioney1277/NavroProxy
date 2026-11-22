@@ -12,7 +12,7 @@ public final class MultiActionsB extends InventoryCheck {
     }
 
     @Override
-    public void onInventoryClick() {
+    public boolean onInventoryClick() {
         var motion = player.rawInputMotion();
         boolean moving = motion != null && motion.finite() && (motion.x() != 0 || motion.y() != 0);
         for (PlayerAuthInputData input : player.inputData()) {
@@ -22,5 +22,6 @@ public final class MultiActionsB extends InventoryCheck {
             };
         }
         if (moving) fail("input=true");
+        return moving;
     }
 }

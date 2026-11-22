@@ -213,6 +213,30 @@ public final class SessionState {
     public void setClientStateCorrectionTransport(java.util.function.Consumer<BedrockPacket> transport) {
         clientStateCorrection=java.util.Objects.requireNonNull(transport);
     }
+    private void rejectInventoryInteraction(BedrockPacket packet) {
+        var response = new org.cloudburstmc.protocol.bedrock.packet.ItemStackResponsePacket();
+        if (packet instanceof ItemStackRequestPacket requests) {
+            for (var request : requests.getRequests()) rejectInventoryRequest(response, request);
+        } else if (packet instanceof PlayerAuthInputPacket input) {
+            rejectInventoryRequest(response, input.getItemStackRequest());
+        }
+        if (!response.getEntries().isEmpty()) clientStateCorrection.accept(response);
+
+        var containers = new java.util.LinkedHashSet<Integer>(List.of(0, 119, 120, 124));
+        if (inventory.openContainer != null) containers.add(Byte.toUnsignedInt(inventory.openContainer.getId()));
+        for (int id : containers) {
+            var content = backendInventories.fullPacket(id);
+            if (content != null) clientStateCorrection.accept(content);
+        }
+    }
+
+    private static void rejectInventoryRequest(org.cloudburstmc.protocol.bedrock.packet.ItemStackResponsePacket response,
+            org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.ItemStackRequest request) {
+        if (request != null) response.getEntries().add(
+                new org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.response.ItemStackResponse(
+                        org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.response.ItemStackResponseStatus.ERROR,
+                        request.getRequestId(), List.of()));
+    }
     public void resyncGliding() {
         var metadata=new SetEntityDataPacket();metadata.setRuntimeEntityId(player.runtimeId());
         ac.navro.proxy.util.EntityMetadataUtil.writeFlags(metadata.getMetadata(),player.trackedFlags().cloneFlags());
@@ -516,7 +540,11 @@ public final class SessionState {
 
     private boolean observeClient(BedrockPacket packet, boolean checked) {
         applyCheckConfig();
-        if (!(packet instanceof PlayerAuthInputPacket)) inventoryInteractions.onPacketReceive(packet, checked);
+        if (!(packet instanceof PlayerAuthInputPacket) && !inventoryInteractions.onPacketReceive(packet, checked)) {
+            rejectInventoryInteraction(packet);
+            observeRejectedClient(packet, "MultiActions", "Rejected inventory interaction");
+            return false;
+        }
         boolean forward = true;
         if (detectionEnabled && !checked && !player.isExempted()
                 && packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket sync) {
@@ -536,7 +564,6 @@ public final class SessionState {
         if (packet instanceof PlayerAuthInputPacket input) {
             clientInputPackets++;
             clientPosition = input.getPosition();
-            if(detectionEnabled)inventoryResponseSync.receive(input);
             if (detectionEnabled && player.isExempted()) return true;
             if (detectionEnabled && !awaitingBackendSpawnPosition) authInputPackets().beforeInput(input);
             if (input.getTick() < 0) {
@@ -552,7 +579,13 @@ public final class SessionState {
 
 
             player.apply(input, world, detectionEnabled ? null : fluidState, movementCoordinates ? playerYOffset() : 0);
-            inventoryInteractions.onPacketReceive(input, checked);
+            if (!inventoryInteractions.onPacketReceive(input, checked)) {
+                rejectInventoryInteraction(input);
+                input.setItemStackRequest(null);
+                input.getInputData().remove(org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.PERFORM_ITEM_STACK_REQUEST);
+                recordAnomaly(WireEvent.Direction.CLIENT, sequence, "MultiActions", "Rejected embedded inventory interaction");
+            }
+            if(detectionEnabled)inventoryResponseSync.receive(input);
             if (spawned) {
                 world.tickCollisionBlockActors();
                 if(detectionEnabled)player.tickPredictionEffects();
