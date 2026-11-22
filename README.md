@@ -85,6 +85,14 @@ The Nukkit-MOT bridge also forwards NavroProxy alerts to the backend console and
 AirLiquidPlace and RotationPlace require a valid native server tick from the backend bridge. They automatically disable when samples are missing, stale, or reset; FarPlace and ordinary inventory validation remain active. RotationPlace timeouts use only backend ticks. Missing selection data skips local placement prediction without a confirmation wait or timeout cancellation.
 
 
+## Contributors
+
+- [nioney1277](https://github.com/nioney1277-lab)
+- [GLOBEsg](https://github.com/globesg)
+- [GhostNgEnd](https://github.com/GhostNgEnd)
+- [huangyxHUTAO](https://github.com/huangyxHUTAO)
+- [Theu5er](https://github.com/Theu5er)
+
 ## License
 
 [MIT](LICENSE)
