@@ -22,7 +22,9 @@ final class PostSend {
                 throw new IllegalStateException("Cannot register post-send action", exception);
             }
         }
-        player.getServer().getScheduler().scheduleDelayedTask(plugin, action, 1);
+        player.getServer().getScheduler().scheduleDelayedTask(plugin, () -> {
+            if (!event.isCancelled() && player.isOnline()) action.run();
+        }, 1);
     }
 
     private static Method nativeHook() {

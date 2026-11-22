@@ -1,7 +1,16 @@
 name: NavroFireworkBridge
 main: ac.navro.bridge.nukkit.NavroFireworkBridge
-version: 0.2.0
+version: 0.3.0
 api: ["1.0.14"]
 load: POSTWORLD
 author: NavroProxy
-description: Native firework conversion, negotiated server tick and missing final transaction inventory synchronization for NavroProxy.
+description: Bridges NavroProxy alerts, native server state, inventories and fireworks on Nukkit-MOT.
+commands:
+  navroalerts:
+    description: Toggle your NavroProxy alerts in chat
+    usage: "/navroalerts"
+    permission: navrobridge.alerts
+permissions:
+  navrobridge.alerts:
+    description: Receive NavroProxy alerts in chat
+    default: op

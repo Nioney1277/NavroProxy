@@ -205,6 +205,10 @@ public final class SessionState {
                 && backendProfile.serverEngine().toLowerCase(java.util.Locale.ROOT).contains("pocketmine");
     }
 
+    public boolean hasBackendCommands() {
+        return backendSync.hasBackendCommands() || isPocketMineBackend();
+    }
+
     public void forwardBackendAlert(String message) {
         var packet = backendSync.alert(message);
         if (packet != null) backendSyncTransport.accept(packet);

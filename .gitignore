@@ -42,3 +42,4 @@ local.properties
 
 !/src/main/resources/punishments.yml
 !/backend/pocketmine-mp/resources/config.yml
+!/backend/nukkit/src/main/resources/config.yml

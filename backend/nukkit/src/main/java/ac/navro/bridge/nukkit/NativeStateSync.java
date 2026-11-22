@@ -13,7 +13,7 @@ import cn.nukkit.network.protocol.types.AuthInputAction;
 import cn.nukkit.network.protocol.types.ContainerIds;
 import cn.nukkit.network.protocol.types.inventory.ContainerSlotType;
 import cn.nukkit.network.protocol.types.inventory.itemstack.response.ItemStackResponseStatus;
-import cn.nukkit.plugin.Plugin;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 
@@ -21,9 +21,10 @@ public final class NativeStateSync implements Listener {
     public static final String CHANNEL="navro:backend_sync_v1";
     private static final int CREATED_OUTPUT=PlayerUIComponent.CREATED_ITEM_OUTPUT_UI_SLOT;
     private final Map<Player,Session> sessions=new IdentityHashMap<>();
-    private final Plugin plugin;
+    private final NavroFireworkBridge plugin;
 
-    NativeStateSync(Plugin plugin) { this.plugin=plugin; }
+    NativeStateSync(NavroFireworkBridge plugin) { this.plugin=plugin; }
+    public boolean hasSession(Player player) { return sessions.containsKey(player); }
     private record Slot(int container,int index) { }
     private record Source(Inventory inventory,int nativeSlot) { }
     private record ResponseSlot(Source source,Item snapshot,boolean emptyConfirmed) { }
@@ -47,11 +48,21 @@ public final class NativeStateSync implements Listener {
         var player=event.getPlayer();var packet=event.getPacket();
         if(packet instanceof ScriptMessagePacket message&&CHANNEL.equals(message.channel)) {
             event.setCancelled(true);
+            if(!plugin.trusts(player))return;
             String value=message.message;
-            if(value==null||!value.startsWith("hello|")||value.length()!=42)return;
+            if(value==null)return;
+            Session session=sessions.get(player);
+            if(session!=null&&value.startsWith("alert|"+session.nonce+"|")) {
+                String alert=value.substring(7+session.nonce.length());
+                if(alert.getBytes(StandardCharsets.UTF_8).length<=4096)plugin.displayAlert(alert);
+                return;
+            }
+            if(!value.matches("hello\\|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}"))return;
             String nonce=value.substring(6);
-            try { UUID.fromString(nonce); } catch(IllegalArgumentException ex) { return; }
-            sessions.put(player,new Session(nonce));sendTick(player);return;
+            sessions.put(player,new Session(nonce));
+            var ready=new ScriptMessagePacket();ready.channel=CHANNEL;ready.message="nk_ready|"+nonce;
+            player.dataPacket(ready);
+            sendTick(player);return;
         }
         if(!sessions.containsKey(player))return;
         if(packet instanceof ContainerClosePacket close && !event.isCancelled()) {

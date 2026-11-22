@@ -80,6 +80,8 @@ The NetherNet frontend requires Go 1.26 or later and runs alongside the Java pro
 - Nukkit bridge source and build script: `backend/nukkit/`.
 - PocketMine-MP 5 bridge source and build script: `backend/pocketmine-mp/`.
 
+The Nukkit-MOT bridge also forwards NavroProxy alerts to the backend console and permitted staff. `/navroalerts` toggles persistent chat alerts for players with `navrobridge.alerts` (operators by default). Set `trusted-proxy-addresses`, `console-alerts`, and `staff-chat-alerts` in the plugin's `config.yml`; trusted addresses refer to the actual proxy connection, before player IP forwarding. Use the updated proxy together with bridge version 0.3.0 for alert forwarding. Existing native tick and inventory synchronization remain negotiated per connection, and firework boosts end when the attached rocket or glide ends.
+
 AirLiquidPlace and RotationPlace require a valid native server tick from the backend bridge. They automatically disable when samples are missing, stale, or reset; FarPlace and ordinary inventory validation remain active. RotationPlace timeouts use only backend ticks. Missing selection data skips local placement prediction without a confirmation wait or timeout cancellation.
 
 

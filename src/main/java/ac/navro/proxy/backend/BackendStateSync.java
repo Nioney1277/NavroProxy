@@ -23,6 +23,7 @@ public final class BackendStateSync {
     private int tick;
     private boolean active;
     private boolean pocketMineAlerts;
+    private boolean nukkitAlerts;
     private NetworkBlockStateRegistry.RuntimePalette pendingPalette;
     private StringBuilder paletteParts;
     private int expectedPart, palettePartCount;
@@ -31,7 +32,7 @@ public final class BackendStateSync {
         this.state=state;this.clock=clock;
     }
     public void reset() {
-        nonce=null;sequence=-1;tick=0;active=false;pocketMineAlerts=false;receivedAt=0;
+        nonce=null;sequence=-1;tick=0;active=false;pocketMineAlerts=false;nukkitAlerts=false;receivedAt=0;
         pendingPalette = null;
         paletteParts = null;
         expectedPart = palettePartCount = 0;
@@ -47,7 +48,7 @@ public final class BackendStateSync {
     }
 
     public ScriptMessagePacket alert(String message) {
-        if (!pocketMineAlerts || !available() || message.getBytes(StandardCharsets.UTF_8).length > MAX_ALERT_BYTES)
+        if (!(pocketMineAlerts || nukkitAlerts) || !available() || message.getBytes(StandardCharsets.UTF_8).length > MAX_ALERT_BYTES)
             return null;
         var packet = new ScriptMessagePacket();
         packet.setChannel(CHANNEL);
@@ -120,6 +121,10 @@ public final class BackendStateSync {
             pocketMineAlerts = true;
             return true;
         }
+        if (message.equals("nk_ready|" + nonce)) {
+            nukkitAlerts = true;
+            return true;
+        }
         String[] fields=message.split("\\|",-1);
         if(fields.length!=4||!"tick".equals(fields[0])||!nonce.equals(fields[1]))return true;
         try {
@@ -135,6 +140,7 @@ public final class BackendStateSync {
     }
     public boolean available() { return active&&clock.getAsLong()-receivedAt<1_000_000_000L; }
     public boolean isPocketMine() { return pocketMineAlerts; }
+    public boolean hasBackendCommands() { return pocketMineAlerts || nukkitAlerts; }
     public boolean hasRuntimePalette() { return pendingPalette != null; }
     public NetworkBlockStateRegistry.RuntimePalette takeRuntimePalette() {
         var palette = pendingPalette;

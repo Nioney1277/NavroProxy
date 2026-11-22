@@ -178,16 +178,16 @@ public final class NetherNetBatchSession implements AutoCloseable {
                         state.observeBackend(packet);state.onBackendPacketQueued(packet);
                         commandTableUpdate = observeCommandPermissions(packet);
                         if (packet instanceof AvailableCommandsPacket commands) {
-                            if (detect) proxyCommandNames = state.isPocketMineBackend()
+                            if (detect) proxyCommandNames = state.hasBackendCommands()
                                     ? NavroCommand.unclaimedNames(commands) : NavroCommand.advertise(commands);
-                            if (operatorCommandTable && !state.isPocketMineBackend()) {
+                            if (operatorCommandTable && !state.hasBackendCommands()) {
                                 keep = permissions.isOperator();
                                 commandTableVisible = keep;
                                 if (!keep) withheldCommandTable = encodeFrame(commands);
                             }
                         }
                         if(keep&&(packet instanceof NetworkStackLatencyPacket||detect&&(
-                                packet instanceof AvailableCommandsPacket && !state.isPocketMineBackend()
+                                packet instanceof AvailableCommandsPacket && !state.hasBackendCommands()
                                 ||
                                 packet instanceof MovePlayerPacket move&&move.getRuntimeEntityId()==state.player().runtimeId()
                                 ||packet instanceof SetEntityMotionPacket motion&&motion.getRuntimeEntityId()==state.player().runtimeId()
@@ -259,7 +259,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private byte[] observeCommandPermissions(BedrockPacket packet) throws Exception {
         boolean wasOperator = permissions.isOperator();
         permissions.observe(state.player(), packet);
-        if (!operatorCommandTable || state.isPocketMineBackend()) return null;
+        if (!operatorCommandTable || state.hasBackendCommands()) return null;
         if (packet instanceof StartGamePacket) {
             withheldCommandTable = null;
             commandTableVisible = false;

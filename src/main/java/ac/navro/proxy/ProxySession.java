@@ -379,7 +379,7 @@ public final class ProxySession {
         PacketListener.onPacketSent(state.player(), packet);
         state.observeBackend(packet);
         if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands)
-            proxyCommandNames = state.isPocketMineBackend()
+            proxyCommandNames = state.hasBackendCommands()
                     ? ac.navro.proxy.command.NavroCommand.unclaimedNames(commands)
                     : ac.navro.proxy.command.NavroCommand.advertise(commands);
         if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.StartGamePacket && serverTickTask == null) {
@@ -412,7 +412,7 @@ public final class ProxySession {
 
             client.sendPacket(latency.clone());
         } else if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands
-                && !state.isPocketMineBackend()){
+                && !state.hasBackendCommands()){
             client.sendPacket(commands);
         } else if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket move
                 &&move.getRuntimeEntityId()==state.player().runtimeId()
