@@ -9,6 +9,7 @@ import org.cloudburstmc.nbt.NbtUtils;
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -110,19 +111,25 @@ public final class NetworkBlockStateRegistry {
 
 
     public static RuntimePalette readRuntimePalette(Path path) throws IOException {
-        try (var input = NbtUtils.createGZIPReader(new BufferedInputStream(Files.newInputStream(path)))) {
+        try (var input = new BufferedInputStream(Files.newInputStream(path))) {
+            return readRuntimePalette(input);
+        }
+    }
+
+    public static RuntimePalette readRuntimePalette(InputStream compressed) throws IOException {
+        try (var input = NbtUtils.createGZIPReader(compressed, 24L * 1024 * 1024)) {
             if (!(input.readTag() instanceof NbtMap root))
-                throw new IOException("Expected a palette compound in " + path);
+                throw new IOException("Expected a palette compound");
             int protocol = root.getInt("protocol", -1);
             var states = root.getList("states", NbtType.COMPOUND);
             if (protocol <= 0 || states.isEmpty() || states.size() > 131072)
-                throw new IOException("Invalid protocol or state count in " + path);
+                throw new IOException("Invalid palette protocol or state count");
             if (states.stream().anyMatch(state -> state.getString("name").isBlank()))
-                throw new IOException("Unnamed block state in " + path);
+                throw new IOException("Unnamed block state");
             Map<StateKey, Integer> legacy = knownLegacy(protocol);
             var tables = orderedTables(states, legacy);
             if (tables.airRuntime == Integer.MIN_VALUE)
-                throw new IOException("Missing air entry in " + path);
+                throw new IOException("Missing air entry in palette");
             return new RuntimePalette(protocol, tables);
         }
     }

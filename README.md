@@ -78,6 +78,7 @@ The NetherNet frontend requires Go 1.26 or later and runs alongside the Java pro
 - NetherNet frontend source: `nethernet/`.
 - Geyser and Floodgate integration: `backend/geyser/`.
 - Nukkit bridge source and build script: `backend/nukkit/`.
+- PocketMine-MP 5 bridge source and build script: `backend/pocketmine-mp/`.
 
 
 ## License

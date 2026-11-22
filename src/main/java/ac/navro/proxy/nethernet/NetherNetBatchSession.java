@@ -46,6 +46,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private boolean compressed,authenticated,closed;
     private boolean operatorCommandTable;
     private boolean commandTableVisible;
+    private Set<String> proxyCommandNames = NavroCommand.NAMES;
     private byte[] withheldCommandTable;
     private String backendDisconnect;
     private UUID identity;
@@ -83,8 +84,11 @@ public final class NetherNetBatchSession implements AutoCloseable {
             state.setBdsCorrectionAcknowledgmentDispatcher(correctionAcknowledgments::defer);
         state.player().setTransportAcknowledgment((packet,task)->pending.add(task));
         if(detect){
-            state.player().setAlertSink(NetherNetAlerts.ALERTS::alert);
-            state.player().setFormattedAlertSink(NetherNetAlerts.ALERTS::formattedAlert);
+            state.player().setFormattedAlertSink(message -> {
+                NetherNetAlerts.ALERTS.formattedAlert(message);
+                state.forwardBackendAlert(message);
+            });
+            state.player().setAlertSink(message -> state.player().formattedAlert(NetherNetAlerts.ALERTS.getPrefix() + "§3" + message));
             state.player().setDisconnectSink(this::kick);
             state.player().setCorrectionRequestSink(message->System.out.println("[NetherNet] "+message));
             state.player().setMaxBalanceAdvantageMs(8500);
@@ -157,7 +161,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                     }else if(backend){
                         if (packet instanceof StartGamePacket start && !runtimePalettes.isEmpty()
                                 && !start.isBlockNetworkIdsHashed() && (start.getBlockPalette() == null || start.getBlockPalette().isEmpty())
-                                && !runtimePalettes.containsKey(state.world().protocolVersion()))
+                                && !runtimePalettes.containsKey(state.world().protocolVersion()) && !state.backendSync().hasRuntimePalette())
                             throw new IOException("No runtime block palette for protocol " + state.world().protocolVersion());
                         String violation=state.validateBackend(packet);
                         if(violation!=null)throw new IOException("Invalid backend packet: "+violation);
@@ -174,15 +178,16 @@ public final class NetherNetBatchSession implements AutoCloseable {
                         state.observeBackend(packet);state.onBackendPacketQueued(packet);
                         commandTableUpdate = observeCommandPermissions(packet);
                         if (packet instanceof AvailableCommandsPacket commands) {
-                            if (detect) NavroCommand.advertise(commands);
-                            if (operatorCommandTable) {
+                            if (detect) proxyCommandNames = state.isPocketMineBackend()
+                                    ? NavroCommand.unclaimedNames(commands) : NavroCommand.advertise(commands);
+                            if (operatorCommandTable && !state.isPocketMineBackend()) {
                                 keep = permissions.isOperator();
                                 commandTableVisible = keep;
                                 if (!keep) withheldCommandTable = encodeFrame(commands);
                             }
                         }
                         if(keep&&(packet instanceof NetworkStackLatencyPacket||detect&&(
-                                packet instanceof AvailableCommandsPacket
+                                packet instanceof AvailableCommandsPacket && !state.isPocketMineBackend()
                                 ||
                                 packet instanceof MovePlayerPacket move&&move.getRuntimeEntityId()==state.player().runtimeId()
                                 ||packet instanceof SetEntityMotionPacket motion&&motion.getRuntimeEntityId()==state.player().runtimeId()
@@ -211,7 +216,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                                     public String name(){return state.player().getName();}
                                     public boolean hasPermission(String node){return NetherNetAlerts.PERMISSIONS.hasPermission(identity,node,permissions.isOperator());}
                                     public void sendMessage(String message){NetherNetBatchSession.this.sendMessage(message);}
-                                },NetherNetAlerts.ALERTS,NetherNetAlerts.commands());
+                                },NetherNetAlerts.ALERTS,NetherNetAlerts.commands(),proxyCommandNames);
                             }
                             if(state.player().disconnectRequested())keep=false;
                             if(keep){
@@ -254,7 +259,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private byte[] observeCommandPermissions(BedrockPacket packet) throws Exception {
         boolean wasOperator = permissions.isOperator();
         permissions.observe(state.player(), packet);
-        if (!operatorCommandTable) return null;
+        if (!operatorCommandTable || state.isPocketMineBackend()) return null;
         if (packet instanceof StartGamePacket) {
             withheldCommandTable = null;
             commandTableVisible = false;

@@ -7,6 +7,7 @@ import java.util.*;
 
 
 public final class NavroCommand {
+    public static final Set<String> NAMES = Set.of("navro", "navro:navro");
     private NavroCommand() { }
     public interface Sender {
         UUID identity();
@@ -15,22 +16,38 @@ public final class NavroCommand {
         default boolean isPlayer() { return !AlertManager.CONSOLE_UUID.equals(identity()); }
         default String name() { return ""; }
     }
-    public static void advertise(AvailableCommandsPacket packet) {
-
-        packet.getCommands().removeIf(c->"navro".equalsIgnoreCase(c.getName()));
+    public static Set<String> advertise(AvailableCommandsPacket packet) {
+        Set<String> proxyNames = unclaimedNames(packet);
+        if (proxyNames.isEmpty()) return proxyNames;
+        String proxyCommand = proxyNames.contains("navro") ? "navro" : "navro:navro";
         var subcommand=new CommandParamData();subcommand.setName("subcommand");subcommand.setOptional(true);
         var values=new LinkedHashMap<String,Set<CommandEnumConstraint>>();
         for(String name:List.of("alert","reload","debug","debug2"))values.put(name,Set.of());
         subcommand.setEnumData(new CommandEnumData("NavroSubcommand",values,false));
         var player=new CommandParamData();player.setName("player");player.setType(CommandParam.STRING);player.setOptional(true);
-        packet.getCommands().add(new CommandData("navro","Navro anticheat management",Set.of(),
+        packet.getCommands().add(new CommandData(proxyCommand,"Navro anticheat management",Set.of(),
                 CommandPermission.ANY,null,List.of(),new CommandOverloadData[]{
                 new CommandOverloadData(false,new CommandParamData[]{subcommand,player})}));
+        return proxyNames;
+    }
+
+    public static Set<String> unclaimedNames(AvailableCommandsPacket packet) {
+        var proxyNames = new HashSet<>(NAMES);
+        for (var command : packet.getCommands()) {
+            proxyNames.remove(command.getName().toLowerCase(Locale.ROOT));
+            var aliases = command.getAliases();
+            if (aliases != null) aliases.getValues().keySet().forEach(alias -> proxyNames.remove(alias.toLowerCase(Locale.ROOT)));
+        }
+        return Set.copyOf(proxyNames);
     }
     public static boolean handle(String command,Sender sender,AlertManager manager,CommandRuntime runtime) {
+        return handle(command, sender, manager, runtime, NAMES);
+    }
+
+    public static boolean handle(String command,Sender sender,AlertManager manager,CommandRuntime runtime,Set<String> names) {
         if(command==null)return false;
         var args=CommandArguments.parseArguments(command.startsWith("/")?command.substring(1):command);
-        if(args.isEmpty()||!("navro".equalsIgnoreCase(args.get(0))||"navro:navro".equalsIgnoreCase(args.get(0))))return false;
+        if(args.isEmpty()||!names.contains(args.get(0).toLowerCase(Locale.ROOT)))return false;
         args.remove(0);
         if(args.isEmpty()){usage(sender,manager,runtime);return true;}
         String sub=args.get(0);

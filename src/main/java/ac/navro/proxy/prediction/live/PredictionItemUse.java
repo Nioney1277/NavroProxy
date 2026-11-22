@@ -169,6 +169,10 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
         while(iterator.hasNext()){
             var action=iterator.next();if(action!=PlayerAuthInputData.START_USING_ITEM)continue;
             ItemData item=nativeItem(session.inventory().inventoryContainer.getHeldItemData());
+            if (NativeItemDecoder.usesBackendDefinition(session.player().protocolVersion(), item)) {
+                decision = "backend_item";
+                break;
+            }
             if(tracker.getDirtyUsing()==ItemUseTracker.DirtyUsing.NONE){
                 if(tracker.resumeLatchedUse(item)){
                     decision = "resumed";

@@ -33,6 +33,10 @@ public final class NativeItemDecoder {
         @Override protected boolean removeEldestEntry(Map.Entry<Integer,ExtraRow> entry){return size()>4;}
     };
     private static final NativePredictionItems.Traits AIR=new NativePredictionItems.Traits(0,true,false,0,false,"","");
+    private static final NativePredictionItems.Traits SERVER_ITEM =
+            new NativePredictionItems.Traits(-1, false, false, 0, false, "", "");
+    private static final NativeItemPlacementProperties.Properties SERVER_PLACEMENT =
+            new NativeItemPlacementProperties.Properties(false, false, 0, 0, 0);
     private static final Table TABLE=load();
     private NativeItemDecoder(){}
 
@@ -71,6 +75,7 @@ public final class NativeItemDecoder {
         boolean descriptor=version.descriptor(format);
         if(wire.getDefinition()==null || (!descriptor&&wire.getDefinition().getRuntimeId()==0))return canonicalAir(protocol);
         Binding binding=wire.getDefinition().getRuntimeId()==0?new Binding(numeric(0),-1):version.bindings.get(wire.getDefinition().getIdentifier());
+        if (binding == null && isCustomDefinition(wire.getDefinition())) return wire;
         if(binding==null)throw new IllegalArgumentException("Native item definition is not exported: "+wire.getDefinition().getIdentifier());
         int factory=binding.factory(),rawDamage=binding.fixedDamage()>=0?binding.fixedDamage():wire.getDamage();
         NbtMap tag=ItemUtil.copyTag(wire.getTag());
@@ -134,9 +139,23 @@ public final class NativeItemDecoder {
         return value;
     }
     private static String string(NbtMap tag,String key){Object value=tag.get(key);return value==null?"":value instanceof Number?String.valueOf(value):(String)value;}
+
+    private static boolean isCustomDefinition(ItemDefinition definition) {
+        String identifier = definition.getIdentifier();
+        return identifier != null && identifier.indexOf(':') > 0 && !identifier.startsWith("minecraft:");
+    }
+
+    public static boolean usesBackendDefinition(int protocol, ItemData item) {
+        if (item == null || item.getDefinition() == null || item.getDefinition().getRuntimeId() == 0
+                || !isCustomDefinition(item.getDefinition())) return false;
+        Protocol version = TABLE.protocols.get(protocol);
+        return version != null && !version.bindings.containsKey(item.getDefinition().getIdentifier());
+    }
+
     public static NativePredictionItems.Traits traits(int protocol,ItemData item){
         if(item==null)return AIR;
-        ItemData decoded=decode(protocol,item);Definition definition=(Definition)decoded.getDefinition();
+        ItemData decoded=decode(protocol,item);
+        if (!(decoded.getDefinition() instanceof Definition definition)) return SERVER_ITEM;
         return traits(definition.factory,definition.rawDamage);
     }
 
@@ -147,7 +166,7 @@ public final class NativeItemDecoder {
     }
     public static NativeItemPlacementProperties.Properties placement(int protocol,ItemData item,Format format){
         ItemData decoded=Objects.requireNonNull(decode(protocol,item,format),"Native placement item");
-        Definition definition=(Definition)decoded.getDefinition();
+        if (!(decoded.getDefinition() instanceof Definition definition)) return SERVER_PLACEMENT;
         Factory constructor=TABLE.factories[definition.factory];
         return constructor.number!=null
                 ?NativeItemPlacementProperties.forNumeric(constructor.number,definition.rawDamage)

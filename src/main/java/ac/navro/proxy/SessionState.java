@@ -190,6 +190,16 @@ public final class SessionState {
     }
     public ac.navro.proxy.backend.BackendStateSync backendSync() { return backendSync; }
     public boolean consumeBackendSync(BedrockPacket packet) { return backendSync.receive(packet); }
+
+    public boolean isPocketMineBackend() {
+        return backendSync.isPocketMine() || backendProfile != null && backendProfile.serverEngine() != null
+                && backendProfile.serverEngine().toLowerCase(java.util.Locale.ROOT).contains("pocketmine");
+    }
+
+    public void forwardBackendAlert(String message) {
+        var packet = backendSync.alert(message);
+        if (packet != null) backendSyncTransport.accept(packet);
+    }
     private final CompensatedInventory inventory = new CompensatedInventory(player);
     private final ac.navro.proxy.validator.inventory.ItemTransactionValidator transactionValidator =
             new ac.navro.proxy.validator.inventory.ItemTransactionValidator(player, inventory);

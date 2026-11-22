@@ -3,6 +3,7 @@ package ac.navro.proxy.validator.inventory;
 import ac.navro.proxy.compensated.CompensatedInventory;
 import ac.navro.proxy.data.inventory.ItemCache;
 import ac.navro.proxy.data.ItemUseTracker;
+import ac.navro.proxy.data.inventory.NativeItemDecoder;
 import ac.navro.proxy.data.inventory.NativeItemPlacementProperties;
 import ac.navro.proxy.data.block.NetworkBlockState;
 import ac.navro.proxy.data.block.NativeBlockProperties;
@@ -169,6 +170,8 @@ public class ItemTransactionValidator {
 
         final CompensatedWorld world = context.world();
         final NetworkBlockState clickedState = stateAt(world, position, 0);
+        if (clickedState.legacyFullId() < 0 && !clickedState.identifier().isEmpty()
+                && !clickedState.identifier().startsWith("minecraft:")) return true;
         if (NativeBlockProperties.forState(clickedState).itemFrame()) return true;
         final Vector3i newBlockPos = BlockUtil.getBlockPosition(position, face);
         final boolean heldItemExists = held != null && !context.nativeIsNull(held);
@@ -222,7 +225,10 @@ public class ItemTransactionValidator {
         final int slot = data.getHotbarSlot();
         if (slot < 0 || slot > 8) return false;
 
-        final ItemData held = inventory.inventoryContainer.getHeldItemData();
+        boolean backendItem = NativeItemDecoder.usesBackendDefinition(
+                player.protocolVersion(), data.getItemInHand());
+        final ItemData held = backendItem ? inventory.inventoryContainer.getItemFromSlot(slot).getData()
+                : inventory.inventoryContainer.getHeldItemData();
         final var actions = packet.getActions();
         final boolean noActions = actions == null || actions.isEmpty();
         if (!noActions) {
@@ -234,7 +240,7 @@ public class ItemTransactionValidator {
         }
 
         final boolean emptyHandInteraction = isEmpty(held, context) && isEmpty(data.getItemInHand(), context);
-        if (noActions && !emptyHandInteraction && !context.validate(held, data.getItemInHand())) {
+        if ((backendItem || noActions && !emptyHandInteraction) && !context.validate(held, data.getItemInHand())) {
             context.validatorDecision(data, "REJECT_HELD_ITEM_MISMATCH");
             return false;
         }
@@ -242,6 +248,10 @@ public class ItemTransactionValidator {
         final Vector3i position = data.getBlockPosition();
         if (position == null || !Float.isFinite(position.getX()) || !Float.isFinite(position.getY())
                 || !Float.isFinite(position.getZ()) || tooFar(position, context)) return false;
+        if (backendItem) {
+            // A registered plugin item can use the same interaction to place, throw or consume.
+            return data.getActionType() != 0 || data.getBlockFace() >= 0 && data.getBlockFace() <= 5;
+        }
         return switch (data.getActionType()) {
             case 0 -> context.handleClickBlock(data);
             case 1 -> {
@@ -303,14 +313,16 @@ public class ItemTransactionValidator {
         if (world == null || container == null) return false;
         if (world.getSlot() != 0) return false;
         if (container.getSource().getContainerId() != inventory.inventoryContainer.getId()) return false;
-        return handleHotbarDrop(world, container, context);
+        return handleInventoryDrop(world, container, context);
     }
 
-    private boolean handleHotbarDrop(InventoryActionData world, InventoryActionData containerAction, TransactionContext context) {
+    private boolean handleInventoryDrop(InventoryActionData world, InventoryActionData containerAction, TransactionContext context) {
         int slot = containerAction.getSlot();
-        if (slot < 0 || slot > 8) return false;
-        ItemData slotData = inventory.inventoryContainer.getItemFromSlot(slot).getData();
+        if (slot < 0 || slot >= inventory.inventoryContainer.getContainerSize()) return false;
+        ItemData slotData = inventory.inventoryContainer.get(slot).getData();
         ItemData claimedDrop = world.getToItem();
+        if (slot > 8 && !NativeItemDecoder.usesBackendDefinition(
+                player.protocolVersion(), claimedDrop)) return false;
         final boolean emptyDrop = context == null
                 ? inventory.nativeIsNull(claimedDrop, ac.navro.proxy.data.inventory.NativeItemDecoder.Format.TRANSACTION) : isEmpty(claimedDrop, context);
         if (emptyDrop) return false;
