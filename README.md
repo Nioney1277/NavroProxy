@@ -54,7 +54,7 @@ Settings are stored in `plugins/Navro/`:
 
 All three files are bundled under `src/main/resources/` and included in the distribution. Missing files are created at startup; existing settings are preserved. A legacy prefix in `config.yml` moves to `messages.yml` when that file is first created. `/navro reload` reloads all three together; an invalid file leaves the previous configuration active.
 
-Punishment rules use `threshold:interval action`. For example, `50:0 kick %player%` kicks at 50 recent violations, once until the group's window expires. `1:1 [alert]` reports each violation. Check selectors support exact names (`RotationPlace`, `Sprint-A`), check families (`Sprint`), `*` wildcards, and `!` exclusions. The default file has a separate section for each of the 23 implemented checks, so Timer, NegativeTimer and each Sprint type have independent counters. Each player's counters are also independent; reloading or reconnecting resets them. Default rules only alert. The proxy supports `[alert]`, `[log]`, and kicks; it does not execute arbitrary backend console commands.
+Punishment rules use `threshold:interval action`. For example, `50:0 kick %player%` kicks at 50 recent violations, once until the group's window expires. `1:1 [alert]` reports each violation. Check selectors support exact names (`RotationPlace`, `Sprint-A`), check families (`Sprint`), `*` wildcards, and `!` exclusions. The default file has a separate section for each of the 22 implemented checks, so Timer, NegativeTimer and each Sprint type have independent counters. Each player's counters are also independent; reloading or reconnecting resets them. Default rules only alert. The proxy supports `[alert]`, `[log]`, and kicks; it does not execute arbitrary backend console commands.
 
 Message placeholders include `%prefix%`, `%player%`, `%check_name%`, `%check%`, `%vl%` (recent group count), `%check_vl%` (individual check count), `%verbose%`, and `%message%` (the original detailed alert). Color codes use `&`.
 
@@ -83,3 +83,5 @@ The NetherNet frontend requires Go 1.26 or later and runs alongside the Java pro
 ## License
 
 [MIT](LICENSE)
+
+Input timing uses a server-owned counter that advances once per input. Client tick values are stored separately for correction frame matching. Negative frames disconnect the client; duplicate, backward and jumping frames do not add VL. BadPacketsC checks respawn requests (formerly BadPacketsD).

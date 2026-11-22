@@ -8,6 +8,7 @@ import ac.navro.proxy.state.WirePlayerState;
 
 public final class RewindData extends TeleportData {
     private final long tick;
+    private long inputTick;
     private final Vec3 tickEnd;
     private final RewindHistory frame;
     private final float fallbackOffset;
@@ -20,15 +21,24 @@ public final class RewindData extends TeleportData {
 
     public RewindData(long tick, Vec3 position, Vec3 tickEnd, boolean ground,
                       RewindHistory frame, float fallbackOffset, long externalMotionSequence) {
+        this(tick,position,tickEnd,ground,frame,fallbackOffset,externalMotionSequence,tick);
+    }
+    public RewindData(long tick, Vec3 position, Vec3 tickEnd, boolean ground,
+                      RewindHistory frame, float fallbackOffset, long externalMotionSequence,long inputTick) {
         super(position, ground);
+        this.inputTick=inputTick;
         this.externalMotionSequence = externalMotionSequence;
         this.tick = tick;
         this.tickEnd = tickEnd.clone();
-        this.frame = frame != null && frame.tick() == tick && frame.matches(position, tickEnd, ground) ? frame : null;
+        this.frame = frame != null && frame.simulationFrame() == tick && frame.matches(position, tickEnd, ground) ? frame : null;
         this.fallbackOffset = fallbackOffset;
     }
     @Override public boolean isHard() { return false; }
     public long tick() { return tick; }
+    public long inputTick() { return inputTick; }
+    public void observeInputFrame(long internalTick,long clientFrame) {
+        if(inputTick<0 && clientFrame==tick)inputTick=internalTick;
+    }
     public Vec3 tickEnd() { return tickEnd.clone(); }
     public long externalMotionSequence() { return externalMotionSequence; }
     public float yOffset() { return yOffset(fallbackOffset); }

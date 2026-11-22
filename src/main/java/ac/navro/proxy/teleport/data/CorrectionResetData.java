@@ -48,7 +48,7 @@ public final class CorrectionResetData extends TeleportData {
     public Vec3 nativeTargetFoot() { return physicalTarget.clone(); }
 
     public boolean confirmedBy(final PlayerAuthInputPacket packet) {
-        return packet.getTick() > sourceTick && matchesConfirmation(new Vec3(packet.getPosition()),
+        return packet.getTick() >= 0 && matchesConfirmation(new Vec3(packet.getPosition()),
                 packet.getInputData().contains(PlayerAuthInputData.HANDLE_TELEPORT));
     }
 

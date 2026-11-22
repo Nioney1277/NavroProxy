@@ -172,9 +172,12 @@ public final class TeleportUtil {
         drainReadyTeleports(input, true, process);
     }
     public void drainReadyTeleports(org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket input,boolean onFoot,Consumer<TeleportData> process){
+        drainReadyTeleports(input,onFoot,input.getTick(),process);
+    }
+    public void drainReadyTeleports(org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket input,boolean onFoot,long inputTick,Consumer<TeleportData> process){
         TeleportData data;
         while((data=queuedTeleports.peek())!=null && (data instanceof CorrectionResetData reset ? reset.confirmedBy(input)
-                : data.isAccepted() && (data instanceof RewindData rewind ? rewind.tick() < input.getTick() : onFoot))){
+                : data.isAccepted() && (data instanceof RewindData rewind ? rewind.inputTick() < inputTick : onFoot))){
             queuedTeleports.poll();process.accept(data);
         }
     }

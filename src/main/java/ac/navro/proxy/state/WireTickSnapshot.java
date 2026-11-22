@@ -103,7 +103,8 @@ public record WireTickSnapshot(
         Vec3 afterCollision,
         Set<Integer> trackedFlags,
         boolean inputWasSwimming,
-        WirePlayerState.SprintSynchronization sprintSynchronization
+        WirePlayerState.SprintSynchronization sprintSynchronization,
+        long simulationFrame
 ) {
     public WireTickSnapshot {
         trackedFlags = trackedFlags == null ? Set.of() : Set.copyOf(trackedFlags);

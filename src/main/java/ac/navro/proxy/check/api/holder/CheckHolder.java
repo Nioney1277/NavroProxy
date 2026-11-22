@@ -5,7 +5,6 @@ import ac.navro.proxy.check.impl.timer.Timer;
 import ac.navro.proxy.check.impl.badpackets.BadPacketsC;
 import ac.navro.proxy.check.impl.badpackets.BadPacketA;
 import ac.navro.proxy.check.impl.badpackets.BadPacketB;
-import ac.navro.proxy.check.impl.badpackets.BadPacketsD;
 import ac.navro.proxy.check.impl.prediction.Prediction;
 import ac.navro.proxy.check.impl.prediction.DebugOffsetA;
 import ac.navro.proxy.check.impl.multiactions.MultiActionsA;
@@ -31,7 +30,6 @@ public final class CheckHolder extends LinkedHashMap<Class<?>, Check> {
         put(BadPacketsC.class, new BadPacketsC(player));
         put(BadPacketA.class, new BadPacketA(player));
         put(BadPacketB.class, new BadPacketB(player));
-        put(BadPacketsD.class, new BadPacketsD(player));
         put(MultiActionsA.class, new MultiActionsA(player));
         put(MultiActionsB.class, new MultiActionsB(player));
     }

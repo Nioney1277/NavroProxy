@@ -228,6 +228,7 @@ public final class AuthInputPackets {
             if (dimension != world.dimension()) {
                 player.currentLoadingScreen = loadingScreenId;
                 player.inLoadingScreen = true;
+                player.loadingScreenStartMs=System.currentTimeMillis();
             }
 
             acknowledgedReset.run();

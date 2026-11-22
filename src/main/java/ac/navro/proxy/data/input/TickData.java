@@ -28,7 +28,7 @@ public record TickData(PlayerAuthInputPacket packet, WireTickSnapshot state,
         var context = session.authInputPackets().context();
         var tracker = session.authInputPackets().itemUse().getItemUseTracker();
         var state = wire.snapshot(session.fluidState());
-        return new TickData(packet, state, tracker.snapshotPredictionFlags(packet.getTick()), tracker.snapshot(),
+        return new TickData(packet, state, tracker.snapshotPredictionFlags(wire.tick()), tracker.snapshot(),
                 context.fallDistance, context.fluidPrediction.swimSpeedMultiplier, context.fluidPrediction.waterDrag,
                 context.riptideTickStartState, RiptidePhysics.snapshot(context),
                 state.inputAabb() == null ? wire.snapshotAabb() : state.inputAabb(), wire.snapshotAabb());

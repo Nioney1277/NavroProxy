@@ -353,9 +353,12 @@ public final class SessionState {
         teleports.setLastKnowValid(frame.position());
     }
     public void cacheRewindBaseline(long tick, float yOffset) {
+        cacheRewindBaseline(tick,yOffset,player.simulationFrame());
+    }
+    public void cacheRewindBaseline(long tick,float yOffset,long simulationFrame) {
         var frame = new ac.navro.proxy.teleport.data.RewindHistory(tick, player.position().up(yOffset),
                 new ac.navro.proxy.data.input.PredictionData(Vec3.ZERO.clone(), Vec3.ZERO.clone(), player.velocity().clone()),
-                player.snapshotAabb(), yOffset, player.onGround());
+                player.snapshotAabb(), yOffset, player.onGround(),simulationFrame);
         predictionHistory.put(tick, frame);
         teleports.setLastKnowValid(frame.position());
     }
@@ -490,19 +493,11 @@ public final class SessionState {
             if(detectionEnabled)inventoryResponseSync.receive(input);
             if (detectionEnabled && player.isExempted()) return true;
             if (detectionEnabled && !awaitingBackendSpawnPosition) authInputPackets().beforeInput(input);
-
-            if (!checked) {
-                long arrivalMs = System.currentTimeMillis();
-                player.lastAuthInputGapMs = arrivalMs - player.sinceAuthInput;
-                player.sinceAuthInput = arrivalMs;
-                player.sinceLoadingScreen++;
-            }
             if (input.getTick() < 0) {
                 recordAnomaly(WireEvent.Direction.CLIENT, sequence, "negativeInputTick", Long.toString(input.getTick()));
-            } else if (lastInputTick >= 0 && input.getTick() <= lastInputTick) {
-                recordAnomaly(WireEvent.Direction.CLIENT, sequence, "nonIncreasingInputTick", input.getTick() + " <= " + lastInputTick);
+                return false;
             }
-            lastInputTick = Math.max(lastInputTick, input.getTick());
+            lastInputTick = input.getTick();
             boolean movementCoordinates = ac.navro.proxy.packets.input.legacy.InputPositionDecoder
                     .usesMovementCoordinates(spawned, input.getInputData().contains(
                             org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData.HANDLE_TELEPORT));
@@ -517,9 +512,9 @@ public final class SessionState {
                 for (EntityCache entity : entities.values()) if (entity.getCurrent() != null) entity.getCurrent().tick();
             }
             boolean wasHardTeleporting=teleports.isHardTeleporting();
-            boolean wasTeleporting=teleports.isTeleporting();
+            boolean wasTeleporting=teleports.isTeleporting() && !teleports.hasPendingBackendRewind();
             boolean skipTravel=teleportHandler.processTeleport(input);
-            if (spawned && !detectionEnabled) player.collisionPhysics.begin(world, entities, input.getTick(), null);
+            if (spawned && !detectionEnabled) player.collisionPhysics.begin(world, entities, player.tick(), null);
             if(detectionEnabled && !teleports.isHardTeleporting()) {
                 if(skipTravel || wasHardTeleporting || wasTeleporting) authInputPackets().finishTeleportConfirmation(input);
                 else authInputPackets().run(input);
@@ -585,9 +580,6 @@ public final class SessionState {
         }
         if (input.getTick() < 0) {
             return "negative client tick";
-        }
-        if (lastInputTick >= 0 && input.getTick() <= lastInputTick) {
-            return "non-increasing client tick " + input.getTick() + " <= " + lastInputTick;
         }
         if (!finite(input.getPosition()) || !finite(input.getRotation())) {
             return "non-finite client input vector";
@@ -814,9 +806,11 @@ public final class SessionState {
             return null;
         long includedMotion = backendType == ac.navro.proxy.protocol.BackendType.BDS
                 ? authInputPackets().velocityPackets().externalMotionSequence() : -1;
+        Long sourceTick=inputTickForSimulationFrame(packet.getTick());
         var rewind = new ac.navro.proxy.teleport.data.RewindData(packet.getTick(),
                 new Vec3(packet.getPosition()), new Vec3(packet.getDelta()), packet.isOnGround(),
-                predictionHistory.get(packet.getTick()), playerYOffset(), includedMotion);
+                sourceTick==null?null:predictionHistory.get(sourceTick), playerYOffset(), includedMotion,
+                sourceTick==null?-1:sourceTick);
         teleports.queue(rewind, accept -> player.queueAcknowledgment(packet, () -> {
             Long ackId = player.getLatencyUtil().currentAcknowledgmentId();
             Runnable complete = () -> {
@@ -833,6 +827,11 @@ public final class SessionState {
             else complete.run();
         }));
         return rewind;
+    }
+    public Long inputTickForSimulationFrame(long frame) {
+        for(var entry:teleports.getAuthInputHistory().descendingMap().entrySet())
+            if(entry.getValue().state().simulationFrame()==frame)return entry.getKey();
+        return null;
     }
 
     public long lastInputTick() {

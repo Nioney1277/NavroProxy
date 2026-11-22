@@ -19,16 +19,16 @@ public final class PredictionRewind {
         var wire = session.player();
         if (session.teleports().isTeleporting() || wire.vehicleData != null) return;
         long liveTick = wire.tick();
-        if (correction.tick() >= liveTick) return;
+        if (correction.inputTick() >= liveTick) return;
         if (wire.isMovementExempted()) {
             session.authInputPackets().processExemptedMovement();
             return;
         }
         var history = session.teleports().getAuthInputHistory();
-        TickData source = history.get(correction.tick());
-        long distance = liveTick - correction.tick();
+        TickData source = history.get(correction.inputTick());
+        long distance = liveTick - correction.inputTick();
         if (source == null || distance > session.rewindHistorySize()
-                || history.subMap(correction.tick(), false, liveTick, false).size() != distance - 1) {
+                || history.subMap(correction.inputTick(), false, liveTick, false).size() != distance - 1) {
             trace(session, "prediction_rewind_missing_history", correction, 0);
             session.teleports().teleport(correction.getPosition());
             return;
@@ -46,7 +46,7 @@ public final class PredictionRewind {
         long precedingResize = wire.aabbResizeRevision();
         int replayed = 0;
         try {
-            for (long tick = correction.tick() + 1; tick < liveTick; tick++) {
+            for (long tick = correction.inputTick() + 1; tick < liveTick; tick++) {
                 var input = history.get(tick);
                 wire.restoreReplayInput(input.state(), precedingResize);
                 prediction.itemUse().getItemUseTracker().restore(input.itemUseSnapshot());
@@ -91,7 +91,7 @@ public final class PredictionRewind {
         wire.setVelocity(correction.tickEnd());
         wire.setCollisionResult(false, false, correction.isOnGround());
         wire.resetCorrectionObservation();
-        session.cacheRewindBaseline(correction.tick(), correction.yOffset(sourceOffset));
+        session.cacheRewindBaseline(correction.inputTick(), correction.yOffset(sourceOffset),source.state().simulationFrame());
     }
 
     private static void acceptHistoricalPrediction(SessionState session, long tick) {

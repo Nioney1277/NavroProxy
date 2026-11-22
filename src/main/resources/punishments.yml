@@ -43,13 +43,6 @@ Punishments:
       - "1:1 [alert]"
       # - "100:0 kick %player%"
 
-  BadPacketsD:
-    remove-violations-after: 300
-    checks: ["BadPacketsD"]
-    commands:
-      - "1:1 [alert]"
-      # - "100:0 kick %player%"
-
   Sprint-A:
     remove-violations-after: 300
     checks: ["Sprint-A"]

@@ -3,7 +3,7 @@ package ac.navro.proxy.listener;
 import ac.navro.proxy.SessionState;
 import ac.navro.proxy.check.impl.timer.NegativeTimer;
 import ac.navro.proxy.check.impl.timer.Timer;
-import ac.navro.proxy.check.impl.badpackets.BadPacketsC;
+import ac.navro.proxy.packets.input.AuthInputClock;
 import ac.navro.proxy.check.api.impl.PacketCheck;
 import ac.navro.proxy.state.WirePlayerState;
 import org.cloudburstmc.protocol.bedrock.data.AttributeData;
@@ -30,35 +30,26 @@ public final class PacketListener {
                 && player.acknowledgedDead) {
             negativeTimer.onRespawn();
         }
+        if(packet instanceof PlayerAuthInputPacket input && !AuthInputClock.begin(state,input))return false;
         if (player.isExempted()) return true;
         if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovementPredictionSyncPacket sync) {
             state.observePredictionSync(sync);
         }
         player.setMaxBalanceAdvantageMs(maxBalanceAdvantageMS);
-        BadPacketsC tickOrder = (BadPacketsC) player.getCheckHolder().get(BadPacketsC.class);
         if (packet instanceof PlayerAuthInputPacket input) {
-            if (player.checkEnabled(BadPacketsC.class) && tickOrder.onPacketReceive(packet, false)) {
-                state.observeRejectedClient(packet, "BadPacketsC", "rejected tick=" + input.getTick());
-                return false;
-            }
-            player.sinceLoadingScreen++;
             Timer timer = (Timer) player.getCheckHolder().get(Timer.class);
-            if (player.checkEnabled(Timer.class) && timer.isInvalid(input.getTick())) {
-                tickOrder.discard();
+            if (player.checkEnabled(Timer.class) && timer.isInvalid()) {
                 state.observeRejectedClient(packet, "Timer", "rejected tick=" + input.getTick());
                 return false;
             }
             if(player.checkEnabled(NegativeTimer.class))negativeTimer.onAuthInput(input);
         }
         for (PacketCheck check : player.getCheckHolder().packetChecks()) {
-            if (check instanceof BadPacketsC) continue;
             if (check.onPacketReceive(packet, false)) {
-                if (packet instanceof PlayerAuthInputPacket) tickOrder.discard();
                 state.observeRejectedClient(packet, check.getClass().getSimpleName(), "cancelled by packet check");
                 return false;
             }
         }
-        if (packet instanceof PlayerAuthInputPacket) tickOrder.commit();
         return true;
     }
 

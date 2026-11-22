@@ -16,13 +16,18 @@ public class Timer extends PingBasedCheck {
     protected final TimerBudget budget = new TimerBudget();
     protected final LongSupplier clock;
     protected final Consumer<String> report;
+    protected final LongSupplier wallClock;
 
     public Timer(final WirePlayerState player) {
         this(player, System::nanoTime, null);
     }
 
     protected Timer(final WirePlayerState player, final LongSupplier clock, final Consumer<String> report) {
+        this(player,clock,report,System::currentTimeMillis);
+    }
+    protected Timer(final WirePlayerState player,final LongSupplier clock,final Consumer<String> report,LongSupplier wallClock) {
         super(player);
+        this.wallClock=wallClock;
         this.clock = clock;
         this.report = report == null ? this::fail : report;
     }
@@ -47,30 +52,17 @@ public class Timer extends PingBasedCheck {
     }
 
 
-    public boolean isInvalid(long inputTick) {
-        final long now = clock.getAsLong();
-
-        if (needsTimerReset()) {
-
-            budget.reset(now, inputTick);
-
+    public boolean isInvalid(long ignoredClientTick) {
+        long now=clock.getAsLong();
+        if (budget.lastNS==0 || (player.inLoadingScreen
+                ? wallClock.getAsLong()-player.loadingScreenStartMs<10_000L
+                : player.sinceLoadingScreen<200)) {
+            budget.resetBoar(now);
             return false;
         }
-
-        final boolean grace = timerGrace();
-        final TimerBudget.Accounting accounting = budget.account(now, inputTick, grace,
-                player.maxBalanceAdvantageMs());
-        if (accounting.invalid()) {
-
-            if (accounting.flag()) {
-                report.accept(formatTimerMillis(accounting.evaluatedBalance()));
-            } else {
-
-            }
-
-            pullBack();
-        }
-
+        TimerBudget.Accounting accounting=budget.accountBoar(now,player.maxBalanceAdvantageMs());
+        if(accounting.flag())report.accept("balance="+accounting.evaluatedBalance());
+        budget.lastNS=Math.max(budget.lastNS,clock.getAsLong());
         return accounting.invalid();
     }
 
@@ -98,42 +90,33 @@ public class Timer extends PingBasedCheck {
         boolean beforeAuthInput;
         long lastMovementPlayerClock;
 
-        void reset(final long now, final long tick) {
-            lastNS = now;
-            prevTick = tick;
-            balance = loseBalance = 0;
-            beforeAuthInput = false;
+        void resetBoar(long now) {
+            lastNS=now;
+            balance=0;
         }
 
-        record Accounting(long elapsedNS, long requiredNS, long evaluatedBalance,
-                          boolean invalid, boolean flag) { }
+        record Accounting(long elapsedNS,long requiredNS,long evaluatedBalance,
+                          boolean invalid,boolean flag) { }
 
-        Accounting account(final long now, final long tick, final boolean grace,
-                           final long maxBalanceAdvantageMS) {
-            final long elapsed = Math.max(0, now - lastNS);
-            final long required = Math.max(0, tick - prevTick) * TICK_NS;
-
-
-            balance += required - elapsed;
-
-
-            if (grace) balance = Math.min(0, balance);
-            final long maxAdvantage = Math.max(0, maxBalanceAdvantageMS) * 1_000_000L;
-            if (maxAdvantage > 0 && balance <= -(maxAdvantage + TICK_NS)) {
-                loseBalance = Math.abs(balance);
-                balance = -TICK_NS;
+        Accounting accountBoar(long now,long maxBalanceAdvantageMS) {
+            long distance=now-lastNS;
+            long evaluated=balance;
+            boolean invalid=balance>LIMIT_NS;
+            boolean flag=invalid && balance-loseBalance>LIMIT_NS;
+            if(invalid) {
+                if(!flag)loseBalance-=TICK_NS;
+                balance-=TICK_NS;
+            } else {
+                long maximum=(long)Math.max(0,maxBalanceAdvantageMS*1e6);
+                if(balance<=-Math.abs(maximum+TICK_NS) && maxBalanceAdvantageMS>0) {
+                    loseBalance=Math.abs(balance);
+                    balance=-TICK_NS;
+                }
             }
-            final long evaluated = balance;
-            final boolean invalid = !grace && evaluated > LIMIT_NS;
-            final boolean flag = invalid && evaluated - loseBalance > LIMIT_NS;
-            if (invalid) {
-                if (!flag) loseBalance = Math.max(0, loseBalance - TICK_NS);
-                balance -= TICK_NS;
-            }
-            lastNS = Math.max(lastNS, now);
-            prevTick = tick;
-            beforeAuthInput = !grace;
-            return new Accounting(elapsed, required, evaluated, invalid, flag);
+            balance-=distance-TICK_NS;
+            lastNS=Math.max(lastNS,now);
+            beforeAuthInput=true;
+            return new Accounting(distance,TICK_NS,evaluated,invalid,flag);
         }
 
         void acknowledge(final long sentNS, final long now) {

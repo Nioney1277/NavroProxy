@@ -19,7 +19,7 @@ public final class PostAuthInputPackets {
 
         if (player.awaitingRespawnHealth()) return trace(session, packet, false, "awaiting_respawn_health");
 
-        session.teleports().getAuthInputHistory().put(packet.getTick(), TickData.capture(session, packet));
+        if(!cancelled)session.teleports().getAuthInputHistory().put(player.tick(), TickData.capture(session, packet));
         var context = session.authInputPackets().context();
         context.thisTickRiptideLevel = 0;
         context.riptideTickStartState = null;

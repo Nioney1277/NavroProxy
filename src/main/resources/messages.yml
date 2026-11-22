@@ -23,3 +23,6 @@ usage: "%prefix%Usage: /navro %usage%"
 # Used when a kick action has no explicit reason.
 kick-message: "%prefix%&cDisconnected for %check_name% violations."
 disconnect-timeout: "Timed out!"
+
+# Internal input validation: negative client frames are impossible.
+disconnect-invalid-tick: "Impossible tick id=%tick%"

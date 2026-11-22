@@ -26,8 +26,8 @@ differ-till-alert: 0.0
 # Checks that you want Navro to disable.
 # Check names use "Name-Type" when a type exists, or "Name" otherwise.
 # For example: Sprint-A, Timer, RotationPlace or Elytra-A.
-# Bad Packet-C (displayed as BadPacketsC) checks client tick ordering.
-# BadPacketsC and the previous ClientTickOrder disable keys are also accepted.
+# BadPacketsC checks respawn requests before acknowledged death.
+# Input tick validation is internal and is not controlled by disabled-checks.
 disabled-checks: []
 
 # How long do we wait for player to respond to latency confirmation/acknowledgements till we kicked the player for timed out.

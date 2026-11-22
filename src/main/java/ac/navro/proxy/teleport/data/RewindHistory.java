@@ -9,14 +9,17 @@ import org.cloudburstmc.protocol.bedrock.packet.CorrectPlayerMovePredictionPacke
 
 
 public record RewindHistory(long tick, Vec3 position, PredictionData data,
-                            MovementAabbSnapshot aabb, float yOffset, boolean onGround) {
+                            MovementAabbSnapshot aabb, float yOffset, boolean onGround,long simulationFrame) {
     public RewindHistory {
         position = position.clone();
         data = copy(data);
     }
 
     public RewindHistory(long tick, Vec3 position, PredictionData data) {
-        this(tick, position, data, null, 0, data.before().y != data.after().y && data.before().y < 0);
+        this(tick, position, data, null, 0, data.before().y != data.after().y && data.before().y < 0,tick);
+    }
+    public RewindHistory(long tick,Vec3 position,PredictionData data,MovementAabbSnapshot aabb,float yOffset,boolean onGround) {
+        this(tick,position,data,aabb,yOffset,onGround,tick);
     }
 
     private static PredictionData copy(PredictionData value) {
@@ -36,7 +39,7 @@ public record RewindHistory(long tick, Vec3 position, PredictionData data,
         final Vec3 physical = physicalActor ? player.boundingBox.feetCenter() : player.position.clone();
         final MovementAabbSnapshot aabb = physicalActor ? new MovementAabbSnapshot(player.dimensions,
                 physical, player.boundingBox, player.aabbResizeRevision()) : null;
-        return new RewindHistory(tick, physical.up(yOffset), data, aabb, yOffset, player.onGround);
+        return new RewindHistory(tick, physical.up(yOffset), data, aabb, yOffset, player.onGround,player.wire.simulationFrame());
     }
 
     public boolean matches(final Vec3 wirePosition, final Vec3 delta, final boolean ground) {
@@ -52,7 +55,7 @@ public record RewindHistory(long tick, Vec3 position, PredictionData data,
         packet.setPosition(position.toVector3f());
         packet.setDelta(data.tickEnd().toVector3f());
         packet.setOnGround(onGround);
-        packet.setTick(tick);
+        packet.setTick(simulationFrame);
         packet.setVehicleRotation(Vector2f.ZERO);
         packet.setPredictionType(vehicle ? org.cloudburstmc.protocol.bedrock.data.PredictionType.VEHICLE
                 : org.cloudburstmc.protocol.bedrock.data.PredictionType.PLAYER);

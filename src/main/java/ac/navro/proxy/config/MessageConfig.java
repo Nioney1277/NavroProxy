@@ -22,6 +22,7 @@ public record MessageConfig(Map<String,String> templates) {
         m.put("usage","%prefix%Usage: /navro %usage%");
         m.put("kick-message","%prefix%&cDisconnected for %check_name% violations.");
         m.put("disconnect-timeout","Timed out!");
+        m.put("disconnect-invalid-tick","Impossible tick id=%tick%");
         return new MessageConfig(m);
     }
     public String prefix() { return templates.get("prefix"); }

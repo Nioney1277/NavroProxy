@@ -30,7 +30,11 @@ public final class TeleportHandler {
                     "headAccepted", head != null && head.isAccepted(), "headTarget", head == null ? null : head.getPosition().toVector3f()));
         }
         boolean[] skipTravel = {false};
-        teleports.drainReadyTeleports(input, session.player().vehicleData == null, data -> {
+        for(var queued:teleports.getQueuedTeleports()) {
+            if(queued instanceof RewindData rewind)
+                rewind.observeInputFrame(session.player().tick(),session.player().simulationFrame());
+        }
+        teleports.drainReadyTeleports(input, session.player().vehicleData == null, session.player().tick(),data -> {
             if (data instanceof RewindData rewind) PredictionRewind.process(session, rewind);
             else if (data instanceof CorrectionResetData reset) {
                 applyHardCorrection(reset, input, true);
@@ -103,7 +107,7 @@ public final class TeleportHandler {
             Vec3 expected = reset.isOnGround() && input.getInputData().contains(PlayerAuthInputData.START_JUMPING)
                     && player.predictionSprinting() && !player.flying()
                     ? ProtocolTeleportMotion.sprintJumpImpulse(input.getRotation().getY()) : null;
-            var seed = ProtocolTeleportMotion.fromConfirmation(input.getTick(), new Vec3(input.getDelta()), expected);
+            var seed = ProtocolTeleportMotion.fromConfirmation(player.tick(), new Vec3(input.getDelta()), expected);
             if (seed != null) session.rememberTeleportMotion(seed);
         }
     }

@@ -44,17 +44,17 @@ public final class NegativeTimer extends Timer {
     public void onAuthInput(final PlayerAuthInputPacket input) {
         final long now = clock.getAsLong();
         if (needsTimerReset() || !player.isAlive()) {
-            budget.resetNegative(now, input.getTick(), DRIFT_NS);
+            budget.resetNegative(now, player.tick(), DRIFT_NS);
             awaitFirstInputAfterLifecycle = true;
             return;
         }
         if (awaitFirstInputAfterLifecycle) {
-            budget.resetNegative(now, input.getTick(), DRIFT_NS);
+            budget.resetNegative(now, player.tick(), DRIFT_NS);
             awaitFirstInputAfterLifecycle = false;
             return;
         }
         final TimerBudget.NegativeAccounting accounting = budget.accountNegative(
-                now, input.getTick(), DRIFT_NS, timerGrace());
+                now, player.tick(), DRIFT_NS, timerGrace());
         if (accounting.flag()) {
             report.accept(formatTimerMillis(accounting.evaluatedBalance()));
             pullBack();

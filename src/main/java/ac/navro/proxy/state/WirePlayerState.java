@@ -105,6 +105,9 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
     private final ac.navro.proxy.prediction.PredictionSyncState predictionSync = new ac.navro.proxy.prediction.PredictionSyncState();
     public ac.navro.proxy.prediction.PredictionSyncState predictionSync() { return predictionSync; }
     private long tick = -1;
+    private long simulationFrame = -1;
+    private PlayerAuthInputPacket clockedInput;
+    public long loadingScreenStartMs = System.currentTimeMillis();
     private long previousTick = -1;
     private long lastCorrectionTick = -1;
     public int tickSinceBlockResync;
@@ -181,7 +184,7 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
         if(info==null)return true;
         String key=info.type().isEmpty()?info.name():info.name()+"-"+info.type();
         if(type==ac.navro.proxy.check.impl.badpackets.BadPacketsC.class
-                &&(disabledChecks.contains("BadPacketsC")||disabledChecks.contains("ClientTickOrder")))return false;
+                &&disabledChecks.contains("BadPacketsC"))return false;
         return !disabledChecks.contains(key);
     }
     public void setExempted(boolean value) { exempted = value; }
@@ -224,6 +227,19 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
         previousTick = tick;
         tick = value;
     }
+    public void advanceInputClock(PlayerAuthInputPacket input) {
+        if(input.getTick()<0)throw new IllegalArgumentException("Negative client frame");
+        previousTick=tick;
+        tick++;
+        simulationFrame=input.getTick();
+        long now=System.currentTimeMillis();
+        lastAuthInputGapMs=now-sinceAuthInput;
+        sinceAuthInput=now;
+        sinceLoadingScreen++;
+        clockedInput=input;
+    }
+    public long simulationFrame(){return simulationFrame;}
+
 
     public CheckHolder getCheckHolder() { return checkHolder; }
     public LatencyUtil getLatencyUtil() { return latencyUtil; }
@@ -337,7 +353,8 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
                       float inputYOffset) {
         beginPoseInput();
 
-        if (tick != packet.getTick()) commitInputTick(packet.getTick());
+        if(clockedInput!=packet)advanceInputClock(packet);
+        clockedInput=null;
         rawInputPosition = WireVec3.of(packet.getPosition());
         previousInputRotation = rawInputRotation;
         rawInputRotation = WireVec3.of(packet.getRotation());
@@ -742,6 +759,8 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
 
     public void restoreReplayInput(WireTickSnapshot frame, long precedingResizeRevision) {
         tick = frame.tick();
+        simulationFrame = frame.simulationFrame();
+        clockedInput=null;
         previousTick = frame.previousTick();
         inputMode = frame.inputMode();
         interactionModel = frame.interactionModel();
@@ -926,7 +945,7 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
                 poseMetadataRevision, acknowledgedPoseMetadataRevision,
                 pendingPoseMetadata.stream().map(value -> WireTickSnapshot.PoseMetadata.from(
                         value.revision(), value.metadata(), value.sourceTick())).toList(), collisionPhysics.snapshot(), movementCollisionEntries, wasFlying, abilities, afterCollision, trackedFlags.cloneFlags(), pose.wasSwimming,
-                new SprintSynchronization(lastSprintActionTick, sprintHistory));
+                new SprintSynchronization(lastSprintActionTick, sprintHistory), simulationFrame);
     }
 
     private record PendingPoseMetadata(long revision, EntityDataMap metadata, long sourceTick) {}
@@ -945,6 +964,8 @@ public final class WirePlayerState implements ac.navro.proxy.prediction.fluid.Fl
         wasFlying = snapshot.wasFlying();
         abilities = snapshot.abilities();
         tick = snapshot.tick();
+        simulationFrame = snapshot.simulationFrame();
+        clockedInput=null;
         previousTick = snapshot.previousTick();
         inputMode = snapshot.inputMode();
         interactionModel = snapshot.interactionModel();
