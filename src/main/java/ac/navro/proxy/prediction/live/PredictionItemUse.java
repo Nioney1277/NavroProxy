@@ -25,20 +25,20 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
     private final ItemUseTracker<ItemData> tracker=new ItemUseTracker<>(this);
     private final FlagTracker<ItemData> flags;
     private boolean serverUsing;
+    private ItemData heldItemAfterMovement;
     private int sinceTridentUse;
     public PredictionItemUse(SessionState session){this.session=session;this.flags=session.player().trackedFlags();}
     public ItemUseTracker<ItemData> getItemUseTracker(){return tracker;}
     public void onHeldItemChanged(ItemData item){
-
-
-
+        item=nativeItem(item);
         if (usingItemFlag()) {
-            traceUse("item_use_held_change",fields("decision","await_use_stop"));
+            heldItemAfterMovement=item;
+            traceUse("item_use_held_change",fields("decision","finish_scaled_movement"));
             return;
         }
-
+        heldItemAfterMovement=null;
         var pending=tracker.getUsedItem();
-        if (pending!=airItem()&&!sameDefinition(nativeItem(item),pending)) {
+        if (pending!=airItem()&&!sameDefinition(item,pending)) {
             tracker.release();
             traceUse("item_use_held_change",fields("decision","cancel_pending_request"));
         }
@@ -219,5 +219,13 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
         }
         tracker.preTick();
     }
-    public void finishInput(){tracker.postTick();}
+    public void finishInput(){
+        if(heldItemAfterMovement!=null){
+            var held=heldItemAfterMovement;
+            heldItemAfterMovement=null;
+            tracker.onHeldItemChanged(held);
+            traceUse("item_use_held_change_applied",fields("decision","movement_finished"));
+        }
+        tracker.postTick();
+    }
 }
