@@ -18,6 +18,7 @@ final class NavroBridge extends PluginBase{
     private bool $consoleAlerts;
     private bool $staffChatAlerts;
     private Config $mutedPlayers;
+    private ?FireworkBridge $fireworks = null;
 
     protected function onEnable() : void{
         $this->saveDefaultConfig();
@@ -27,7 +28,17 @@ final class NavroBridge extends PluginBase{
         $this->consoleAlerts = $config->get("console-alerts", true) === true;
         $this->staffChatAlerts = $config->get("staff-chat-alerts", true) === true;
         $this->mutedPlayers = new Config($this->getDataFolder() . "muted-alerts.json", Config::JSON);
-        (new NativeStateSync($this))->register();
+        $stateSync = new NativeStateSync($this);
+        $stateSync->register();
+        if(FireworkBridge::isSupported()){
+            $this->fireworks = new FireworkBridge($stateSync);
+            $this->fireworks->register($this);
+        }
+    }
+
+    protected function onDisable() : void{
+        $this->fireworks?->clear();
+        $this->fireworks = null;
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{

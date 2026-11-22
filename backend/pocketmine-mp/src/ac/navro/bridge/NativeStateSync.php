@@ -56,6 +56,10 @@ final class NativeStateSync{
         }), 1);
     }
 
+    public function hasSession(NetworkSession $session) : bool{
+        return isset($this->sessions[$session]);
+    }
+
     private function syncCommandsAfterJoin(PlayerJoinEvent $event) : void{
         $session = $event->getPlayer()->getNetworkSession();
         if(!$this->plugin->trusts($session)){
