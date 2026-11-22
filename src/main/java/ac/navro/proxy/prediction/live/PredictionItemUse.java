@@ -28,21 +28,7 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
     private int sinceTridentUse;
     public PredictionItemUse(SessionState session){this.session=session;this.flags=session.player().trackedFlags();}
     public ItemUseTracker<ItemData> getItemUseTracker(){return tracker;}
-    public void onHeldItemChanged(ItemData item){
-
-
-
-        if (usingItemFlag()) {
-            traceUse("item_use_held_change",fields("decision","await_use_stop"));
-            return;
-        }
-
-        var pending=tracker.getUsedItem();
-        if (pending!=airItem()&&!sameDefinition(nativeItem(item),pending)) {
-            tracker.release();
-            traceUse("item_use_held_change",fields("decision","cancel_pending_request"));
-        }
-    }
+    public void onHeldItemChanged(ItemData item){tracker.onHeldItemChanged(nativeItem(item));}
     public ItemData airItem(){return ItemData.AIR;}
     private NativePredictionItems.Traits traits(ItemData item){return NativePredictionItems.resolve(session.player().protocolVersion(),item);}
     public String identifier(ItemData item){return ItemUtil.identifier(nativeItem(item));}
@@ -66,7 +52,7 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
     public boolean hasUseDurationComponent(ItemData item){
         if(item==null||item.getDefinition()==null)return false;
         NbtMap root=item.getDefinition().getComponentData();if(root==null)return false;
-        Object data=root.get("components");if(!(data instanceof NbtMap components))return false;
+        Object data=root.get("components");if(!(data instanceof NbtMap components))return true;
         if(components.containsKey("minecraft:use_duration"))return true;
         Object properties=components.get("item_properties");return properties instanceof NbtMap map&&map.containsKey("use_duration");
     }
