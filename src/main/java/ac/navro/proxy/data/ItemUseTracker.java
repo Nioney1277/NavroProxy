@@ -3,12 +3,12 @@ package ac.navro.proxy.data;
 import java.util.Locale;
 import java.util.Set;
 
-
+/** Original request/metadata/prediction state machine over explicit native item identities. */
 public class ItemUseTracker<I> {
     public static final int USING_ITEM = -1;
     public static final int ACTION_FLAG = 4;
 
-
+    /** Native item/model boundaries. airItem has stable identity; cloneFlags returns a mutable copy. */
     public interface Context<I> {
         I airItem();
         String identifier(I item);
@@ -49,23 +49,23 @@ public class ItemUseTracker<I> {
     private boolean useButtonLatched;
     private boolean buttonReleasePending;
 
-
-
-
-
-
+    // Server use state and client-visible slowdown state are separate domains.
+    // Nukkit can queue ACTION=false metadata from an older release and deliver it
+    // after a new use request has already started. Track that exact ordering in
+    // Navro player/AuthInput ticks (not Nukkit server ticks), so prediction
+    // follows the movement frame in which the Bedrock client observed it.
     private int pendingMetadataFalsePackets;
     private long lastMetadataTrueSentPlayerTick = Long.MIN_VALUE;
     private long lastMetadataFalseAckPlayerTick = Long.MIN_VALUE;
-
-
+    // Ordered network confirmation is live state, independent of local prediction
+    // flags and of the flags restored while replaying an older movement input.
     private Boolean lastAcknowledgedMetadataUsing;
     private boolean awaitingMetadataStartConfirmation;
     private boolean predictionUsingItem;
     private boolean predictionAction;
     private long predictionInputTick = Long.MIN_VALUE;
-
-
+    // Belongs to the movement input, not the mutable item/request state. Both
+    // committed movement and velocity trials must use this same frozen value.
     private float predictionItemSlowdownFactor = 1F;
 
     public ItemUseTracker(final Context<I> context) {
@@ -100,10 +100,10 @@ public class ItemUseTracker<I> {
 
     public void postTick() {
         if (!context.hasFlag(USING_ITEM)) {
-
-
-
-
+            // Geyser keeps a use request pending after sending Java's UseItem packet
+            // and waits for either START_USING_ITEM or server metadata to confirm it.
+            // Do not discard the request merely because confirmation did not arrive
+            // in the same Bedrock auth-input tick.
             if (this.dirtyUsing == DirtyUsing.INVENTORY_TRANSACTION
                     || this.awaitingMetadataStartConfirmation) {
                 return;
@@ -121,9 +121,9 @@ public class ItemUseTracker<I> {
             return;
         }
 
-
-
-
+        // Match Geyser's BedrockMobEquipmentTranslator: changing the carried slot
+        // does not locally clear USING_ITEM. The authoritative server metadata or
+        // an explicit RELEASE transaction ends the state.
     }
 
     public void onMetadataUseStateChanged(final boolean oldUsing, final boolean newUsing) {
@@ -132,9 +132,9 @@ public class ItemUseTracker<I> {
             this.awaitingMetadataStartConfirmation = false;
         } else if (context.serverUsingItem()
                 && this.usedItem != this.airItem && this.javaItemId != -1) {
-
-
-
+            // The client has observed an ACTION=false packet from an older use
+            // generation while Nukkit is already using the replacement item.
+            // Keep the request pending until the later ACTION=true packet arrives.
             this.awaitingMetadataStartConfirmation = true;
             this.dirtyUsing = DirtyUsing.INVENTORY_TRANSACTION;
         }
@@ -158,9 +158,9 @@ public class ItemUseTracker<I> {
 
         this.pendingMetadataFalsePackets++;
 
-
-
-
+        // Sending a stop does not say which movement input observed it, even
+        // when a start was sent in the same server-observed player tick. Only
+        // the ordered acknowledgment may apply that metadata transition.
         context.stage("USE_METADATA_SENT_END", "using", using,
                 "lastMetadataTrueSentPlayerTick", this.lastMetadataTrueSentPlayerTick);
     }
@@ -200,7 +200,7 @@ public class ItemUseTracker<I> {
         context.stage("USE_PREDICTION_SNAPSHOT_END");
     }
 
-
+    /** Native flags history belongs to the movement phase, before a later local release. */
     public Set<Integer> snapshotPredictionFlags(final long inputTick) {
         final Set<Integer> flags = context.cloneFlags();
         if (this.predictionInputTick == inputTick) {
@@ -210,7 +210,7 @@ public class ItemUseTracker<I> {
         return flags;
     }
 
-
+    /** Update the model's local-start flags; this does not acknowledge a server packet. */
     public void applyPredictedUseStart() {
         final boolean using = !this.awaitingMetadataStartConfirmation;
         context.setFlag(USING_ITEM, using);
@@ -221,9 +221,9 @@ public class ItemUseTracker<I> {
 
     public void release() {
         context.event("USE_RELEASE_BEGIN");
-
-
-
+        // Bedrock can emit RELEASE_ITEM as part of a carried-slot transition
+        // while the physical use button is still held. Wait for the following
+        // auth-input frame before deciding whether this was a real button-up.
         this.buttonReleasePending = this.useButtonLatched;
         this.releaseState(false);
         context.event("USE_RELEASE_END");
@@ -252,8 +252,8 @@ public class ItemUseTracker<I> {
         this.javaItemId = -1;
         this.dirtyUsing = DirtyUsing.NONE;
         this.awaitingMetadataStartConfirmation = false;
-
-
+        // A release may run after this movement's input has already been
+        // scaled. It affects the next snapshot, never the current input.
         if (clearButtonLatch) {
             this.useButtonLatched = false;
             this.buttonReleasePending = false;
@@ -277,12 +277,13 @@ public class ItemUseTracker<I> {
         this.dirtyUsing = DirtyUsing.NONE;
         this.buttonReleasePending = false;
         context.sinceTridentUse(0);
-
-
-
-
+        // A held-button restart can follow an acknowledged completion in this
+        // same input tick. Honor the stop until the replacement start is
+        // confirmed, as use(skip=false) does. Repeated START edges must retain
+        // that wait; an already acknowledged start must remain usable.
         if (!context.hasFlag(USING_ITEM)
-                && this.hasUnreplacedStopInCurrentInput()) {
+                && (this.hasUnreplacedStopInCurrentInput()
+                || Boolean.FALSE.equals(this.lastAcknowledgedMetadataUsing))) {
             this.awaitingMetadataStartConfirmation = true;
         }
         if (!this.awaitingMetadataStartConfirmation) {
@@ -346,9 +347,9 @@ public class ItemUseTracker<I> {
             return;
         }
 
-
-
-
+        // Changing the carried item immediately stops the client's slowdown model.
+        // Preserve only the physical button edge so a later CLICK_AIR can resume
+        // without requiring Bedrock to emit another START_USING_ITEM.
         this.releaseState(false);
     }
 
@@ -363,16 +364,16 @@ public class ItemUseTracker<I> {
         this.javaItemId = itemId;
         this.dirtyUsing = DirtyUsing.INVENTORY_TRANSACTION;
         if (!skip) {
-
-
-
-
+            // An ACTION=false packet that is merely in flight does not prevent the
+            // Bedrock client from applying its new local START_USING_ITEM slowdown.
+            // Wait only after that false packet has actually been acknowledged in
+            // the same player/AuthInput tick as this replacement use request.
             this.awaitingMetadataStartConfirmation =
                     this.hasUnreplacedStopInCurrentInput();
         }
         if (skip) {
-
-
+            // skip=true is a validated START_USING_ITEM event. It is not a
+            // persistent physical-button snapshot; the latch is a legacy policy.
             this.useButtonLatched = true;
             this.buttonReleasePending = false;
             }
@@ -475,8 +476,8 @@ public class ItemUseTracker<I> {
     }
 
     private boolean hasUnreplacedStopInCurrentInput() {
-
-
+        // ACTION also changes on local start/release and can be restored from
+        // movement history. Neither it nor USING_ITEM identifies the last ACK.
         return this.lastMetadataFalseAckPlayerTick == context.playerTick()
                 && Boolean.FALSE.equals(this.lastAcknowledgedMetadataUsing);
     }
@@ -486,9 +487,9 @@ public class ItemUseTracker<I> {
             return true;
         }
 
-
-
-
+        // Nukkit-MOT does not expose Bedrock component NBT for every vanilla item.
+        // Its native use-duration/release flags are the equivalent source for those
+        // definitions (food, shields and other hold-to-use items).
         if (context.canRelease(usedItem) || context.useDuration(usedItem) > 0) {
             return true;
         }

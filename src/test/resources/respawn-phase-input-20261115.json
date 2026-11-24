@@ -1,0 +1,88 @@
+{
+  "provenance": "Live proxy diagnostic rawInput values, 2026-11-15; health and Respawn/MOVE ordering corroborated by packet-order.log. Not a complete wire recording or walking replay.",
+  "session": "0efdbb39-3edb-49d6-94d3-5ef4c4c4dd19",
+  "protocol": 2193,
+  "initialFeet": [
+    122.977295,
+    4,
+    143.06895
+  ],
+  "initialVelocity": [
+    -6.868776e-08,
+    -0.0784,
+    3.1773908e-07
+  ],
+  "inputs": [
+    {
+      "tick": 2416,
+      "time": "2026-11-15T00:52:28.654647468Z",
+      "seq": 3475,
+      "position": [
+        122.977295,
+        5.62001,
+        143.06895
+      ],
+      "delta": [
+        -0.0,
+        -0.0784,
+        1.7348556e-07
+      ],
+      "rotation": [
+        43.38092,
+        12.198303,
+        12.198303
+      ],
+      "motion": [
+        0.0,
+        0.0
+      ],
+      "rawMoveVector": [
+        0.0,
+        0.0
+      ],
+      "actions": [
+        "BLOCK_BREAKING_DELAY_ENABLED",
+        "VERTICAL_COLLISION"
+      ]
+    },
+    {
+      "tick": 2449,
+      "time": "2026-11-15T00:52:30.308398665Z",
+      "seq": 3481,
+      "position": [
+        123.1,
+        4.00001,
+        143.1
+      ],
+      "delta": [
+        0.0,
+        -0.0784,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        12.194794,
+        12.194794
+      ],
+      "motion": [
+        0.0,
+        0.0
+      ],
+      "rawMoveVector": [
+        0.0,
+        0.0
+      ],
+      "actions": [
+        "BLOCK_BREAKING_DELAY_ENABLED",
+        "HORIZONTAL_COLLISION"
+      ]
+    }
+  ],
+  "terrain": {
+    "grassY": 3,
+    "dirtY": 2,
+    "grassNetworkId": -567203660,
+    "dirtNetworkId": -2108756090
+  },
+  "sourceEventsSha256": "717ffb97fb996f1066a9dab24708e318be4f97edfde846d19b05b0f3de470556"
+}

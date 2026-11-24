@@ -32,8 +32,8 @@ final class PrivateNetherNet{
         }
         $config = NetherNetConfig::fromArray([
             "signaling-port" => $port,
-            "bind-address" => self::LOCAL_ADDRESS,
-            "ice-bind-address" => self::LOCAL_ADDRESS,
+            "bind-address" => $settings["signaling-bind-address"] ?? self::LOCAL_ADDRESS,
+            "ice-bind-address" => $settings["ice-bind-address"] ?? self::LOCAL_ADDRESS,
             "ice-port-range" => $settings["ice-port-range"] ?? [20000, 20127],
             "max-connections" => $maxConnections,
             "max-per-ip" => $maxConnections,
@@ -41,15 +41,10 @@ final class PrivateNetherNet{
             "trusted-key-files" => [self::KEY_ID => $settings["proxy-public-key-file"] ?? "navro-backend.pub.pem"],
             "issuer" => self::KEY_ID,
             "audience" => self::AUDIENCE,
-        ], $plugin->getDataFolder(), $server->getPort(), self::LOCAL_ADDRESS, $server->getMotd());
+        ], $plugin->getDataFolder(), $server->getPort(), $settings["advertised-address"] ?? self::LOCAL_ADDRESS, $server->getMotd());
         if($config === null){
             throw new \RuntimeException("Private NetherNet configuration did not start");
         }
-        $advertised = $config->getAdvertisedAddress();
-        if($advertised !== null && $advertised !== self::LOCAL_ADDRESS){
-            throw new \RuntimeException("Private NetherNet requires loopback ICE, including AMBER_NETHERNET_PUBLIC_IP");
-        }
-
         $converter = TypeConverter::getInstance();
         $broadcaster = $server->getPacketBroadcaster(ProtocolInfo::CURRENT_PROTOCOL);
         $interface = new NetherNetInterface(

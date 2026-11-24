@@ -5,10 +5,13 @@ trusted-proxy-addresses:
 console-alerts: true
 staff-chat-alerts: true
 
-# Optional PocketMine-MP-NG NetherNet backend for Navro on the same machine.
+# Optional PocketMine-MP-NG NetherNet backend for Navro.
 private-nethernet:
   enabled: false
   signaling-port: 19608
+  signaling-bind-address: "127.0.0.1"
+  ice-bind-address: "127.0.0.1"
+  advertised-address: "127.0.0.1"
   ice-port-range: [20000, 20127]
   max-connections: 128
   proxy-public-key-file: navro-backend.pub.pem

@@ -24,6 +24,7 @@ public final class NetherNetInspectServer {
     private static final int GROUPED_BRIDGE_MAGIC = 0x4e564235;
     private static final int STOCK_BACKEND_MAGIC = 0x4e564236;
     private static final int RAKNET_BACKEND_MAGIC = 0x4e564237;
+    private static final int RAKNET_FRONTEND_MAGIC = 0x4e564238;
     private static final int MAX_GROUP_COUNT = 64;
     private static final int MAX_GROUP_BYTES = 2 * 1024 * 1024;
 
@@ -33,7 +34,6 @@ public final class NetherNetInspectServer {
         int port=args.length==0?19138:Integer.parseInt(args[0]);
         var backendType = ac.navro.proxy.protocol.BackendType.NAVRO;
         boolean smoothSetback = false;
-        boolean stockBackend = false;
         boolean operatorCommandTable = false;
         boolean backendStateSync = false;
         var palettes = new HashMap<Integer, RuntimePalette>();
@@ -44,7 +44,6 @@ public final class NetherNetInspectServer {
                     backendType = ac.navro.proxy.protocol.BackendType.parse(args[i]);
                 }
                 case "--smooth-setback" -> smoothSetback = true;
-                case "--stock-geyser-backend" -> stockBackend = true;
                 case "--operator-command-table" -> operatorCommandTable = true;
                 case "--backend-state-sync" -> backendStateSync = true;
                 case "--block-palette" -> {
@@ -63,7 +62,6 @@ public final class NetherNetInspectServer {
         ac.navro.proxy.command.ConsoleCommands.start(NetherNetAlerts.commands(),NetherNetAlerts.ALERTS);
         final var selectedBackend = backendType;
         final boolean selectedSmoothSetback = smoothSetback;
-        final boolean allowStockBackend = stockBackend;
         final boolean restrictCommandTable = operatorCommandTable;
         final boolean allowBackendStateSync = backendStateSync;
         var selectedPalettes = Map.copyOf(palettes);
@@ -72,11 +70,11 @@ public final class NetherNetInspectServer {
         try(var server=new ServerSocket()){
             server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(),port));
             System.out.println("NETHERNET_ADAPTER_READY loopback="+server.getLocalSocketAddress()+" mode=per_connection backendType="+backendType);
-            while(true){var socket=server.accept();try{pool.execute(()->handle(socket, selectedBackend, selectedSmoothSetback, allowStockBackend, selectedPalettes, restrictCommandTable, allowBackendStateSync));}
+            while(true){var socket=server.accept();try{pool.execute(()->handle(socket, selectedBackend, selectedSmoothSetback, selectedPalettes, restrictCommandTable, allowBackendStateSync));}
                 catch(RejectedExecutionException e){socket.close();}}
         }finally{pool.shutdownNow();}
     }
-    private static void handle(Socket socket, ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, boolean allowStockBackend, Map<Integer, RuntimePalette> palettes, boolean restrictCommandTable, boolean allowBackendStateSync){
+    private static void handle(Socket socket, ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, Map<Integer, RuntimePalette> palettes, boolean restrictCommandTable, boolean allowBackendStateSync){
         var gson=new Gson();
         try(socket;var in=new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             var out=new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()))){
@@ -84,17 +82,18 @@ public final class NetherNetInspectServer {
             int magic=in.readInt();
             boolean stockBackend=magic==STOCK_BACKEND_MAGIC;
             boolean rakNetBackend=magic==RAKNET_BACKEND_MAGIC;
-            if(stockBackend&&!allowStockBackend)throw new IOException("Stock Geyser backend mode is disabled");
-            boolean grouped=stockBackend||rakNetBackend||magic==GROUPED_BRIDGE_MAGIC;
+            boolean rakNetFrontend=magic==RAKNET_FRONTEND_MAGIC;
+            boolean grouped=stockBackend||rakNetBackend||rakNetFrontend||magic==GROUPED_BRIDGE_MAGIC;
             boolean detectBridge=grouped||magic==DETECT_BRIDGE_MAGIC;
             boolean duplex=magic==0x4e564233||detectBridge;
             if(magic!=0x4e564231&&magic!=0x4e564232&&!duplex)throw new IOException("Invalid NetherNet IPC handshake");
             if(detectBridge)socket.setTcpNoDelay(true);
             int n=in.readInt();if(n<0||n>512)throw new IOException("Invalid transport key size");
-            if(detectBridge&&n==0)throw new IOException("Missing verified NetherNet transport key");
+            if(rakNetFrontend&&n!=0)throw new IOException("RakNet frontend has no DTLS identity");
+            if(detectBridge&&!rakNetFrontend&&n==0)throw new IOException("Missing verified NetherNet transport key");
             var key=n==0?null:KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(in.readNBytes(n)));
             KeyPair backendKey=null;
-            if(stockBackend||magic==0x4e564232||magic==0x4e564233){
+            if(stockBackend||rakNetFrontend||magic==0x4e564232||magic==0x4e564233){
                 int publicSize=in.readInt();if(publicSize<1||publicSize>512)throw new IOException("Invalid backend public key size");
                 var publicKey=KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(in.readNBytes(publicSize)));
                 int privateSize=in.readInt();if(privateSize<1||privateSize>1024)throw new IOException("Invalid backend private key size");
@@ -112,8 +111,10 @@ public final class NetherNetInspectServer {
                     throw new IOException("Invalid frontend address");
             }
             boolean detect=detectBridge||magic==0x4e564233&&in.readBoolean();
-            boolean backendStateSync = !detectBridge || rakNetBackend || stockBackend && allowBackendStateSync;
-            try(var session=new NetherNetBatchSession(key,backendKey,detect,backendType,smoothSetback,backendStateSync,peerAddress,rakNetBackend)){
+            boolean backendStateSync = !detectBridge || rakNetBackend || allowBackendStateSync;
+            try(var session=rakNetFrontend
+                    ? NetherNetBatchSession.forRakNetFrontend(backendKey,backendType,smoothSetback,backendStateSync)
+                    : new NetherNetBatchSession(key,backendKey,detect,backendType,smoothSetback,backendStateSync,peerAddress,rakNetBackend)){
                 session.setRuntimePalettes(palettes);
                 session.setOperatorCommandTable(restrictCommandTable);
                 if(detectBridge){out.writeInt(magic);out.flush();}

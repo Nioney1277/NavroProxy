@@ -1,5 +1,5 @@
 name: NavroBridge
-version: 1.0.1
+version: 1.0.2
 main: ac\navro\bridge\NavroBridge
 api: [5.0.0]
 description: Bridges NavroProxy alerts and server state on PocketMine-MP

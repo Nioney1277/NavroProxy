@@ -13,9 +13,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"net"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -48,14 +48,13 @@ func rtcAPI(local string, publicPorts bool) (*webrtc.API, error) {
 }
 
 func main() {
-	listen := flag.String("listen", "0.0.0.0:19132", "Independent inspection HTTP/TCP signaling listener")
-	backend := flag.String("backend", "http://127.0.0.1:19134", "NetherNet URL or private RakNet URL (raknet://127.0.0.1:port)")
+	frontend := flag.String("frontend", "nethernet", "Client transport: nethernet or raknet")
+	listen := flag.String("listen", "0.0.0.0:19132", "Client listener address")
+	backend := flag.String("backend", "http://127.0.0.1:19134", "Backend URL: http(s)://host:port or raknet://host:port")
 	adapter := flag.String("adapter", "127.0.0.1:19138", "Loopback Java native-batch adapter")
 	local := flag.String("local-ip", "", "Optional local IPv4 filter for ICE candidates (default: automatic interface discovery)")
-	keyPath := flag.String("identity", "keys/inspect-identity.pem", "Persistent public listener identity key")
-	offline := flag.Bool("offline-backend", false, "Re-sign verified frontend login for a private offline NetherNet backend")
-	stock := flag.Bool("stock-geyser-backend", false, "Use stock private NetherNet Geyser with WaterdogPE forwarding")
-	detect := flag.Bool("detect", false, "Enable the existing Navro checks and corrections on this independent connection")
+	keyPath := flag.String("identity", "keys/nethernet-identity.pem", "Persistent public NetherNet listener identity key")
+	backendAuth := flag.String("backend-auth", "private", "Backend identity: private, pmmp-ng, or geyser")
 	backendSigningKey := flag.String("backend-signing-key", "", "RSA private key for the pinned private NetherNet backend")
 	initSigningKey := flag.String("init-backend-signing-key", "", "Generate a backend RSA private key and its .pub.pem public key, then exit")
 	flag.Parse()
@@ -76,36 +75,47 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	if err := run(*listen, *backend, *adapter, *local, *keyPath, *offline, *detect, *stock, signer); err != nil {
-		slog.Error("inspect stopped", "error", err)
+	if *frontend == "raknet" {
+		if *backendAuth != "private" || signer != nil {
+			log.Fatal("RakNet frontend currently requires -backend-auth private")
+		}
+		if err := runRakNetFrontend(*listen, *backend, *adapter, *backendAuth); err != nil {
+			slog.Error("RakNet frontend stopped", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+	if *frontend != "nethernet" {
+		log.Fatalf("unsupported frontend %q (use nethernet or raknet)", *frontend)
+	}
+	if *backendAuth != "native" && *backendAuth != "private" && *backendAuth != "pmmp-ng" && *backendAuth != "geyser" {
+		log.Fatalf("unsupported backend auth %q (use native, private, pmmp-ng, or geyser)", *backendAuth)
+	}
+	if *backendAuth == "pmmp-ng" && signer == nil {
+		log.Fatal("-backend-auth pmmp-ng requires -backend-signing-key")
+	}
+	if *backendAuth != "pmmp-ng" && signer != nil {
+		log.Fatal("-backend-signing-key requires -backend-auth pmmp-ng")
+	}
+	if err := run(*listen, *backend, *adapter, *local, *keyPath, *backendAuth, signer); err != nil {
+		slog.Error("proxy stopped", "error", err)
 		os.Exit(1)
 	}
 }
-func run(listen, backend, adapter, local, keyPath string, offline, detect, stock bool, signer *rsa.PrivateKey) error {
+func run(listen, backend, adapter, local, keyPath, backendAuth string, signer *rsa.PrivateKey) error {
 	rakNetAddress, err := rakNetBackendAddress(backend)
 	if err != nil {
 		return err
 	}
-	if rakNetAddress != "" && (!detect || offline || stock || signer != nil) {
-		return errors.New("RakNet backend requires -detect and uses no NetherNet backend identity options")
+	if rakNetAddress != "" && (backendAuth != "native" || signer != nil) {
+		return errors.New("RakNet backends require -backend-auth native")
 	}
-	if stock && (!detect || offline) {
-		return errors.New("stock Geyser mode requires -detect and is separate from -offline-backend")
-	}
-	if detect && !offline && !stock && rakNetAddress == "" {
-		return errors.New("detection currently requires an explicitly private offline backend")
-	}
-	if signer != nil && !offline {
-		return errors.New("-backend-signing-key requires -offline-backend")
-	}
-	if offline || stock {
-		u, err := url.Parse(backend)
-		if err != nil {
-			return err
+	if rakNetAddress == "" {
+		if backendAuth == "native" {
+			return errors.New("NetherNet backends require -backend-auth private, pmmp-ng, or geyser")
 		}
-		ip := net.ParseIP(u.Hostname())
-		if ip == nil || !ip.IsLoopback() || ((stock || signer != nil) && (u.Scheme != "http" || u.Port() == "" || u.User != nil)) {
-			return errors.New("private backend login requires an explicit loopback endpoint")
+		if err := validateNetherNetBackend(backend); err != nil {
+			return err
 		}
 	}
 	host, _, err := net.SplitHostPort(adapter)
@@ -119,12 +129,9 @@ func run(listen, backend, adapter, local, keyPath string, offline, detect, stock
 	if err != nil {
 		return err
 	}
-	backendAPI := api
-	if stock || signer != nil {
-		backendAPI, err = rtcAPI("127.0.0.1", stock)
-		if err != nil {
-			return err
-		}
+	backendAPI, err := rtcAPI("", true)
+	if err != nil {
+		return err
 	}
 	key, saved, err := nethernet.LoadOrGenerateIdentityKey(keyPath)
 	if err != nil {
@@ -143,10 +150,6 @@ func run(listen, backend, adapter, local, keyPath string, offline, detect, stock
 		return err
 	}
 	defer h.Close()
-	mode := "INSPECT"
-	if detect {
-		mode = "DETECT"
-	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	go mirrorBackendStatus(ctx, h, backend, rakNetAddress)
@@ -160,7 +163,7 @@ func run(listen, backend, adapter, local, keyPath string, offline, detect, stock
 	}
 	defer l.Close()
 	go func() { <-ctx.Done(); l.Close(); h.Close() }()
-	slog.Info("NETHERNET_TERMINATING_READY", "listen", listen, "backend", backend, "adapter", adapter, "mode", mode, "raknet", rakNetAddress != "")
+	slog.Info("NETHERNET_TERMINATING_READY", "listen", listen, "backend", backend, "adapter", adapter, "mode", "DETECT", "raknet", rakNetAddress != "")
 	for {
 		c, err := l.Accept()
 		if err != nil {
@@ -170,8 +173,8 @@ func run(listen, backend, adapter, local, keyPath string, offline, detect, stock
 			return err
 		}
 		go func(front *nethernet.Conn) {
-			if err := session(front, backend, adapter, rakNetAddress, backendAPI, offline, detect, stock, signer); err != nil {
-				slog.Info("inspect_session_closed", "error", err)
+			if err := session(front, backend, adapter, rakNetAddress, backendAPI, backendAuth, signer); err != nil {
+				slog.Info("proxy_session_closed", "error", err)
 			}
 		}(c.(*nethernet.Conn))
 	}
@@ -184,8 +187,10 @@ type event struct {
 	tick    bool
 }
 
-func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api *webrtc.API, offline, detect, stock bool, signer *rsa.PrivateKey) error {
+func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api *webrtc.API, backendAuth string, signer *rsa.PrivateKey) error {
 	defer front.Close()
+	privateAuth := backendAuth == "private" || backendAuth == "pmmp-ng"
+	stock := backendAuth == "geyser"
 	if front.PublicKey() == nil {
 		return errors.New("missing frontend DTLS identity")
 	}
@@ -205,7 +210,7 @@ func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api 
 		magic = rakNetBridgeMagic
 	} else if stock {
 		magic = stockBridgeMagic
-	} else if offline {
+	} else if privateAuth {
 		magic = 0x4e564233
 	}
 	binary.Write(out, binary.BigEndian, magic)
@@ -218,7 +223,7 @@ func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api 
 			return err
 		}
 	}
-	if offline || stock {
+	if privateAuth || stock {
 		pub, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
 		if err != nil {
 			return err
@@ -239,10 +244,8 @@ func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api 
 			}
 			out.WriteByte(byte(len(ip)))
 			out.Write(ip)
-		} else if detect {
-			out.WriteByte(1)
 		} else {
-			out.WriteByte(0)
+			out.WriteByte(1)
 		}
 	}
 	if err = out.Flush(); err != nil {
@@ -291,11 +294,6 @@ func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api 
 		return err
 	}
 	defer back.Close()
-	if stock || signer != nil {
-		if !selectedIP(back).IsLoopback() {
-			return errors.New("private NetherNet backend media is outside loopback")
-		}
-	}
 	if stock {
 		return bridgeBatches(front, back, ipc, in, out)
 	}
@@ -331,7 +329,7 @@ func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api 
 				return e.err
 			}
 		case <-ticker.C:
-			if !offline {
+			if !privateAuth {
 				continue
 			}
 			e.tick = true
@@ -393,7 +391,7 @@ func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api 
 				return err
 			}
 		}
-		if offline {
+		if privateAuth {
 			if err = binary.Read(in, binary.BigEndian, &count); err != nil {
 				return err
 			}

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"net"
 	"net/url"
 	"strconv"
 
@@ -23,11 +22,10 @@ func rakNetBackendAddress(backend string) (string, error) {
 	if u.Scheme != "raknet" {
 		return "", nil
 	}
-	ip := net.ParseIP(u.Hostname())
 	port, err := strconv.ParseUint(u.Port(), 10, 16)
-	if ip == nil || !ip.IsLoopback() || err != nil || port == 0 || u.User != nil ||
+	if u.Hostname() == "" || err != nil || port == 0 || u.User != nil ||
 		(u.Path != "" && u.Path != "/") || u.ForceQuery || u.RawQuery != "" || u.Fragment != "" {
-		return "", errors.New("RakNet backend requires raknet:// with a numeric loopback address and port")
+		return "", errors.New("RakNet backend requires raknet://host:port")
 	}
 	return u.Host, nil
 }

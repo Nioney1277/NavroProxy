@@ -95,7 +95,7 @@ public final class ProxySession {
         state.player().setDisconnectSink(reason->client.getPeer().getChannel().eventLoop().execute(()->disconnect(reason)));
         state.player().setCorrectionRequestSink(this::log);
         state.player().setMaxBalanceAdvantageMs(proxy.config().maxBalanceAdvantageMs());
-        state.setDetectionEnabled(proxy.config().mode() == ProxyConfig.Mode.DETECT);
+        state.setDetectionEnabled(true);
         if(proxy.config().debug()){
             var trace=new ac.navro.proxy.diagnostics.WorldCollisionDiagnostics(state.player(),state.world(),java.util.UUID.randomUUID().toString(),ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fileSink());
             state.player().setWorldDiagnostics(trace);trace.event("session_open",ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields("remote",client.getSocketAddress().toString()));

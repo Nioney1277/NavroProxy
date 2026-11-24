@@ -40,6 +40,11 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private final KeyPair backendKey;
     private final ac.navro.proxy.protocol.RakNetBackendEncryption rakNetEncryption;
     private ac.navro.proxy.protocol.RakNetBackendEncryption.BatchCipher rakNetCipher;
+    private final boolean rakNetFrontend;
+    private ac.navro.proxy.protocol.RakNetBackendEncryption.BatchCipher frontendCipher;
+    private ac.navro.proxy.protocol.RakNetBackendEncryption.BatchCipher pendingFrontendCipher;
+    private byte[] pendingFrontendLogin;
+    private final long frontendLoginDeadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
     private final InetAddress forwardedPeer;
     private final boolean detect;
     private BedrockCodec codec;
@@ -82,6 +87,14 @@ public final class NetherNetBatchSession implements AutoCloseable {
     NetherNetBatchSession(PublicKey transportKey, KeyPair backendKey, boolean detect,
                           ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
                           boolean backendStateSync, InetAddress forwardedPeer, boolean rakNetBackend) {
+        this(transportKey, backendKey, detect, backendType, smoothSetback, backendStateSync, forwardedPeer, rakNetBackend, false);
+    }
+
+    private NetherNetBatchSession(PublicKey transportKey, KeyPair backendKey, boolean detect,
+                                 ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
+                                 boolean backendStateSync, InetAddress forwardedPeer, boolean rakNetBackend,
+                                 boolean rakNetFrontend) {
+        this.rakNetFrontend = rakNetFrontend;
         this.forwardedPeer = forwardedPeer;
         this.rakNetEncryption = rakNetBackend ? new ac.navro.proxy.protocol.RakNetBackendEncryption() : null;
         this.state = new SessionState(backendType);
@@ -123,6 +136,13 @@ public final class NetherNetBatchSession implements AutoCloseable {
                     ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fileSink()));
         }
     }
+    static NetherNetBatchSession forRakNetFrontend(KeyPair backendKey,
+            ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, boolean backendStateSync) {
+        Objects.requireNonNull(backendKey, "RakNet frontend requires a private NetherNet backend key");
+        return new NetherNetBatchSession(null, backendKey, true, backendType, smoothSetback,
+                backendStateSync, null, false, true);
+    }
+
     private boolean ready(){return !closed&&codec!=null&&state.player().runtimeId()>=0;}
     public SessionState state(){return state;}
     public Map<String,Long> counts(){return Map.copyOf(counts);}
@@ -143,6 +163,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
         if(closed)throw new IOException("Session closed");
         if(state.player().disconnectRequested())throw new IOException("Player disconnected by Navro punishment");
         if (backend && rakNetCipher != null) batch = rakNetCipher.decrypt(batch);
+        if (!backend && frontendCipher != null) batch = frontendCipher.decrypt(batch);
         byte[] payload=unpack(batch);
         var stream=Unpooled.wrappedBuffer(payload);var kept=Unpooled.buffer();
         var names=new ArrayList<String>();boolean changed=false;
@@ -165,7 +186,17 @@ public final class NetherNetBatchSession implements AutoCloseable {
                     if(frame.isReadable())throw new IOException("Trailing bytes in "+packet.getClass().getSimpleName());
                     names.add(packet.getClass().getSimpleName());
                     counts.merge((backend?"backend:":"client:")+packet.getClass().getSimpleName(),1L,Long::sum);
-                    if(ac.navro.proxy.backend.BackendStateSync.privatePacket(packet)) {
+                    if (rakNetFrontend && !backend && packet instanceof ClientToServerHandshakePacket) {
+                        if (pendingFrontendLogin == null || frontendCipher == null || authenticated)
+                            throw new IOException("Unexpected RakNet frontend encryption confirmation");
+                        authenticated = true;
+                        backendQueue.add(wrapFrame(pendingFrontendLogin));
+                        pendingFrontendLogin = null;
+                        keep = false;
+                    }else if (rakNetFrontend && !backend && !authenticated
+                            && !(packet instanceof LoginPacket) && !(packet instanceof RequestNetworkSettingsPacket)) {
+                        throw new IOException("RakNet packet received before encrypted frontend login completed");
+                    }else if(ac.navro.proxy.backend.BackendStateSync.privatePacket(packet)) {
                         if(backend)state.consumeBackendSync(packet);
                         keep=false;
                     }else if (backend && rakNetEncryption != null && packet instanceof ServerToClientHandshakePacket handshake) {
@@ -174,6 +205,11 @@ public final class NetherNetBatchSession implements AutoCloseable {
                         queueBackend(new ClientToServerHandshakePacket());
                         keep = false;
                     }else if(backend){
+                        if (rakNetFrontend && !authenticated && !(packet instanceof NetworkSettingsPacket)
+                                && !(packet instanceof DisconnectPacket))
+                            throw new IOException("NetherNet backend sent game packets before frontend login completed");
+                        if (rakNetFrontend && packet instanceof ServerToClientHandshakePacket)
+                            throw new IOException("NetherNet backend must use its transport encryption");
                         if (packet instanceof StartGamePacket start && !runtimePalettes.isEmpty()
                                 && !start.isBlockNetworkIdsHashed() && (start.getBlockPalette() == null || start.getBlockPalette().isEmpty())
                                 && !runtimePalettes.containsKey(state.world().protocolVersion()) && !state.backendSync().hasRuntimePalette())
@@ -220,7 +256,10 @@ public final class NetherNetBatchSession implements AutoCloseable {
                             cache.setSupported(false);
                             replacement=encodeFrame(packet);
                         }
-                        if(packet instanceof LoginPacket login){var translated=verifyLogin(login);if(translated!=null)replacement=encodeFrame(translated);}
+                        if(packet instanceof LoginPacket login){
+                            if (rakNetFrontend && !compressed) throw new IOException("RakNet login received before network settings");
+                            var translated=verifyLogin(login);if(translated!=null)replacement=encodeFrame(translated);
+                        }
                         boolean ownLatency=packet instanceof NetworkStackLatencyPacket latency&&NetworkLatencyPackets.onPacket(state.player(),latency);
                         if(packet instanceof ServerboundLoadingScreenPacket loading)ServerChunkPackets.finishLoadingScreen(state.player(),loading);
                         if(detect){
@@ -239,6 +278,13 @@ public final class NetherNetBatchSession implements AutoCloseable {
                                 if(packet instanceof PlayerAuthInputPacket||packet instanceof InventoryTransactionPacket)replacement=encodeFrame(packet);
                             }
                         }else{state.observeClient(packet);keep=!ownLatency;}
+                        if (rakNetFrontend && packet instanceof LoginPacket login) {
+                            if (!compressed || replacement == null)
+                                throw new IOException("RakNet login requires negotiated settings and a private backend");
+                            pendingFrontendLogin = replacement;
+                            authenticated = false;
+                            keep = false;
+                        }
                     }
                 }finally{ReferenceCountUtil.safeRelease(packet);}
                 if(replacement!=null)changed=true;
@@ -269,6 +315,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
                 kept.readBytes(forwarded,compressed?1:0,kept.readableBytes());
             }
         }finally{stream.release();kept.release();}
+        if (rakNetFrontend && backend && forwarded != null && frontendCipher != null)
+            forwarded = frontendCipher.encrypt(forwarded);
         return flush(forwarded,names,false);
     }
     private byte[] observeCommandPermissions(BedrockPacket packet) throws Exception {
@@ -297,6 +345,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
 
 
     public Result tick()throws Exception{
+        if (rakNetFrontend && !authenticated && System.nanoTime() > frontendLoginDeadline)
+            throw new IOException("RakNet frontend login handshake timed out");
         if(closed)throw new IOException("Session closed");
         if(state.player().disconnectRequested())throw new IOException("Player disconnected by Navro punishment");
         if(detect&&authenticated&&ready()){
@@ -314,7 +364,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
             var packet=new TextPacket();packet.setType(TextPacket.Type.RAW);packet.setMessage(message);packet.setNeedsTranslation(false);
             packet.setSourceName("");packet.setXuid("");packet.setPlatformChatId("");extra.add(encode(packet));
         }
-        if(!state.player().disconnectRequested()&&codec!=null&&(!pending.isEmpty()||!extra.isEmpty()||keepalive)){
+        if(!state.player().disconnectRequested()&&codec!=null&&(!rakNetFrontend||authenticated)
+                &&(!pending.isEmpty()||!extra.isEmpty()||keepalive)){
             var tasks=List.copyOf(pending);pending.clear();
             long id=MARKER.updateAndGet(v->v>=999_000_000L?700_000_000L:v+1);
             state.player().getLatencyUtil().queue(id,true,()->tasks.forEach(Runnable::run));
@@ -322,6 +373,11 @@ public final class NetherNetBatchSession implements AutoCloseable {
         }
         var upstream=List.copyOf(backendQueue);backendQueue.clear();
         if (rakNetCipher != null) upstream = upstream.stream().map(rakNetCipher::encrypt).toList();
+        if (frontendCipher != null) extra.replaceAll(frontendCipher::encrypt);
+        if (pendingFrontendCipher != null) {
+            frontendCipher = pendingFrontendCipher;
+            pendingFrontendCipher = null;
+        }
         return new Result(forwarded,List.copyOf(extra),upstream,List.copyOf(names),authenticated);
     }
     private void queueClient(BedrockPacket packet){try{clientQueue.add(encode(packet));}catch(Exception e){throw new IllegalStateException("Cannot encode NetherNet correction",e);}}
@@ -337,7 +393,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
         queueClient(packet);
     }
     private LoginPacket verifyLogin(LoginPacket login)throws Exception{
-        if(authenticated||transportKey==null||login.getAuthPayload()==null||login.getAuthPayload().getAuthType()==AuthType.GUEST)
+        if(authenticated||pendingFrontendLogin!=null||(!rakNetFrontend&&transportKey==null)
+                ||login.getAuthPayload()==null||login.getAuthPayload().getAuthType()==AuthType.GUEST)
             throw new IOException("NetherNet login has no authenticated transport identity");
         var chain=EncryptionUtils.validatePayload(login.getAuthPayload());
         if(!chain.signed())throw new IOException("Invalid NetherNet login signature");
@@ -346,7 +403,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
             throw new IOException("RakNet forwarding requires a verified Xbox login with an XUID");
         }
         var key=chain.identityClaims().parsedIdentityPublicKey();
-        if(!MessageDigest.isEqual(key.getEncoded(),transportKey.getEncoded()))throw new IOException("NetherNet transport public key differs from login key");
+        if(!rakNetFrontend&&!MessageDigest.isEqual(key.getEncoded(),transportKey.getEncoded()))throw new IOException("NetherNet transport public key differs from login key");
         byte[] clientData=EncryptionUtils.verifyClientData(login.getClientJwt(),key);
         if(clientData==null)throw new IOException("Invalid NetherNet client data signature");
         var verified=ac.navro.proxy.protocol.LoginIdentity.fromVerifiedChain(chain);
@@ -367,7 +424,17 @@ public final class NetherNetBatchSession implements AutoCloseable {
             data.addProperty("Waterdog_IP",forwardedPeer.getHostAddress());
             clientData=data.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         }
-        return ac.navro.proxy.protocol.PrivateBackendLogin.encode(login.getProtocolVersion(),verified,chain.rawIdentityClaims(),clientData,backendKey);
+        var translated = ac.navro.proxy.protocol.PrivateBackendLogin.encode(login.getProtocolVersion(),verified,chain.rawIdentityClaims(),clientData,backendKey);
+        if (rakNetFrontend) {
+            var keys = EncryptionUtils.createKeyPair();
+            byte[] salt = EncryptionUtils.generateRandomToken();
+            var handshake = new ServerToClientHandshakePacket();
+            handshake.setJwt(EncryptionUtils.createHandshakeJwt(keys, salt));
+            queueClient(handshake);
+            pendingFrontendCipher = new ac.navro.proxy.protocol.RakNetBackendEncryption.BatchCipher(
+                    EncryptionUtils.getSecretKey(keys.getPrivate(), key, salt));
+        }
+        return translated;
     }
     private byte[] unpack(byte[] batch)throws IOException,DataFormatException{
         if(batch.length==0||batch.length>MAX_BATCH)throw new IOException("Invalid NetherNet batch length");
@@ -399,7 +466,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
         }finally{frame.release();}
     }
     @Override public void close(){
-        closed=true;withheldCommandTable=null;state.closeBackendWorld();state.player().getLatencyUtil().close();pending.clear();clientQueue.clear();backendQueue.clear();messages.clear();
+        closed=true;pendingFrontendLogin=null;frontendCipher=null;pendingFrontendCipher=null;withheldCommandTable=null;state.closeBackendWorld();state.player().getLatencyUtil().close();pending.clear();clientQueue.clear();backendQueue.clear();messages.clear();
         if(identity!=null&&detect){NetherNetAlerts.remove(identity,alertRecipient);NetherNetAlerts.commands().detach(identity,state);}
     }
 }

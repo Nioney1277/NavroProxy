@@ -1,0 +1,384 @@
+{
+  "source": "Captured private BDS test session at 2026-11-15T11:59Z; evidence navro-knockback-retest-6sasq3y4/recent-events.json",
+  "limitations": "Real motion/correction/current-input endpoints; intervening raw input was not logged. The replay setup supplies stationary intermediate inputs, so it is a diagnostic comparison, not a continuous recorded gameplay replay.",
+  "cases": [
+    {
+      "motion": {
+        "time": "2026-11-15T11:59:37.876312927Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1260,
+        "event": "external_motion_queued",
+        "player": "DriftyJet720138",
+        "tick": 290,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "packetTick": 289,
+        "motionSequence": 2,
+        "motion": {
+          "x": -0.37262473,
+          "y": 0.4,
+          "z": 0.033419505
+        }
+      },
+      "correction": {
+        "time": "2026-11-15T11:59:37.921322875Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1265,
+        "event": "backend_prediction_correction",
+        "player": "DriftyJet720138",
+        "tick": 291,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "sourceTick": 291,
+        "position": "(25.332012, -57.66981, 2.6661043)",
+        "delta": "(-0.1818376, 0.22557466, 0.01633123)",
+        "onGround": false,
+        "predictionType": "PLAYER"
+      },
+      "input": {
+        "tick": 293,
+        "position": "(24.984703, -57.301575, 2.6972969)",
+        "delta": "(-0.15057974, 0.061409906, 0.013523892)",
+        "input": "[BLOCK_BREAKING_DELAY_ENABLED]",
+        "motion": "(0.0, 0.0)",
+        "rawMoveVector": "(0.0, 0.0)",
+        "rotation": "(17.10672, -93.91972, -93.91972)"
+      },
+      "observedFeet": [
+        24.984703,
+        -58.921585,
+        2.6972969
+      ],
+      "oldOffset": 0.3308784,
+      "onGround": false
+    },
+    {
+      "motion": {
+        "time": "2026-11-15T11:59:38.874247301Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1288,
+        "event": "external_motion_queued",
+        "player": "DriftyJet720138",
+        "tick": 310,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "packetTick": 309,
+        "motionSequence": 3,
+        "motion": {
+          "x": -0.39215824,
+          "y": 0.4,
+          "z": 0.08035722
+        }
+      },
+      "correction": {
+        "time": "2026-11-15T11:59:38.926633447Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1294,
+        "event": "backend_prediction_correction",
+        "player": "DriftyJet720138",
+        "tick": 311,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "sourceTick": 311,
+        "position": "(23.403332, -57.669926, 2.9087043)",
+        "delta": "(-0.1916975, 0.22546251, 0.039280184)",
+        "onGround": false,
+        "predictionType": "PLAYER"
+      },
+      "input": {
+        "tick": 313,
+        "position": "(23.03719, -57.30191, 2.9837294)",
+        "delta": "(-0.1587447, 0.061302207, 0.032527924)",
+        "input": "[BLOCK_BREAKING_DELAY_ENABLED]",
+        "motion": "(0.0, 0.0)",
+        "rawMoveVector": "(0.0, 0.0)",
+        "rotation": "(17.106293, -93.91665, -93.91665)"
+      },
+      "observedFeet": [
+        23.03719,
+        -58.92192,
+        2.9837294
+      ],
+      "oldOffset": 0.34010345,
+      "onGround": false
+    },
+    {
+      "motion": {
+        "time": "2026-11-15T11:59:39.980670999Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1326,
+        "event": "external_motion_queued",
+        "player": "DriftyJet720138",
+        "tick": 332,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "packetTick": 331,
+        "motionSequence": 4,
+        "motion": {
+          "x": -0.39845297,
+          "y": 0.4,
+          "z": -0.03620448
+        }
+      },
+      "correction": {
+        "time": "2026-11-15T11:59:40.027211884Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1331,
+        "event": "backend_prediction_correction",
+        "player": "DriftyJet720138",
+        "tick": 333,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "sourceTick": 333,
+        "position": "(21.392084, -57.669926, 3.139668)",
+        "delta": "(-0.19477129, 0.22546251, -0.017696964)",
+        "onGround": false,
+        "predictionType": "PLAYER"
+      },
+      "input": {
+        "tick": 335,
+        "position": "(21.020071, -57.30191, 3.105867)",
+        "delta": "(-0.16129011, 0.061302207, -0.014654857)",
+        "input": "[BLOCK_BREAKING_DELAY_ENABLED]",
+        "motion": "(0.0, 0.0)",
+        "rawMoveVector": "(0.0, 0.0)",
+        "rotation": "(17.106293, -93.91665, -93.91665)"
+      },
+      "observedFeet": [
+        21.020071,
+        -58.92192,
+        3.105867
+      ],
+      "oldOffset": 0.34002742,
+      "onGround": false
+    },
+    {
+      "motion": {
+        "time": "2026-11-15T11:59:43.074631727Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1403,
+        "event": "external_motion_queued",
+        "player": "DriftyJet720138",
+        "tick": 394,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "packetTick": 393,
+        "motionSequence": 5,
+        "motion": {
+          "x": -0.3971728,
+          "y": 0.4,
+          "z": -0.04747378
+        }
+      },
+      "correction": {
+        "time": "2026-11-15T11:59:43.126521414Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1409,
+        "event": "backend_prediction_correction",
+        "player": "DriftyJet720138",
+        "tick": 395,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "sourceTick": 395,
+        "position": "(14.510359, -57.669926, 3.2695518)",
+        "delta": "(-0.19414477, 0.22546251, -0.023205975)",
+        "onGround": false,
+        "predictionType": "PLAYER"
+      },
+      "input": {
+        "tick": 397,
+        "position": "(14.139542, -57.30191, 3.2252283)",
+        "delta": "(-0.1607713, 0.061302207, -0.019216869)",
+        "input": "[BLOCK_BREAKING_DELAY_ENABLED]",
+        "motion": "(0.0, 0.0)",
+        "rawMoveVector": "(0.0, 0.0)",
+        "rotation": "(17.106293, -93.91665, -93.91665)"
+      },
+      "observedFeet": [
+        14.139542,
+        -58.92192,
+        3.2252283
+      ],
+      "oldOffset": 0.33999392,
+      "onGround": false
+    },
+    {
+      "motion": {
+        "time": "2026-11-15T11:59:44.073729747Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1434,
+        "event": "external_motion_queued",
+        "player": "DriftyJet720138",
+        "tick": 414,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "packetTick": 413,
+        "motionSequence": 6,
+        "motion": {
+          "x": -0.37792268,
+          "y": 0.4,
+          "z": -0.13203058
+        }
+      },
+      "correction": {
+        "time": "2026-11-15T11:59:44.125202977Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1440,
+        "event": "backend_prediction_correction",
+        "player": "DriftyJet720138",
+        "tick": 415,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "sourceTick": 415,
+        "position": "(12.513824, -57.669926, 2.8973932)",
+        "delta": "(-0.18473898, 0.22546251, -0.06453892)",
+        "onGround": false,
+        "predictionType": "PLAYER"
+      },
+      "input": {
+        "tick": 417,
+        "position": "(12.160973, -57.30191, 2.774124)",
+        "delta": "(-0.15298235, 0.061302207, -0.05344468)",
+        "input": "[BLOCK_BREAKING_DELAY_ENABLED]",
+        "motion": "(0.0, 0.0)",
+        "rawMoveVector": "(0.0, 0.0)",
+        "rotation": "(17.106293, -93.91665, -93.91665)"
+      },
+      "observedFeet": [
+        12.160973,
+        -58.92192,
+        2.774124
+      ],
+      "oldOffset": 0.3401085,
+      "onGround": false
+    },
+    {
+      "motion": {
+        "time": "2026-11-15T11:59:45.224992039Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1470,
+        "event": "external_motion_queued",
+        "player": "DriftyJet720138",
+        "tick": 437,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "packetTick": 436,
+        "motionSequence": 7,
+        "motion": {
+          "x": -0.39795324,
+          "y": 0.4,
+          "z": -0.04092444
+        }
+      },
+      "correction": {
+        "time": "2026-11-15T11:59:45.277366205Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1476,
+        "event": "backend_prediction_correction",
+        "player": "DriftyJet720138",
+        "tick": 438,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "sourceTick": 438,
+        "position": "(10.553936, -57.669926, 2.3634996)",
+        "delta": "(-0.19452646, 0.22546251, -0.020004809)",
+        "onGround": false,
+        "predictionType": "PLAYER"
+      },
+      "input": {
+        "tick": 440,
+        "position": "(10.18239, -57.30191, 2.3252904)",
+        "delta": "(-0.16108738, 0.061302207, -0.016565982)",
+        "input": "[BLOCK_BREAKING_DELAY_ENABLED]",
+        "motion": "(0.0, 0.0)",
+        "rawMoveVector": "(0.0, 0.0)",
+        "rotation": "(17.106293, -93.91665, -93.91665)"
+      },
+      "observedFeet": [
+        10.18239,
+        -58.92192,
+        2.3252904
+      ],
+      "oldOffset": 0.34001258,
+      "onGround": false
+    },
+    {
+      "motion": {
+        "time": "2026-11-15T11:59:46.226327299Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1503,
+        "event": "external_motion_queued",
+        "player": "DriftyJet720138",
+        "tick": 457,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "packetTick": 456,
+        "motionSequence": 8,
+        "motion": {
+          "x": -0.38828298,
+          "y": 0.4,
+          "z": -0.097459264
+        }
+      },
+      "correction": {
+        "time": "2026-11-15T11:59:46.279259017Z",
+        "session": "6a4ca8e3-c309-4db9-a881-f4b5f8b986fa",
+        "seq": 1510,
+        "event": "backend_prediction_correction",
+        "player": "DriftyJet720138",
+        "tick": 458,
+        "protocol": 2225,
+        "dimension": 0,
+        "epoch": 0,
+        "localRevision": 0,
+        "sourceTick": 458,
+        "position": "(8.538692, -57.669926, 2.0678241)",
+        "delta": "(-0.18980327, 0.22546251, -0.047639955)",
+        "onGround": false,
+        "predictionType": "PLAYER"
+      },
+      "input": {
+        "tick": 460,
+        "position": "(8.176168, -57.30191, 1.9768319)",
+        "delta": "(-0.15717609, 0.061302207, -0.03945065)",
+        "input": "[BLOCK_BREAKING_DELAY_ENABLED]",
+        "motion": "(0.0, 0.0)",
+        "rawMoveVector": "(0.0, 0.0)",
+        "rotation": "(17.106293, -93.91665, -93.91665)"
+      },
+      "observedFeet": [
+        8.176168,
+        -58.92192,
+        1.9768319
+      ],
+      "oldOffset": 0.34011033,
+      "onGround": false
+    }
+  ]
+}

@@ -61,7 +61,7 @@ public final class RakNetBackendEncryption {
         private long sent;
         private long received;
 
-        private BatchCipher(SecretKey secret) throws NoSuchAlgorithmException {
+        public BatchCipher(SecretKey secret) throws NoSuchAlgorithmException {
             encoder = EncryptionUtils.createCipher(true, true, secret);
             decoder = EncryptionUtils.createCipher(true, false, secret);
             key = secret.getEncoded();

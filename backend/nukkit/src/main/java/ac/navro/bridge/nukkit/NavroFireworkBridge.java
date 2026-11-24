@@ -31,6 +31,7 @@ public final class NavroFireworkBridge extends PluginBase implements Listener {
     private Set<String> trustedProxies=Set.of();
     private boolean consoleAlerts, staffChatAlerts;
     private Config mutedPlayers;
+    private PrivateNetherNet privateNetherNet;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -42,11 +43,20 @@ public final class NavroFireworkBridge extends PluginBase implements Listener {
         getServer().getPluginManager().registerEvents(stateSync, this);
         getServer().getScheduler().scheduleRepeatingTask(this,()-> {stateSync.tick();tickRockets();},1);
         getServer().callDataPkSendEv=true;
+        if(getConfig().getSection("private-nethernet").getBoolean("enabled",false)) {
+            try {
+                privateNetherNet=PrivateNetherNet.start(this);
+                getLogger().info("PRIVATE_NETHERNET_READY RSA authenticated proxy listener");
+            } catch(Exception | LinkageError error) {
+                getLogger().error("Private NetherNet could not start",error);
+            }
+        }
         getLogger().info("NATIVE_STATE_SYNC_READY negotiated server tick and post-event inventory supplements");
         getLogger().info("FIREWORK_BRIDGE_READY standard GLIDE_BOOST; only direct native rocket motion is filtered");
     }
 
     public boolean trusts(Player player) {
+        if(privateNetherNet!=null && privateNetherNet.owns(player))return true;
         var remote=player.getRawSocketAddress();
         if(remote==null||remote.getAddress()==null)return false;
         for(String address:trustedProxies) {
@@ -92,6 +102,12 @@ public final class NavroFireworkBridge extends PluginBase implements Listener {
         if(trusts(player))getServer().getScheduler().scheduleDelayedTask(this,()-> {
             if(player.isOnline())player.sendCommandData();
         },1);
+    }
+
+    @EventHandler(priority=EventPriority.LOWEST)
+    public void onPrivatePreLogin(cn.nukkit.event.player.PlayerPreLoginEvent event) {
+        if(privateNetherNet!=null && privateNetherNet.owns(event.getPlayer()))
+            ((PrivateNetherNetPlayer)event.getPlayer()).applyForwardedIdentity();
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -180,6 +196,7 @@ public final class NavroFireworkBridge extends PluginBase implements Listener {
     @EventHandler public void onQuit(PlayerQuitEvent event) { rockets.remove(event.getPlayer());stateSync.remove(event.getPlayer()); }
 
     @Override public void onDisable() {
+        if(privateNetherNet!=null) {privateNetherNet.shutdown();privateNetherNet=null;}
         for (Player player : new ArrayList<>(rockets.keySet())) {
             if (player.isOnline()) sendEffect(player, 0);
         }

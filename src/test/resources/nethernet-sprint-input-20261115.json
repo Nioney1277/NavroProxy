@@ -1,0 +1,1710 @@
+{
+  "sourceSession": "8d49d2d9-7ee6-4df6-bd74-631f738e4815",
+  "scope": "Extracted real client inputs and ACK-applied external facts. Segment initial positions/deltas come from raw client packets; terrain is separately prepared from recorded grass collision cells. Original predictions are not expected outputs. Metadata source ticks were not recorded and must not be invented.",
+  "segments": [
+    {
+      "startTick": 180,
+      "endTick": 199,
+      "initialFeet": [
+        12.300062,
+        -58.37999,
+        6.9907494
+      ],
+      "initialDelta": [
+        0.23504363,
+        -0.0784,
+        0.13031779
+      ],
+      "initialActions": [
+        {
+          "tick": 144,
+          "sprint": true
+        }
+      ],
+      "initialSpeedFacts": {
+        "base": 0.1,
+        "value": 0.13,
+        "modifiers": {}
+      },
+      "events": [
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.128711552Z",
+          "tick": 181,
+          "position": [
+            12.649481,
+            -58.37999,
+            7.177185
+          ],
+          "delta": [
+            0.19078234,
+            -0.0784,
+            0.10179394
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656372,
+            -45.762283,
+            -45.762283
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.182925041Z",
+          "tick": 182,
+          "position": [
+            12.954638,
+            -58.37999,
+            7.335097
+          ],
+          "delta": [
+            0.16661568,
+            -0.0784,
+            0.08621991
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.224194989Z",
+          "tick": 183,
+          "position": [
+            13.235628,
+            -58.37999,
+            7.4774346
+          ],
+          "delta": [
+            0.15342067,
+            -0.0784,
+            0.07771648
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.276155406Z",
+          "tick": 184,
+          "position": [
+            13.503424,
+            -58.37999,
+            7.611269
+          ],
+          "delta": [
+            0.1462162,
+            -0.0784,
+            0.07307361
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.327665145Z",
+          "tick": 185,
+          "position": [
+            13.764014,
+            -58.37999,
+            7.7404604
+          ],
+          "delta": [
+            0.14228256,
+            -0.0784,
+            0.07053861
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656372,
+            -45.762283,
+            -45.762283
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.380228843Z",
+          "tick": 186,
+          "position": [
+            14.020671,
+            -58.37999,
+            7.867117
+          ],
+          "delta": [
+            0.14013477,
+            -0.0784,
+            0.06915451
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.762283,
+            -45.762283
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.428102281Z",
+          "tick": 187,
+          "position": [
+            14.27518,
+            -58.37999,
+            7.9923897
+          ],
+          "delta": [
+            0.13896209,
+            -0.0784,
+            0.06839877
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.482752281Z",
+          "tick": 188,
+          "position": [
+            14.528517,
+            -58.37999,
+            8.116906
+          ],
+          "delta": [
+            0.1383218,
+            -0.0784,
+            0.067986146
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656372,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.537636968Z",
+          "tick": 189,
+          "position": [
+            14.781213,
+            -58.37999,
+            8.241011
+          ],
+          "delta": [
+            0.13797222,
+            -0.0784,
+            0.067760855
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656372,
+            -45.762283,
+            -45.762283
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.582396603Z",
+          "tick": 190,
+          "position": [
+            15.03356,
+            -58.37999,
+            8.364889
+          ],
+          "delta": [
+            0.13778134,
+            -0.0784,
+            0.067637846
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656372,
+            -45.762283,
+            -45.762283
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.630361291Z",
+          "tick": 191,
+          "position": [
+            15.285716,
+            -58.37999,
+            8.488645
+          ],
+          "delta": [
+            0.1376771,
+            -0.0784,
+            0.06757069
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656372,
+            -45.762283,
+            -45.762283
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.677582020Z",
+          "tick": 192,
+          "position": [
+            15.537767,
+            -58.37999,
+            8.612333
+          ],
+          "delta": [
+            0.13762021,
+            -0.0784,
+            0.06753401
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.735753114Z",
+          "tick": 193,
+          "position": [
+            15.7897625,
+            -58.37999,
+            8.735986
+          ],
+          "delta": [
+            0.13758914,
+            -0.0784,
+            0.06751399
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656372,
+            -45.762283,
+            -45.762283
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.786246343Z",
+          "tick": 194,
+          "position": [
+            16.041727,
+            -58.37999,
+            8.859617
+          ],
+          "delta": [
+            0.13757218,
+            -0.0784,
+            0.06750305
+          ],
+          "motion": [
+            0.31072265,
+            0.9505006
+          ],
+          "rawMoveVector": [
+            0.3269042,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.830545249Z",
+          "tick": 195,
+          "position": [
+            16.293503,
+            -58.37999,
+            8.983586
+          ],
+          "delta": [
+            0.13746932,
+            -0.0784,
+            0.067687124
+          ],
+          "motion": [
+            0.30782652,
+            0.95144254
+          ],
+          "rawMoveVector": [
+            0.32353663,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.873260614Z",
+          "tick": 196,
+          "position": [
+            16.542824,
+            -58.37999,
+            9.112265
+          ],
+          "delta": [
+            0.13612945,
+            -0.0784,
+            0.07025821
+          ],
+          "motion": [
+            0.26950577,
+            0.96299875
+          ],
+          "rawMoveVector": [
+            0.27986097,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.923450093Z",
+          "tick": 197,
+          "position": [
+            16.723534,
+            -58.37999,
+            9.301868
+          ],
+          "delta": [
+            0.098667696,
+            -0.0784,
+            0.10352359
+          ],
+          "motion": [
+            -0.42703432,
+            0.90423536
+          ],
+          "rawMoveVector": [
+            -0.47226012,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:33.974368895Z",
+          "tick": 198,
+          "position": [
+            16.825964,
+            -58.37999,
+            9.532737
+          ],
+          "delta": [
+            0.055927277,
+            -0.0784,
+            0.12605394
+          ],
+          "motion": [
+            -0.69553196,
+            0.71849525
+          ],
+          "rawMoveVector": [
+            -0.96803975,
+            1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:34.032251082Z",
+          "tick": 199,
+          "position": [
+            16.7839,
+            -58.37999,
+            9.660042
+          ],
+          "delta": [
+            -0.022967352,
+            -0.0784,
+            0.06950878
+          ],
+          "motion": [
+            -0.7067293,
+            -0.7074841
+          ],
+          "rawMoveVector": [
+            -0.9989331,
+            -1.0
+          ],
+          "rotation": [
+            37.656387,
+            -45.7623,
+            -45.7623
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "STOP_SPRINTING",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        }
+      ]
+    },
+    {
+      "startTick": 270,
+      "endTick": 277,
+      "initialFeet": [
+        14.812241,
+        -58.37999,
+        8.341026
+      ],
+      "initialDelta": [
+        -0.07219454,
+        -0.0784,
+        -0.03200418
+      ],
+      "initialActions": [
+        {
+          "tick": 144,
+          "sprint": true
+        },
+        {
+          "tick": 199,
+          "sprint": false
+        },
+        {
+          "tick": 244,
+          "sprint": true
+        },
+        {
+          "tick": 250,
+          "sprint": false
+        },
+        {
+          "tick": 264,
+          "sprint": true
+        },
+        {
+          "tick": 268,
+          "sprint": false
+        }
+      ],
+      "initialSpeedFacts": {
+        "base": 0.1,
+        "value": 0.1,
+        "modifiers": {}
+      },
+      "events": [
+        {
+          "type": "metadata",
+          "tick": 270,
+          "time": "2026-11-15T08:17:37.666412123Z",
+          "flags": [
+            48,
+            49,
+            34,
+            19,
+            35
+          ],
+          "sourceTick": null
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:37.669843946Z",
+          "tick": 271,
+          "position": [
+            14.662165,
+            -58.37999,
+            8.2495365
+          ],
+          "delta": [
+            -0.08194126,
+            -0.0784,
+            -0.04995348
+          ],
+          "motion": [
+            -0.11941372,
+            -0.9928445
+          ],
+          "rawMoveVector": [
+            -0.120274335,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.76906,
+            -45.76906
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:37.677157071Z",
+          "tick": 272,
+          "position": [
+            14.503836,
+            -58.37999,
+            8.138192
+          ],
+          "delta": [
+            -0.08644778,
+            -0.0784,
+            -0.060794186
+          ],
+          "motion": [
+            -0.09485474,
+            -0.9954912
+          ],
+          "rawMoveVector": [
+            -0.095284365,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.769043,
+            -45.769043
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:37.714259362Z",
+          "tick": 273,
+          "position": [
+            14.341,
+            -58.37999,
+            8.016006
+          ],
+          "delta": [
+            -0.088908345,
+            -0.0784,
+            -0.06671321
+          ],
+          "motion": [
+            -0.09485474,
+            -0.9954912
+          ],
+          "rawMoveVector": [
+            -0.095284365,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.76906,
+            -45.76906
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:37.769646341Z",
+          "tick": 274,
+          "position": [
+            14.175703,
+            -58.37999,
+            7.8879023
+          ],
+          "delta": [
+            -0.09025182,
+            -0.0784,
+            -0.06994499
+          ],
+          "motion": [
+            -0.09485474,
+            -0.9954912
+          ],
+          "rawMoveVector": [
+            -0.095284365,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.76906,
+            -45.76906
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:37.822070196Z",
+          "tick": 275,
+          "position": [
+            14.009064,
+            -58.37999,
+            7.756566
+          ],
+          "delta": [
+            -0.09098535,
+            -0.0784,
+            -0.07170955
+          ],
+          "motion": [
+            -0.09485474,
+            -0.9954912
+          ],
+          "rawMoveVector": [
+            -0.095284365,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.76906,
+            -45.76906
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:37.883707331Z",
+          "tick": 276,
+          "position": [
+            13.842451,
+            -58.37999,
+            7.622531
+          ],
+          "delta": [
+            -0.0909707,
+            -0.0784,
+            -0.07318313
+          ],
+          "motion": [
+            -0.08261117,
+            -0.99658185
+          ],
+          "rawMoveVector": [
+            -0.08289452,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.76906,
+            -45.76906
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "attributes",
+          "sourceTick": 244,
+          "tick": 276,
+          "time": "2026-11-15T08:17:37.892478477Z",
+          "attributes": [
+            {
+              "name": "minecraft:movement",
+              "default": 0.1,
+              "value": 0.13
+            }
+          ]
+        },
+        {
+          "type": "metadata",
+          "tick": 276,
+          "time": "2026-11-15T08:17:37.893186654Z",
+          "flags": [
+            48,
+            49,
+            34,
+            3,
+            19,
+            35
+          ],
+          "sourceTick": null
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:37.915086446Z",
+          "tick": 277,
+          "position": [
+            13.675772,
+            -58.37999,
+            7.4871206
+          ],
+          "delta": [
+            -0.09100679,
+            -0.0784,
+            -0.07393414
+          ],
+          "motion": [
+            -0.08390321,
+            -0.99647397
+          ],
+          "rawMoveVector": [
+            -0.0842001,
+            -1.0
+          ],
+          "rotation": [
+            37.657684,
+            -45.76906,
+            -45.76906
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "attributes",
+          "sourceTick": 250,
+          "tick": 277,
+          "time": "2026-11-15T08:17:37.927986185Z",
+          "attributes": [
+            {
+              "name": "minecraft:movement",
+              "default": 0.1,
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "type": "metadata",
+          "tick": 277,
+          "time": "2026-11-15T08:17:37.928522643Z",
+          "flags": [
+            48,
+            49,
+            34,
+            19,
+            35
+          ],
+          "sourceTick": null
+        },
+        {
+          "type": "metadata",
+          "tick": 277,
+          "time": "2026-11-15T08:17:37.929037956Z",
+          "flags": [
+            48,
+            49,
+            19,
+            35
+          ],
+          "sourceTick": null
+        },
+        {
+          "type": "metadata",
+          "tick": 277,
+          "time": "2026-11-15T08:17:37.930764727Z",
+          "flags": [
+            48,
+            49,
+            34,
+            19,
+            35
+          ],
+          "sourceTick": null
+        }
+      ]
+    },
+    {
+      "startTick": 279,
+      "endTick": 282,
+      "initialFeet": [
+        13.750424,
+        -58.37999,
+        7.602256
+      ],
+      "initialDelta": [
+        -0.046187196,
+        -0.0784,
+        -0.02363181
+      ],
+      "initialActions": [
+        {
+          "tick": 144,
+          "sprint": true
+        },
+        {
+          "tick": 199,
+          "sprint": false
+        },
+        {
+          "tick": 244,
+          "sprint": true
+        },
+        {
+          "tick": 250,
+          "sprint": false
+        },
+        {
+          "tick": 264,
+          "sprint": true
+        },
+        {
+          "tick": 268,
+          "sprint": false
+        }
+      ],
+      "initialSpeedFacts": {
+        "base": 0.1,
+        "value": 0.1,
+        "modifiers": {}
+      },
+      "events": [
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:38.083653841Z",
+          "tick": 280,
+          "position": [
+            13.780855,
+            -58.37999,
+            7.6804104
+          ],
+          "delta": [
+            0.016615286,
+            -0.0784,
+            0.042672284
+          ],
+          "motion": [
+            -0.15306264,
+            0.98821646
+          ],
+          "rawMoveVector": [
+            -0.15488777,
+            1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.77455,
+            -45.77455
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "START_SPRINTING",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:38.113069675Z",
+          "tick": 281,
+          "position": [
+            13.87684,
+            -58.37999,
+            7.8227386
+          ],
+          "delta": [
+            0.05240747,
+            -0.0784,
+            0.07771124
+          ],
+          "motion": [
+            -0.12602018,
+            0.9920277
+          ],
+          "rawMoveVector": [
+            -0.12703292,
+            1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.774567,
+            -45.774567
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "attributes",
+          "sourceTick": 264,
+          "tick": 281,
+          "time": "2026-11-15T08:17:38.126725925Z",
+          "attributes": [
+            {
+              "name": "minecraft:movement",
+              "default": 0.1,
+              "value": 0.13
+            }
+          ]
+        },
+        {
+          "type": "metadata",
+          "tick": 281,
+          "time": "2026-11-15T08:17:38.129315456Z",
+          "flags": [
+            48,
+            49,
+            34,
+            3,
+            19,
+            35
+          ],
+          "sourceTick": null
+        },
+        {
+          "type": "attributes",
+          "sourceTick": 268,
+          "tick": 281,
+          "time": "2026-11-15T08:17:38.141651289Z",
+          "attributes": [
+            {
+              "name": "minecraft:movement",
+              "default": 0.1,
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "type": "metadata",
+          "tick": 281,
+          "time": "2026-11-15T08:17:38.143974154Z",
+          "flags": [
+            48,
+            49,
+            34,
+            19,
+            35
+          ],
+          "sourceTick": null
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:38.173431237Z",
+          "tick": 282,
+          "position": [
+            14.156983,
+            -57.95999,
+            8.135351
+          ],
+          "delta": [
+            0.15295854,
+            0.33319998,
+            0.1706865
+          ],
+          "motion": [
+            -0.07455202,
+            0.9972172
+          ],
+          "rawMoveVector": [
+            -0.074760064,
+            1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.77455,
+            -45.77455
+          ],
+          "actions": [
+            "JUMP_DOWN",
+            "SPRINT_DOWN",
+            "JUMPING",
+            "WANT_UP",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "START_JUMPING",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "JUMP_PRESSED_RAW",
+            "JUMP_CURRENT_RAW"
+          ]
+        }
+      ]
+    },
+    {
+      "startTick": 521,
+      "endTick": 531,
+      "initialFeet": [
+        25.579487,
+        -58.37999,
+        18.363516
+      ],
+      "initialDelta": [
+        -0.066649325,
+        -0.0784,
+        -0.05046802
+      ],
+      "initialActions": [
+        {
+          "tick": 144,
+          "sprint": true
+        },
+        {
+          "tick": 199,
+          "sprint": false
+        },
+        {
+          "tick": 244,
+          "sprint": true
+        },
+        {
+          "tick": 250,
+          "sprint": false
+        },
+        {
+          "tick": 264,
+          "sprint": true
+        },
+        {
+          "tick": 268,
+          "sprint": false
+        },
+        {
+          "tick": 280,
+          "sprint": true
+        },
+        {
+          "tick": 289,
+          "sprint": false
+        },
+        {
+          "tick": 419,
+          "sprint": true
+        },
+        {
+          "tick": 490,
+          "sprint": false
+        },
+        {
+          "tick": 510,
+          "sprint": true
+        },
+        {
+          "tick": 516,
+          "sprint": false
+        }
+      ],
+      "initialSpeedFacts": {
+        "base": 0.1,
+        "value": 0.1,
+        "modifiers": {}
+      },
+      "events": [
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.159837847Z",
+          "tick": 522,
+          "position": [
+            25.46643,
+            -58.37999,
+            18.226732
+          ],
+          "delta": [
+            -0.061728276,
+            -0.0784,
+            -0.07468415
+          ],
+          "motion": [
+            0.30143306,
+            -0.95348734
+          ],
+          "rawMoveVector": [
+            0.31613746,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.807495,
+            -45.807495
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.219514045Z",
+          "tick": 523,
+          "position": [
+            25.359667,
+            -58.37999,
+            18.06501
+          ],
+          "delta": [
+            -0.058293324,
+            -0.0784,
+            -0.08830076
+          ],
+          "motion": [
+            0.3164659,
+            -0.9486039
+          ],
+          "rawMoveVector": [
+            0.33361226,
+            -1.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.807495,
+            -45.807495
+          ],
+          "actions": [
+            "SPRINT_DOWN",
+            "SPRINTING",
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.254545503Z",
+          "tick": 524,
+          "position": [
+            25.301374,
+            -58.37999,
+            17.97671
+          ],
+          "delta": [
+            -0.031828158,
+            -0.0784,
+            -0.04821222
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.80748,
+            -45.80748
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.306374149Z",
+          "tick": 525,
+          "position": [
+            25.269547,
+            -58.37999,
+            17.928497
+          ],
+          "delta": [
+            -0.017378176,
+            -0.0784,
+            -0.026323875
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.80748,
+            -45.80748
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.358278628Z",
+          "tick": 526,
+          "position": [
+            25.252169,
+            -58.37999,
+            17.902174
+          ],
+          "delta": [
+            -0.009488485,
+            -0.0784,
+            -0.014372838
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.807495,
+            -45.807495
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.408605660Z",
+          "tick": 527,
+          "position": [
+            25.24268,
+            -58.37999,
+            17.8878
+          ],
+          "delta": [
+            -0.0051807133,
+            -0.0784,
+            -0.00784757
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.80748,
+            -45.80748
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.455894045Z",
+          "tick": 528,
+          "position": [
+            25.2375,
+            -58.37999,
+            17.879953
+          ],
+          "delta": [
+            -0.0028286697,
+            -0.0784,
+            -0.0042847735
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.657684,
+            -45.807495,
+            -45.807495
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.500998420Z",
+          "tick": 529,
+          "position": [
+            25.23467,
+            -58.37999,
+            17.87567
+          ],
+          "delta": [
+            -0.0015444539,
+            -0.0784,
+            -0.0023394865
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.807495,
+            -45.807495
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "metadata",
+          "tick": 529,
+          "time": "2026-11-15T08:17:50.528843680Z",
+          "flags": [
+            48,
+            49,
+            19,
+            35
+          ],
+          "sourceTick": null
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.553458055Z",
+          "tick": 530,
+          "position": [
+            25.233126,
+            -58.37999,
+            17.87333
+          ],
+          "delta": [
+            -0.0008432719,
+            -0.0784,
+            -0.0012773598
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.807495,
+            -45.807495
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        },
+        {
+          "type": "input",
+          "time": "2026-11-15T08:17:50.612047743Z",
+          "tick": 531,
+          "position": [
+            25.230917,
+            -58.37999,
+            17.873856
+          ],
+          "delta": [
+            -0.0019980539,
+            -0.0784,
+            0.000114663635
+          ],
+          "motion": [
+            0.0,
+            0.0
+          ],
+          "rawMoveVector": [
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            37.65767,
+            -45.807495,
+            -45.807495
+          ],
+          "actions": [
+            "PERSIST_SNEAK",
+            "BLOCK_BREAKING_DELAY_ENABLED",
+            "VERTICAL_COLLISION"
+          ]
+        }
+      ]
+    }
+  ]
+}

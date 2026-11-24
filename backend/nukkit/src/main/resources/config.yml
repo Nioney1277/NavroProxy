@@ -3,3 +3,14 @@ trusted-proxy-addresses:
   - "::1"
 console-alerts: true
 staff-chat-alerts: true
+
+# Optional separate RSA-authenticated NetherNet listener (same configuration as PMMP).
+private-nethernet:
+  enabled: false
+  signaling-port: 19608
+  signaling-bind-address: "127.0.0.1"
+  ice-bind-address: "127.0.0.1"
+  advertised-address: "127.0.0.1"
+  ice-port-range: [20000, 20127]
+  max-connections: 128
+  proxy-public-key-file: navro-backend.pub.pem

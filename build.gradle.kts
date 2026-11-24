@@ -35,12 +35,32 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.2")
     implementation("com.google.guava:guava:31.0.1-jre")
     implementation("org.slf4j:slf4j-api:2.0.9")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.0")
+}
+
+val hostIsWindows = System.getProperty("os.name").lowercase().contains("windows")
+val nethernetExecutable = if (hostIsWindows) "navro-nethernet.exe" else "navro-nethernet"
+val nethernetOutput = layout.buildDirectory.file("nethernet/$nethernetExecutable")
+val buildNetherNetFrontend by tasks.registering(Exec::class) {
+    workingDir = layout.projectDirectory.dir("nethernet").asFile
+    commandLine("go", "build", "-trimpath", "-o", nethernetOutput.get().asFile.absolutePath, "./inspect")
+    inputs.files(fileTree("nethernet") { exclude("bin/**") })
+    for (name in listOf("GOOS", "GOARCH", "CGO_ENABLED")) {
+        inputs.property(name, providers.environmentVariable(name).orElse("auto"))
+    }
+    inputs.property("hostOs", System.getProperty("os.name"))
+    inputs.property("hostArch", System.getProperty("os.arch"))
+    outputs.file(nethernetOutput)
 }
 
 application {
     mainClass = "ac.navro.proxy.NavroProxy"
 }
 
+sourceSets.test {
+    java.srcDir("backend/geyser/src/main/java")
+}
 
 tasks.withType<JavaCompile>().configureEach {
     options.release = 21
@@ -54,14 +74,28 @@ tasks.jar {
     }
 }
 
+tasks.test {
+    useJUnitPlatform()
+    maxHeapSize = "1024m"
+    maxParallelForks = 1
+    forkEvery = 10
+}
 
 distributions {
     main {
         contents {
+            from(nethernetOutput) {
+                into("bin")
+                filesMatching(nethernetExecutable) { permissions { unix("rwxr-xr-x") } }
+            }
             from("src/main/resources") {
-                include("config.yml", "messages.yml", "punishments.yml")
+                include("config.yml", "messages.yml", "punishments.yml", "network.yml")
                 into("plugins/Navro")
             }
         }
     }
+}
+
+for (name in listOf("distZip", "distTar", "installDist")) {
+    tasks.named(name) { dependsOn(buildNetherNetFrontend) }
 }
