@@ -51,9 +51,9 @@ class NetworkConfigTest {
                 "backend-auth", "pmmp-ng",
                 "backend-signing-key", "keys/navro-backend.pem"));
         assertEquals("pmmp-ng", privateRakNet.backendAuth());
-        assertEquals("keys/navro-backend.pem", privateRakNet.backendSigningKey().toString());
+        assertEquals(java.nio.file.Path.of("keys", "navro-backend.pem"), privateRakNet.backendSigningKey());
         var defaultKey = NetworkConfig.parse(Map.of(
                 "backend-transport", "raknet", "backend-auth", "pmmp-ng"));
-        assertEquals("keys/navro-backend.pem", defaultKey.backendSigningKey().toString());
+        assertEquals(java.nio.file.Path.of("keys", "navro-backend.pem"), defaultKey.backendSigningKey());
     }
 }
