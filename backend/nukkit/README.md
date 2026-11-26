@@ -141,6 +141,40 @@ rely on a forwarded HTTP IP header. RSA-authenticated private sessions can negot
 state/alerts even if the proxy address is not listed in `trusted-proxy-addresses`;
 ordinary connections continue using the source-address allowlist.
 
+## Private RakNet proxy listener (v0.5.0)
+
+The optional `private-raknet` section starts a second RakNet UDP listener and
+assigns a dedicated authenticated player class only to that interface. Defaults
+are disabled, loopback bind, port 19134, and
+`navro-backend.pub.pem` in the plugin data folder. Enable native public/private
+RakNet support in the core. Keep `xbox-auth` enabled globally if the public
+listener requires it; the private interface accepts the proxy-authenticated
+self-signed login only after the signed assertion is verified.
+
+Generate the key pair once on Navro with
+`bin/navro-nethernet -init-backend-signing-key keys/navro-backend.pem`. Keep the
+private key on Navro and copy only the `.pub.pem` file to the bridge data folder.
+Configure Navro with `backend-transport: raknet`, `backend-auth: pmmp-ng`,
+`backend-signing-key: keys/navro-backend.pem`, and a `backend-address` pointing
+at the private port. For example, clients can continue using UDP 19132 while
+Navro connects to `127.0.0.1:19134`. The public listener keeps its normal auth
+policy; the private listener also checks assertion expiry, audience, one-time
+ID, session-key match, UUID, XUID, name, and Bedrock client-data signature.
+
+```yaml
+private-raknet:
+  enabled: true
+  bind-address: "127.0.0.1"
+  port: 19134
+  proxy-public-key-file: navro-backend.pub.pem
+```
+
+Build this bridge against the same latest Nukkit-MOT core JAR that you deploy;
+the core includes the separate-listener and authenticated-player-class hooks.
+The release includes `Nukkit-MOT-private-raknet.jar` with those hooks. To build
+from upstream instead, apply `core-patches/private-raknet.patch` at the exact
+commit recorded in `core-patches/upstream.json` before compiling the core.
+
 The current Navro RakNet-to-NetherNet path only supports `backend-auth: private`;
 it cannot use this RSA listener yet. NetherNet-to-RakNet remains available through
 Nukkit's normal RakNet listener.

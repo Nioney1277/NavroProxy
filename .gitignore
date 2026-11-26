@@ -73,3 +73,5 @@ NavroFireworkBridge.jar
 !backend/nukkit/src/test/**
 
 !/backend/nukkit/README.md
+
+!/nethernet/third_party/go-raknet/NAVRO_CHANGES.md

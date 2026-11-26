@@ -62,7 +62,7 @@ public final class PrivateNetherNet implements AdvancedSourceInterface {
                 .setIceOnLocalPort(false).setTokenTrust(trust).setAdvertisedAddresses(List.of(settings.advertisedAddress()))
                 .setMaxConnectionsPerAddress(settings.maxConnections()).setMaxPendingJoins(Math.min(32,settings.maxConnections()))
                 .setPlayerFilter((host,player) -> closed || connections.get() >= settings.maxConnections() ? JoinRefusal.FULL : null)
-                .setMotdProvider((host,remote) -> new PongData.Builder().setServerName(server.getMotd())
+                .setMotdProvider((host,remote,clientInfo) -> new PongData.Builder().setServerName(server.getMotd())
                         .setProtocol(ProtocolInfo.CURRENT_PROTOCOL).setVersion(ProtocolInfo.MINECRAFT_VERSION_NETWORK)
                         .setPlayerCount(server.getOnlinePlayers().size()).setMaxPlayerCount(server.getMaxPlayers())
                         .setOnlineAuth(false).setSelfSignedAuth(true).setNonce("0000000000000000").build()).build();

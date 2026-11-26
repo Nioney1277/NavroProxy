@@ -16,6 +16,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -24,10 +25,16 @@ import java.util.Map;
 
 public final class RakNetBackendEncryption {
     private final KeyPair keys = EncryptionUtils.createKeyPair();
+    private final PrivateKey proxySigningKey;
+    private int protocol = 2225;
+
+    public RakNetBackendEncryption() { this(null); }
+    public RakNetBackendEncryption(PrivateKey proxySigningKey) { this.proxySigningKey = proxySigningKey; }
 
     public LoginPacket login(int protocol, LoginIdentity identity, Map<String, Object> claims,
                              byte[] verifiedClientData) throws Exception {
-        return PrivateBackendLogin.encode(protocol, identity, claims, sanitize(verifiedClientData), keys);
+        this.protocol = protocol;
+        return PrivateBackendLogin.encode(protocol, identity, claims, sanitize(verifiedClientData), keys, proxySigningKey);
     }
 
     public LoginPacket forwardedLogin(int protocol, ChainValidationResult verifiedChain, byte[] verifiedClientData,
@@ -49,7 +56,7 @@ public final class RakNetBackendEncryption {
     }
 
     public BatchCipher completeBatchHandshake(String jwt) throws Exception {
-        return new BatchCipher(sessionKey(jwt));
+        return new BatchCipher(sessionKey(jwt), protocol >= 428);
     }
 
     public static final class BatchCipher {
@@ -62,8 +69,12 @@ public final class RakNetBackendEncryption {
         private long received;
 
         public BatchCipher(SecretKey secret) throws NoSuchAlgorithmException {
-            encoder = EncryptionUtils.createCipher(true, true, secret);
-            decoder = EncryptionUtils.createCipher(true, false, secret);
+            this(secret, true);
+        }
+
+        public BatchCipher(SecretKey secret, boolean useCtr) throws NoSuchAlgorithmException {
+            encoder = EncryptionUtils.createCipher(useCtr, true, secret);
+            decoder = EncryptionUtils.createCipher(useCtr, false, secret);
             key = secret.getEncoded();
             digest = MessageDigest.getInstance("SHA-256");
         }

@@ -4,6 +4,29 @@ An anti-cheat proxy for Minecraft Bedrock Edition. NavroProxy runs between playe
 
 It runs on Windows and Linux with Java 21. Clients can connect over RakNet or through the separate NetherNet frontend.
 
+## Client versions
+
+All four transport combinations accept the known Bedrock protocols from
+**1.7.0 (291) through 1.26.60 (2225)** provided by the current protocol library,
+subject to compatible client transport and backend protocol support. Versions
+with an existing detection codec keep the normal anti-cheat session. Other
+known versions use connection compatibility without creating anti-cheat world state.
+
+Native forwarding requires `frontend: raknet`, `backend-transport: raknet`,
+`backend-auth: native` (or `auto`), and `backend-encryption: false`. The backend
+must support the player's own protocol version; Navro does not translate an old
+client's protocol into a newer backend protocol. This native RakNet forwarding
+path does not add private RSA assertions or Floodgate forwarding tokens.
+
+The three routes involving NetherNet validate player signatures, bind the
+transport identity to the game login, and sign the backend login using its
+session key. They support legacy certificate-chain and modern token login
+formats, old/new compression framing, and the applicable RakNet encryption
+handshake. A compatible private backend must accept the forwarded login format.
+Clients using a NetherNet entry must themselves implement NetherNet; this does
+not add NetherNet support to an unmodified old Minecraft client. Use the RakNet
+entry for those clients. Backend compression negotiation currently requires ZLIB.
+
 ## Build
 
 Install JDK 21 or later, then run the Gradle wrapper.
@@ -52,12 +75,12 @@ backend-address: https://backend.example.net:19134
 
 | `frontend` | `backend-transport` | `backend-auth` |
 |---|---|---|
-| `raknet` | `raknet` | `native` |
+| `raknet` | `raknet` | `native` or `pmmp-ng` |
 | `nethernet` | `nethernet` | `private`, `pmmp-ng`, or `geyser` |
-| `nethernet` | `raknet` | `native` |
+| `nethernet` | `raknet` | `native` or `pmmp-ng` |
 | `raknet` | `nethernet` | `private` |
 
-Set `listen` and `backend-address` to host and port values. NetherNet backend addresses may include an `http://` or `https://` URL; remote signaling requires HTTPS. Remote ICE/RakNet traffic needs its UDP ports reachable from the proxy host. Set `backend-signing-key` for PMMP-NG and `backend-type: bds` for BDS. Detection always runs; there is no separate observation-only mode.
+Set `listen` and `backend-address` to host and port values. NetherNet backend addresses may include an `http://` or `https://` URL; remote signaling requires HTTPS. Remote ICE/RakNet traffic needs its UDP ports reachable from the proxy host. Set `backend-signing-key` with `backend-auth: pmmp-ng` to use a private authenticated RakNet listener or the PMMP-NG NetherNet listener. Detection always runs; there is no separate observation-only mode.
 
 Manual command-line options are available for RakNet-to-RakNet deployments:
 
@@ -107,7 +130,20 @@ The distribution includes the Go transport and Java packet adapter. Configure `f
 
 The Nukkit-MOT bridge also forwards NavroProxy alerts to the backend console and permitted staff. `/navroalerts` toggles persistent chat alerts for players with `navrobridge.alerts` (operators by default). Set `trusted-proxy-addresses`, `console-alerts`, and `staff-chat-alerts` in the plugin's `config.yml`; trusted addresses refer to the actual proxy connection, before player IP forwarding. Use the updated proxy together with bridge version 0.3.0 for alert forwarding. Existing native tick and inventory synchronization remain negotiated per connection, and firework boosts end when the attached rocket or glide ends.
 
-Nukkit bridge 0.4.0 additionally provides an optional RSA-authenticated private NetherNet listener. Its `private-nethernet` configuration matches the PMMP bridge (TCP 19608, ICE UDP 20000–20127, bind/advertised addresses and proxy public key). On Navro, use `backend-auth: pmmp-ng` to select the existing compatible signing format; the name is retained for compatibility with PMMP. This Nukkit-MOT core requires `xbox-auth=off` on the private backend and native NetherNet enabled; Navro validates players, while the private listener authenticates the proxy and binds forwarded logins to its session key. See `backend/nukkit/README.md` for setup and remote HTTPS deployment.
+Nukkit bridge 0.4.0 provides an optional RSA-authenticated private NetherNet listener, and 0.5.0 adds a separate private RakNet listener. The NetherNet listener uses TCP 19608 and ICE UDP 20000–20127; the RakNet listener defaults to UDP 19134. Both use the same proxy public key and private signing key. The Nukkit RakNet listener keeps global `xbox-auth` policy intact and only admits the verified proxy player class on its private interface. See `backend/nukkit/README.md` for setup.
+
+The PMMP-NG and Nukkit-MOT bridges also offer an optional private RakNet listener on a separate UDP port. Enable `private-raknet`, bind it to loopback unless the proxy is remote, and copy only `navro-backend.pub.pem` from Navro's `keys` directory into the bridge data folder. On Navro set `backend-transport: raknet`, `backend-auth: pmmp-ng`, `backend-signing-key: keys/navro-backend.pem`, and point `backend-address` at that private port. For example:
+
+```yaml
+frontend: raknet
+listen: 0.0.0.0:19132
+backend-transport: raknet
+backend-address: 127.0.0.1:19134
+backend-auth: pmmp-ng
+backend-signing-key: keys/navro-backend.pem
+```
+
+The bridge verifies a one-minute RS256 assertion and binds it to Navro's ES384 game-login key and forwarded UUID/XUID/name; each assertion ID can be used only once. Player login/client-data signatures are still checked by the server core. Keep the private RakNet port reachable only from Navro. The ordinary public RakNet listener keeps its normal authentication policy.
 
 ### RakNet clients to a NetherNet backend
 
@@ -115,8 +151,9 @@ Set `frontend: raknet`, `backend-transport: nethernet`, and `backend-auth: priva
 
 The backend must accept the existing private offline login and self-signed
 NetherNet transport identity. Remote signaling uses HTTPS; its ICE media must
-be reachable from the proxy over UDP. This mode uses the existing player
-identity validation and does not require a bridge plugin for transport.
+be reachable from the proxy over UDP. For a PMMP-NG or Nukkit-MOT private
+RakNet listener, set `backend-auth: pmmp-ng` and configure the signing key.
+Ordinary unauthenticated RakNet backends continue using `native`.
 
 ### PocketMine-MP-NG over NetherNet
 
@@ -136,7 +173,13 @@ Terminate HTTPS for the signaling URL at the host or a reverse proxy, and forwar
 
 ### PocketMine-MP-NG over RakNet
 
-Set `frontend: nethernet`, `backend-transport: raknet`, and `backend-auth: native` in `network.yml`, then run `bin/navro-proxy`. The RakLib backend may be remote if its UDP port is reachable and it accepts proxy logins. Xbox authentication and backend encryption can stay enabled.
+Set `frontend: nethernet`, `backend-transport: raknet`, and `backend-auth: native` for a normal backend, or `backend-auth: pmmp-ng` plus `backend-signing-key` for a private authenticated RakNet listener. The backend may be remote if its UDP port is reachable. Public Xbox authentication stays enabled; the private listener validates Navro's signed proxy assertion and forwarded player login.
+
+Enable the bridge's `private-raknet` block on PMMP-NG or Nukkit-MOT, using a separate UDP port bound to loopback when possible. Copy only `navro-backend.pub.pem` to the plugin data folder; keep `keys/navro-backend.pem` on Navro. The PMMP listener requires the matching PMMP-NG core patch; stock PMMP 5 does not provide it. Build the Nukkit bridge against the same latest Nukkit-MOT core JAR that is deployed.
+
+The bridge releases include matching patched cores. Source patches and exact
+upstream commits are recorded in `backend/pocketmine-mp/core-patches/` and
+`backend/nukkit/core-patches/`. Apply the patch before building a replacement core.
 
 26.60 clients connect to the Go frontend over NetherNet. TCP 19132 is used for signaling and UDP 19210–19273 for ICE. The RakNet backend can be on any reachable host; its server must accept proxy logins.
 

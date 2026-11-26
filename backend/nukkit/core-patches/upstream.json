@@ -1,0 +1,5 @@
+{
+  "repository": "https://github.com/MemoriesOfTime/Nukkit-MOT",
+  "commit": "74e4b5c0c1e66501d336518266e5441b7f141089",
+  "patch": "private-raknet.patch"
+}

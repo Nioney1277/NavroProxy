@@ -43,4 +43,17 @@ class NetworkConfigTest {
                 "frontend", "raknet", "backend-transport", "nethernet",
                 "backend-address", "https://backend.example:19134/ignored-path")));
     }
+
+    @Test void permitsRsaPrivateRakNetBackendOnlyWithSigningKey() throws Exception {
+        var privateRakNet = NetworkConfig.parse(Map.of(
+                "backend-transport", "raknet",
+                "backend-address", "127.0.0.1:19134",
+                "backend-auth", "pmmp-ng",
+                "backend-signing-key", "keys/navro-backend.pem"));
+        assertEquals("pmmp-ng", privateRakNet.backendAuth());
+        assertEquals("keys/navro-backend.pem", privateRakNet.backendSigningKey().toString());
+        var defaultKey = NetworkConfig.parse(Map.of(
+                "backend-transport", "raknet", "backend-auth", "pmmp-ng"));
+        assertEquals("keys/navro-backend.pem", defaultKey.backendSigningKey().toString());
+    }
 }

@@ -1,0 +1,26 @@
+{
+  "acceptedProtocolCount": 66,
+  "routes": [
+    "raknet-raknet",
+    "raknet-nethernet",
+    "nethernet-raknet",
+    "nethernet-nethernet"
+  ],
+  "validation": {
+    "tests": 63,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "knownBaselineFailures": [
+    "ac.navro.proxy.nethernet.NativeSprintMovementTest.lateSourceTickCannotUndoNewerSprintStopOrStartAndCustomSpeedStillApplies()",
+    "ac.navro.proxy.nethernet.NativeSprintMovementTest.snapshotRestoresActionHistoryAndPendingMetadataSourceTick()",
+    "ac.navro.proxy.nethernet.NetherNetDetectionTest.duplicateTickIsRemovedFromNativeBatchWhileUnrelatedActionStillForwards()",
+    "ac.navro.proxy.nethernet.NetherNetDetectionTest.realCorrectionTransportBlocksInputUntilClosingAckAndTargetConfirmation()",
+    "ac.navro.proxy.nethernet.NetherNetDetectionTest.nativeSmoothSetbackUsesTheRealNethernetSenderWithoutAHandleTeleportGate()"
+  ],
+  "goFrontendTestsPassed": true,
+  "nukkitBridgeTestsPassed": true,
+  "pmmpValidation": "PHP lint, token signature/audience/expiry and latest API signatures; no full runtime due to missing extensions",
+  "realClientGameplayTested": false
+}

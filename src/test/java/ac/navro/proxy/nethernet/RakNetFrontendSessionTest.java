@@ -57,7 +57,7 @@ class RakNetFrontendSessionTest {
     }
     @Test void ipcAllowsMissingDtlsKeyOnlyForTheRakNetFrontendMode() throws Exception {
         var handle=NetherNetInspectServer.class.getDeclaredMethod("handle",java.net.Socket.class,
-                BackendType.class,boolean.class,Map.class,boolean.class,boolean.class);
+                BackendType.class,boolean.class,Map.class,boolean.class,boolean.class,java.security.PrivateKey.class);
         handle.setAccessible(true);
         for(int magic:new int[]{0x4e564238,0x4e564237}) {
             try(var server=new java.net.ServerSocket(0,1,java.net.InetAddress.getLoopbackAddress());
@@ -65,7 +65,7 @@ class RakNetFrontendSessionTest {
                 client.setSoTimeout(10000);
                 var errors=new java.util.concurrent.atomic.AtomicReference<Throwable>();
                 var thread=new Thread(()->{
-                    try {handle.invoke(null,server.accept(),BackendType.NAVRO,false,Map.of(),false,false);}
+                    try {handle.invoke(null,server.accept(),BackendType.NAVRO,false,Map.of(),false,false,null);}
                     catch(Throwable e){errors.set(e);}
                 });thread.setDaemon(true);thread.start();
                 var in=new DataInputStream(client.getInputStream());var out=new DataOutputStream(client.getOutputStream());

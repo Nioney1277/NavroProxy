@@ -18,6 +18,7 @@ import org.cloudburstmc.protocol.common.util.VarInts;
 import java.io.*;
 import java.net.InetAddress;
 import java.security.*;
+import java.security.PrivateKey;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -38,6 +39,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private final java.util.Queue<String> messages=new java.util.concurrent.ConcurrentLinkedQueue<>();
     private final PublicKey transportKey;
     private final KeyPair backendKey;
+    private final PrivateKey backendProxySigningKey;
     private final ac.navro.proxy.protocol.RakNetBackendEncryption rakNetEncryption;
     private ac.navro.proxy.protocol.RakNetBackendEncryption.BatchCipher rakNetCipher;
     private final boolean rakNetFrontend;
@@ -87,16 +89,26 @@ public final class NetherNetBatchSession implements AutoCloseable {
     NetherNetBatchSession(PublicKey transportKey, KeyPair backendKey, boolean detect,
                           ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
                           boolean backendStateSync, InetAddress forwardedPeer, boolean rakNetBackend) {
-        this(transportKey, backendKey, detect, backendType, smoothSetback, backendStateSync, forwardedPeer, rakNetBackend, false);
+        this(transportKey, backendKey, detect, backendType, smoothSetback, backendStateSync, forwardedPeer, rakNetBackend, false, null);
+    }
+
+    NetherNetBatchSession(PublicKey transportKey, KeyPair backendKey, boolean detect,
+                          ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
+                          boolean backendStateSync, InetAddress forwardedPeer, boolean rakNetBackend,
+                          PrivateKey backendProxySigningKey) {
+        this(transportKey, backendKey, detect, backendType, smoothSetback, backendStateSync, forwardedPeer,
+                rakNetBackend, false, backendProxySigningKey);
     }
 
     private NetherNetBatchSession(PublicKey transportKey, KeyPair backendKey, boolean detect,
                                  ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
                                  boolean backendStateSync, InetAddress forwardedPeer, boolean rakNetBackend,
-                                 boolean rakNetFrontend) {
+                                 boolean rakNetFrontend, PrivateKey backendProxySigningKey) {
         this.rakNetFrontend = rakNetFrontend;
         this.forwardedPeer = forwardedPeer;
-        this.rakNetEncryption = rakNetBackend ? new ac.navro.proxy.protocol.RakNetBackendEncryption() : null;
+        this.backendProxySigningKey = backendProxySigningKey;
+        this.rakNetEncryption = rakNetBackend
+                ? new ac.navro.proxy.protocol.RakNetBackendEncryption(backendProxySigningKey) : null;
         this.state = new SessionState(backendType);
         state.setSmoothSetback(smoothSetback);
         this.transportKey=transportKey;this.backendKey=backendKey;this.detect=detect;
@@ -140,7 +152,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
             ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, boolean backendStateSync) {
         Objects.requireNonNull(backendKey, "RakNet frontend requires a private NetherNet backend key");
         return new NetherNetBatchSession(null, backendKey, true, backendType, smoothSetback,
-                backendStateSync, null, false, true);
+                backendStateSync, null, false, true, null);
     }
 
     private boolean ready(){return !closed&&codec!=null&&state.player().runtimeId()>=0;}
@@ -424,7 +436,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
             data.addProperty("Waterdog_IP",forwardedPeer.getHostAddress());
             clientData=data.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         }
-        var translated = ac.navro.proxy.protocol.PrivateBackendLogin.encode(login.getProtocolVersion(),verified,chain.rawIdentityClaims(),clientData,backendKey);
+        var translated = ac.navro.proxy.protocol.PrivateBackendLogin.encode(login.getProtocolVersion(),verified,
+                chain.rawIdentityClaims(),clientData,backendKey);
         if (rakNetFrontend) {
             var keys = EncryptionUtils.createKeyPair();
             byte[] salt = EncryptionUtils.generateRandomToken();

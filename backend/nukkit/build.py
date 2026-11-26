@@ -45,7 +45,8 @@ if native.returncode or 'NATIVE_STATE_SYNC_INTEGRATION_PASSED' not in native.std
     raise RuntimeError('Native state integration failed')
 
 for suite, marker in [('AlertBridgeIntegration','ALERT_BRIDGE_INTEGRATION_PASSED'),
-                      ('PrivateNetherNetIntegration','PRIVATE_NETHERNET_AUTH_PASSED')]:
+                      ('PrivateNetherNetIntegration','PRIVATE_NETHERNET_AUTH_PASSED'),
+                      ('PrivateRakNetIntegration','PRIVATE_RAKNET_AUTH_PASSED')]:
     result = subprocess.run(['java', '-XX:ActiveProcessorCount=2', '-Xmx256m', '-ea',
                              '-cp', str(TESTS) + os.pathsep + classpath,
                              'ac.navro.bridge.nukkit.' + suite],
@@ -64,6 +65,6 @@ with zipfile.ZipFile(jar, 'w', zipfile.ZIP_DEFLATED) as archive:
 (BUILD / 'NavroFireworkBridge.jar').unlink(missing_ok=True)
 summary = {'backendJar': str(BACKEND), 'backendSha256': hashlib.sha256(BACKEND.read_bytes()).hexdigest(),
            'pluginJar': str(jar), 'pluginSha256': hashlib.sha256(jar.read_bytes()).hexdigest(),
-           'realNativeMotionIntegrationPassed': True, 'nativeStateIntegrationPassed': True, 'alertIntegrationPassed': True, 'privateNetherNetAuthPassed': True, 'nativeTransactionFixture': str(native_fixture)}
+           'realNativeMotionIntegrationPassed': True, 'nativeStateIntegrationPassed': True, 'alertIntegrationPassed': True, 'privateNetherNetAuthPassed': True, 'privateRakNetAuthPassed': True, 'nativeTransactionFixture': str(native_fixture)}
 (BUILD / 'validation.json').write_text(json.dumps(summary, indent=2) + '\n')
 print(json.dumps(summary, indent=2))

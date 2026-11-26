@@ -1,0 +1,304 @@
+--- a/src/network/mcpe/NetworkSession.php
++++ b/src/network/mcpe/NetworkSession.php
+@@ -227,7 +227,8 @@
+ 		private string $ip,
+ 		private int $port,
+ 		private ?TransportIdentityKey $transportIdentityKey = null,
+-		private bool $transportEncrypted = false
++		private bool $transportEncrypted = false,
++		private ?\pocketmine\network\mcpe\auth\ProxyBackendIdentityVerifier $proxyBackendIdentityVerifier = null
+ 	){
+ 		$this->logger = new \PrefixedLogger($this->server->getLogger(), $this->getLogPrefix());
+ 
+@@ -269,7 +270,8 @@
+ 				$this->logger->setPrefix($this->getLogPrefix());
+ 				$this->manager->markLoginReceived($this);
+ 			},
+-			$this->setAuthenticationStatus(...)
++			$this->setAuthenticationStatus(...),
++			$this->proxyBackendIdentityVerifier
+ 		));
+ 	}
+ 
+--- a/src/network/mcpe/handler/LoginPacketHandler.php
++++ b/src/network/mcpe/handler/LoginPacketHandler.php
+@@ -77,7 +77,8 @@
+ 		private Server $server,
+ 		private NetworkSession $session,
+ 		private \Closure $playerInfoConsumer,
+-		private \Closure $authCallback
++		private \Closure $authCallback,
++		private ?\pocketmine\network\mcpe\auth\ProxyBackendIdentityVerifier $proxyBackendIdentityVerifier = null
+ 	){}
+ 
+ 	private static function calculateUuidFromXuid(string $xuid) : UuidInterface{
+@@ -100,6 +101,9 @@
+ 			$authInfo->Certificate = $packet->authInfoJson;
+ 			$authInfo->Token = "";
+ 		}
++		if($this->proxyBackendIdentityVerifier !== null && $authInfo->AuthenticationType !== AuthenticationType::SELF_SIGNED->value){
++			throw new PacketHandlingException("Private RakNet listener requires an authenticated proxy login");
++		}
+ 		$clientData = $this->parseClientData($packet->clientDataJwt);
+ 
+ 		if($this->session->getProtocolId() === ProtocolInfo::PROTOCOL_1_26_44){
+@@ -142,6 +146,7 @@
+ 					throw PacketHandlingException::wrap($e, "Error parsing self-signed authentication token");
+ 				}
+ 				$claims = $this->mapSelfSignedTokenBody($claimsArray);
++				$xuid = $this->proxyBackendIdentityVerifier?->verify($claimsArray) ?? "";
+ 
+ 				if(!Uuid::isValid($claims->leguuid)){
+ 					throw new PacketHandlingException("Invalid UUID string in self-signed certificate: " . $claims->leguuid);
+@@ -149,7 +154,6 @@
+ 
+ 				$legacyUuid = Uuid::fromString($claims->leguuid);
+ 				$username = $claims->xname;
+-				$xuid = "";
+ 
+ 				$selfSignedKey = base64_decode($claims->cpk, strict: true);
+ 				if($selfSignedKey === false){
+@@ -160,7 +164,8 @@
+ 					$username = $clientData->ThirdPartyName;
+ 				}
+ 
+-				$authRequired = $this->processLoginCommon($packet, $username, $legacyUuid, $xuid, $clientData);
++				$authRequired = $this->processLoginCommon($packet, $username, $legacyUuid, $xuid, $clientData,
++					$this->proxyBackendIdentityVerifier !== null ? false : null);
+ 				if($authRequired === null){
+ 					//plugin cancelled
+ 					return true;
+@@ -219,6 +224,7 @@
+ 						throw new PacketHandlingException("'extraData' not found in legacy chain data");
+ 					}
+ 				}
++				$proxyXuid = $this->proxyBackendIdentityVerifier?->verify($claimsArray);
+ 
+ 				try{
+ 					$claims = $this->defaultJsonMapper("Self-signed auth JWT 'extraData'")->map($claimsArray["extraData"], new LegacyAuthIdentityData());
+@@ -231,9 +237,10 @@
+ 				}
+ 				$legacyUuid = Uuid::fromString($claims->identity);
+ 				$username = $claims->displayName;
+-				$xuid = $this->session->getProtocolId() >= ProtocolInfo::PROTOCOL_1_21_93 ? "" : $claims->XUID;
+-
+-				$authRequired = $this->processLoginCommon($packet, $username, $legacyUuid, $xuid, $clientData);
++				$xuid = $proxyXuid ?? ($this->session->getProtocolId() >= ProtocolInfo::PROTOCOL_1_21_93 ? "" : $claims->XUID);
++
++				$authRequired = $this->processLoginCommon($packet, $username, $legacyUuid, $xuid, $clientData,
++					$this->proxyBackendIdentityVerifier !== null ? false : null);
+ 				if($authRequired === null){
+ 					//plugin cancelled
+ 					return true;
+@@ -247,7 +254,8 @@
+ 		return true;
+ 	}
+ 
+-	private function processLoginCommon(LoginPacket $packet, string $username, UuidInterface $legacyUuid, string $xuid, ClientData $clientData) : ?bool{
++	private function processLoginCommon(LoginPacket $packet, string $username, UuidInterface $legacyUuid, string $xuid,
++		ClientData $clientData, ?bool $authRequiredOverride = null) : ?bool{
+ 		if(!Player::isValidUserName($username)){
+ 			$this->session->disconnectWithError(KnownTranslationFactory::disconnectionScreen_invalidName());
+ 
+@@ -288,7 +296,7 @@
+ 		$ev = new PlayerPreLoginEvent(
+ 			$playerInfo,
+ 			$this->session,
+-			$this->server->requiresAuthentication()
++			$authRequiredOverride ?? $this->server->requiresAuthentication()
+ 		);
+ 		if($this->server->getNetwork()->getValidConnectionCount() > $this->server->getMaxPlayers()){
+ 			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_FULL, KnownTranslationFactory::disconnectionScreen_serverFull());
+@@ -315,7 +323,7 @@
+ 			return null;
+ 		}
+ 
+-		return $ev->isAuthRequired();
++		return $authRequiredOverride ?? $ev->isAuthRequired();
+ 	}
+ 
+ 	/**
+--- a/src/network/mcpe/raklib/RakLibInterface.php
++++ b/src/network/mcpe/raklib/RakLibInterface.php
+@@ -30,6 +30,7 @@
+ use pocketmine\network\mcpe\convert\TypeConverter;
+ use pocketmine\network\mcpe\EntityEventBroadcaster;
+ use pocketmine\network\mcpe\NetworkSession;
++use pocketmine\network\mcpe\auth\ProxyBackendIdentityVerifier;
+ use pocketmine\network\mcpe\PacketBroadcaster;
+ use pocketmine\network\mcpe\protocol\PacketPool;
+ use pocketmine\network\mcpe\ServerPongData;
+@@ -85,6 +86,7 @@
+ 	private PacketBroadcaster $packetBroadcaster;
+ 	private EntityEventBroadcaster $entityEventBroadcaster;
+ 	private TypeConverter $typeConverter;
++	private ?ProxyBackendIdentityVerifier $proxyBackendIdentityVerifier;
+ 
+ 	public function __construct(
+ 		Server $server,
+@@ -93,12 +95,14 @@
+ 		bool $ipV6,
+ 		PacketBroadcaster $packetBroadcaster,
+ 		EntityEventBroadcaster $entityEventBroadcaster,
+-		TypeConverter $typeConverter
++		TypeConverter $typeConverter,
++		?ProxyBackendIdentityVerifier $proxyBackendIdentityVerifier = null
+ 	){
+ 		$this->server = $server;
+ 		$this->packetBroadcaster = $packetBroadcaster;
+ 		$this->entityEventBroadcaster = $entityEventBroadcaster;
+ 		$this->typeConverter = $typeConverter;
++		$this->proxyBackendIdentityVerifier = $proxyBackendIdentityVerifier;
+ 
+ 		$this->rakServerId = mt_rand(0, PHP_INT_MAX);
+ 		$this->bindAddress = new InternetAddress($ip, $port, $ipV6 ? 6 : 4);
+@@ -207,7 +211,10 @@
+ 			ZlibCompressor::getInstance(), //TODO: this shouldn't be hardcoded, but we might need the RakNet protocol version to select it
+ 			$this->typeConverter,
+ 			$address,
+-			$port
++			$port,
++			null,
++			false,
++			$this->proxyBackendIdentityVerifier
+ 		);
+ 		$this->sessions[$sessionId] = $session;
+ 	}
+--- /dev/null
++++ b/src/network/mcpe/auth/ProxyBackendIdentityVerifier.php
+@@ -0,0 +1,135 @@
++<?php
++
++declare(strict_types=1);
++
++namespace pocketmine\network\mcpe\auth;
++
++use pocketmine\network\PacketHandlingException;
++use function array_filter;
++use function array_is_list;
++use function base64_decode;
++use function count;
++use function explode;
++use function is_array;
++use function is_int;
++use function is_string;
++use function hash_equals;
++use function in_array;
++use function json_decode;
++use function preg_match;
++use function openssl_pkey_get_details;
++use function openssl_pkey_get_public;
++use function openssl_verify;
++use function strlen;
++use function str_repeat;
++use function strtr;
++use function time;
++
++/** Verifies the proxy assertion embedded in a private RakNet login token. */
++final class ProxyBackendIdentityVerifier{
++	private const ISSUER = "navro-proxy";
++	private const AUDIENCE = "urn:navro:raknet-backend";
++	private const MAX_TOKEN_SIZE = 16_384;
++	private const MAX_USED_JTIS = 8_192;
++
++	/** @var array<string, int> */
++	private array $usedJtis = [];
++	private \OpenSSLAsymmetricKey $key;
++
++	public function __construct(string $publicKeyPem){
++		$key = openssl_pkey_get_public($publicKeyPem);
++		if($key === false){
++			throw new \InvalidArgumentException("Could not parse proxy RSA public key");
++		}
++		$details = openssl_pkey_get_details($key);
++		if($details === false || $details["type"] !== OPENSSL_KEYTYPE_RSA || $details["bits"] < 2048){
++			throw new \InvalidArgumentException("Proxy RSA public key must be at least 2048 bits");
++		}
++		$this->key = $key;
++	}
++
++	/** @param array<string, mixed> $loginClaims */
++	public function verify(array $loginClaims) : string{
++		$token = $loginClaims["proxyAuth"] ?? null;
++		if(!is_string($token) || $token === "" || strlen($token) > self::MAX_TOKEN_SIZE){
++			throw new PacketHandlingException("Missing or oversized proxy identity assertion");
++		}
++		$parts = explode(".", $token);
++		if(count($parts) !== 3){
++			throw new PacketHandlingException("Malformed proxy identity assertion");
++		}
++		$header = $this->decodeObject($parts[0], "proxy identity header");
++		$claims = $this->decodeObject($parts[1], "proxy identity claims");
++		$signature = self::decodeBase64Url($parts[2]);
++		if(($header["alg"] ?? null) !== "RS256" || ($header["kid"] ?? null) !== self::ISSUER || $signature === null){
++			throw new PacketHandlingException("Unsupported proxy identity signature");
++		}
++		$verified = openssl_verify($parts[0] . "." . $parts[1], $signature, $this->key, OPENSSL_ALGO_SHA256);
++		if($verified !== 1){
++			throw new PacketHandlingException("Invalid proxy identity signature");
++		}
++
++		$now = time();
++		$audience = $claims["aud"] ?? null;
++		$audienceMatches = $audience === self::AUDIENCE || (is_array($audience) && in_array(self::AUDIENCE, $audience, true));
++		$issuedAt = $claims["iat"] ?? null;
++		$expires = $claims["exp"] ?? null;
++		$jti = $claims["jti"] ?? null;
++		if(($claims["iss"] ?? null) !== self::ISSUER || ($claims["sub"] ?? null) !== self::ISSUER ||
++			!$audienceMatches || !is_int($issuedAt) || !is_int($expires) ||
++			$issuedAt > $now + 5 || $expires <= $now || $expires <= $issuedAt || $expires - $issuedAt > 120 ||
++			!is_string($jti) || !preg_match('/^[0-9a-f-]{36}$/i', $jti)){
++			throw new PacketHandlingException("Expired or invalid proxy identity claims");
++		}
++		foreach(["cpk", "leguuid", "xname"] as $field){
++			if(!is_string($loginClaims[$field] ?? null) || !is_string($claims[$field] ?? null) ||
++				!hash_equals($loginClaims[$field], $claims[$field])){
++				throw new PacketHandlingException("Proxy assertion does not match forwarded login " . $field);
++			}
++		}
++		if(isset($claims["xid"]) && (!is_string($claims["xid"]) || !preg_match('/^[0-9]{0,20}$/', $claims["xid"]))){
++			throw new PacketHandlingException("Invalid forwarded XUID");
++		}
++		if(isset($loginClaims["xid"]) && (!is_string($loginClaims["xid"]) || !hash_equals($loginClaims["xid"], $claims["xid"] ?? ""))){
++			throw new PacketHandlingException("Proxy assertion does not match forwarded login xid");
++		}
++		$this->pruneJtis($now);
++		if(isset($this->usedJtis[$jti]) || count($this->usedJtis) >= self::MAX_USED_JTIS){
++			throw new PacketHandlingException("Replayed or over-capacity proxy identity assertion");
++		}
++		$this->usedJtis[$jti] = $expires;
++		return $claims["xid"] ?? "";
++	}
++
++	/** @return array<string, mixed> */
++	private function decodeObject(string $part, string $context) : array{
++		$decoded = self::decodeBase64Url($part);
++		if($decoded === null){
++			throw new PacketHandlingException("Invalid " . $context);
++		}
++		try{
++			$value = json_decode($decoded, true, flags: JSON_THROW_ON_ERROR);
++		}catch(\JsonException $e){
++			throw PacketHandlingException::wrap($e, "Invalid " . $context);
++		}
++		if(!is_array($value) || array_is_list($value)){
++			throw new PacketHandlingException("Unexpected " . $context . " type");
++		}
++		return $value;
++	}
++
++	private static function decodeBase64Url(string $value) : ?string{
++		$normalized = strtr($value, "-_", "+/");
++		$normalized .= str_repeat("=", (4 - strlen($normalized) % 4) % 4);
++		$decoded = base64_decode($normalized, true);
++		return $decoded === false ? null : $decoded;
++	}
++
++	private function pruneJtis(int $now) : void{
++		foreach($this->usedJtis as $jti => $expires){
++			if($expires <= $now){
++				unset($this->usedJtis[$jti]);
++			}
++		}
++	}
++}

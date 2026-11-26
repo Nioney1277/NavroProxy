@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "ac.navro"
-version = "0.1.0-SNAPSHOT"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -44,7 +44,8 @@ val nethernetExecutable = if (hostIsWindows) "navro-nethernet.exe" else "navro-n
 val nethernetOutput = layout.buildDirectory.file("nethernet/$nethernetExecutable")
 val buildNetherNetFrontend by tasks.registering(Exec::class) {
     workingDir = layout.projectDirectory.dir("nethernet").asFile
-    commandLine("go", "build", "-trimpath", "-o", nethernetOutput.get().asFile.absolutePath, "./inspect")
+    commandLine("go", "build", "-trimpath", "-ldflags=-checklinkname=0",
+        "-o", nethernetOutput.get().asFile.absolutePath, "./inspect")
     inputs.files(fileTree("nethernet") { exclude("bin/**") })
     for (name in listOf("GOOS", "GOARCH", "CGO_ENABLED")) {
         inputs.property(name, providers.environmentVariable(name).orElse("auto"))
@@ -84,6 +85,10 @@ tasks.test {
 distributions {
     main {
         contents {
+            from("nethernet/third_party/go-raknet") {
+                include("LICENSE", "NAVRO_CHANGES.md")
+                into("licenses/go-raknet")
+            }
             from(nethernetOutput) {
                 into("bin")
                 filesMatching(nethernetExecutable) { permissions { unix("rwxr-xr-x") } }

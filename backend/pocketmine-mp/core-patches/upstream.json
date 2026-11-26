@@ -1,0 +1,5 @@
+{
+  "repository": "https://github.com/NetherGamesMC/PocketMine-MP",
+  "commit": "eaa2e58156e71e7a10093cffc98b02e1023f05ee",
+  "patch": "private-raknet.patch"
+}

@@ -258,8 +258,8 @@ public final class ProxySession {
                 return false;
             }
             var verifiedIdentity=ac.navro.proxy.protocol.LoginIdentity.fromVerifiedChain(chain);
-            if (proxy.config().encryptBackend()) {
-                backendEncryption = new RakNetBackendEncryption();
+            if (proxy.config().encryptBackend() || proxy.config().pmmpNgBackendAuth()) {
+                backendEncryption = new RakNetBackendEncryption(proxy.backendSigningKey());
                 var forwarding = proxy.floodgateForwarding();
                 if (forwarding != null) {
                     pendingLogin = backendEncryption.forwardedLogin(login.getProtocolVersion(), chain, clientData,

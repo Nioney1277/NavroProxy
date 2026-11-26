@@ -32,6 +32,7 @@ public final class NavroProxy {
     private final java.util.Map<java.util.UUID, java.util.function.Consumer<String>> onlineAlerts =
             new java.util.concurrent.ConcurrentHashMap<>();
     private final ProxyConfig config;
+    private final java.security.PrivateKey backendSigningKey;
     private ac.navro.proxy.protocol.FloodgateForwarding floodgateForwarding;
     private final ac.navro.proxy.command.CommandRuntime commands;
     public ac.navro.proxy.command.CommandRuntime commands(){return commands;}
@@ -43,6 +44,12 @@ public final class NavroProxy {
 
     public NavroProxy(ProxyConfig config) {
         this.config = config;
+        try {
+            this.backendSigningKey = config.pmmpNgBackendAuth()
+                    ? ac.navro.proxy.protocol.PrivateBackendLogin.loadProxySigningKey(config.backendSigningKey()) : null;
+        } catch (Exception error) {
+            throw new IllegalArgumentException("Could not load the PMMP-NG backend signing key", error);
+        }
         commands=new ac.navro.proxy.command.CommandRuntime(ac.navro.proxy.config.ConfigLoader.DEFAULT_FILE,config.smoothSetback(),config.maxBalanceAdvantageMs());
         java.nio.file.Path subscriptions = java.nio.file.Path.of("alert-subscriptions.json");
         boolean firstRun = !java.nio.file.Files.exists(subscriptions);
@@ -51,6 +58,8 @@ public final class NavroProxy {
         // Console alerts were requested for this proxy test; preserve later subscription changes.
         if (firstRun) alertManager.setAlert(ac.navro.proxy.alert.AlertManager.CONSOLE_UUID, true);
     }
+
+    java.security.PrivateKey backendSigningKey() { return backendSigningKey; }
 
     public ac.navro.proxy.alert.AlertManager getAlertManager() { return alertManager; }
     void registerAlertRecipient(java.util.UUID id, java.util.function.Consumer<String> recipient) {
@@ -76,6 +85,10 @@ public final class NavroProxy {
                     "--backend-type", network.backendType()));
             if (network.smoothSetback()) options.add("--smooth-setback");
             if (network.backendEncryption()) options.add("--encrypt-backend");
+            if (network.backendAuth().equals("pmmp-ng")) {
+                options.add("--backend-auth"); options.add("pmmp-ng");
+                options.add("--backend-signing-key"); options.add(network.backendSigningKey().toString());
+            }
             args = options.toArray(String[]::new);
         }
         ProxyConfig config;
@@ -105,6 +118,9 @@ public final class NavroProxy {
         var adapterCommand = new ArrayList<>(List.of(javaCommand, "-cp", root.resolve("lib/*").toString(),
                 "ac.navro.proxy.nethernet.NetherNetAdapter", Integer.toString(config.adapterPort()),
                 "--backend-type", config.backendType()));
+        if (config.backendAuth().equals("pmmp-ng")) {
+            adapterCommand.add("--backend-signing-key"); adapterCommand.add(config.backendSigningKey().toString());
+        }
         if (config.smoothSetback()) adapterCommand.add("--smooth-setback");
         if (config.backendStateSync()) adapterCommand.add("--backend-state-sync");
         for (Path palette : config.blockPalettes()) {
@@ -243,7 +259,17 @@ public final class NavroProxy {
                 .option(RakChannelOption.RAK_GUID, guid)
                 .option(RakChannelOption.RAK_HANDLE_PING, true)
                 .option(RakChannelOption.RAK_SERVER_COOKIE_MODE, RakServerCookieMode.INVALID)
-                .childHandler(initializer);
+                .option(RakChannelOption.RAK_SUPPORTED_PROTOCOLS, new int[]{9, 10, 11, 12})
+                .childHandler(new io.netty.channel.ChannelInitializer<Channel>() {
+                    @Override protected void initChannel(Channel channel) {
+                        int raknetVersion = channel.config().getOption(RakChannelOption.RAK_PROTOCOL_VERSION);
+                        channel.pipeline().addLast("navro-connection-routing", new ConnectionRoutingHandler(
+                                raknetVersion,
+                                selected -> selected.pipeline().addLast(initializer),
+                                (selected, declaration) -> NativeRakNetForwarder.install(
+                                        selected, config, declaration.raknetVersion(), declaration.protocol())));
+                    }
+                });
 
         InetSocketAddress address = new InetSocketAddress(config.listenHost(), config.listenPort());
         ChannelFuture future = bootstrap.bind(address).sync();

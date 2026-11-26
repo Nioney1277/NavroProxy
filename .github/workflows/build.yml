@@ -33,6 +33,9 @@ jobs:
         run: >-
           bash ./gradlew test
           --tests 'ac.navro.proxy.NetworkConfigTest'
+          --tests 'ac.navro.proxy.ConnectionRoutingTest'
+          --tests 'ac.navro.proxy.NativeRakNetForwarderTest'
+          --tests 'ac.navro.proxy.nethernet.ConnectionBatchSessionTest'
           --tests 'ac.navro.proxy.nethernet.RakNetFrontendSessionTest'
           --tests 'ac.navro.proxy.nethernet.NetherNetBatchSessionTest'
           --tests 'ac.navro.proxy.nethernet.NetherNetBridgeFramingTest'

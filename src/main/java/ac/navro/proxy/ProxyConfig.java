@@ -15,11 +15,22 @@ public record ProxyConfig(
         ac.navro.proxy.protocol.BackendType backendType,
         boolean smoothSetback,
         boolean encryptBackend,
-        Path floodgateForwardingKey
+        Path floodgateForwardingKey,
+        boolean pmmpNgBackendAuth,
+        Path backendSigningKey
 ) {
     public ProxyConfig {
         if (floodgateForwardingKey != null && !encryptBackend) {
             throw new IllegalArgumentException("--floodgate-forwarding-key requires --encrypt-backend");
+        }
+        if (pmmpNgBackendAuth && backendSigningKey == null) {
+            throw new IllegalArgumentException("--backend-auth pmmp-ng requires --backend-signing-key");
+        }
+        if (!pmmpNgBackendAuth && backendSigningKey != null) {
+            throw new IllegalArgumentException("--backend-signing-key requires --backend-auth pmmp-ng");
+        }
+        if (pmmpNgBackendAuth && floodgateForwardingKey != null) {
+            throw new IllegalArgumentException("--backend-auth pmmp-ng cannot be combined with Floodgate forwarding");
         }
     }
 
@@ -27,7 +38,7 @@ public record ProxyConfig(
                        int protocol, long maxBalanceAdvantageMs, boolean debug,
                        ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, boolean encryptBackend) {
         this(listenHost, listenPort, backendHost, backendPort, protocol, maxBalanceAdvantageMs,
-                debug, backendType, smoothSetback, encryptBackend, null);
+                debug, backendType, smoothSetback, encryptBackend, null, false, null);
     }
 
     public ProxyConfig(String listenHost, int listenPort, String backendHost, int backendPort,
@@ -67,6 +78,8 @@ public record ProxyConfig(
         boolean smoothSetback = defaults.smoothSetback();
         boolean encryptBackend = defaults.encryptBackend();
         Path floodgateForwardingKey = defaults.floodgateForwardingKey();
+        boolean pmmpNgBackendAuth = false;
+        Path backendSigningKey = null;
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -89,6 +102,13 @@ public record ProxyConfig(
                 case "--smooth-setback" -> smoothSetback = true;
                 case "--encrypt-backend" -> encryptBackend = true;
                 case "--floodgate-forwarding-key" -> floodgateForwardingKey = Path.of(requireValue(args, ++i, arg));
+                case "--backend-auth" -> {
+                    String auth = requireValue(args, ++i, arg);
+                    if (!auth.equals("native") && !auth.equals("pmmp-ng"))
+                        throw new IllegalArgumentException("RakNet backend-auth must be native or pmmp-ng");
+                    pmmpNgBackendAuth = auth.equals("pmmp-ng");
+                }
+                case "--backend-signing-key" -> backendSigningKey = Path.of(requireValue(args, ++i, arg));
                 case "--debug" -> debug = true;
                 case "--help", "-h" -> {
                     printUsage();
@@ -102,7 +122,8 @@ public record ProxyConfig(
             throw new IllegalArgumentException("Ports must be between 1 and 65535");
         }
         return new ProxyConfig(listenHost, listenPort, backendHost, backendPort, protocol,
-                maxBalanceAdvantageMs, debug, backendType, smoothSetback, encryptBackend, floodgateForwardingKey);
+                maxBalanceAdvantageMs, debug, backendType, smoothSetback, encryptBackend, floodgateForwardingKey,
+                pmmpNgBackendAuth, backendSigningKey);
     }
 
     private static String requireValue(String[] args, int index, String option) {

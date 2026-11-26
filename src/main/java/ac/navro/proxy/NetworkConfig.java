@@ -80,7 +80,8 @@ record NetworkConfig(String frontend, String listen, String backendTransport, St
         if (adapterPort < 1 || adapterPort > 65535) throw new IOException("adapter-port must be between 1 and 65535");
         if (!validHostPort(listen)) throw new IOException("listen must be host:port");
         if (backendTransport.equals("raknet")) {
-            if (!backendAuth.equals("native")) throw new IOException("RakNet backends require backend-auth: native");
+            if (!backendAuth.equals("native") && !backendAuth.equals("pmmp-ng"))
+                throw new IOException("RakNet backends require backend-auth: native or pmmp-ng");
             if (!validHostPort(backendAddress)) throw new IOException("backend-address must be host:port for RakNet");
         } else {
             if (backendAuth.equals("native")) throw new IOException("NetherNet backends require private, pmmp-ng, or geyser authentication");

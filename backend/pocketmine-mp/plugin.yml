@@ -1,8 +1,8 @@
 name: NavroBridge
-version: 1.0.2
+version: 1.1.0
 main: ac\navro\bridge\NavroBridge
 api: [5.0.0]
-description: Bridges NavroProxy alerts and server state on PocketMine-MP
+description: Bridges NavroProxy alerts, server state and private authenticated RakNet on PocketMine-MP-NG
 softdepend: [Customies, Customies-NG]
 commands:
   navroalerts:

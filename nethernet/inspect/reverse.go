@@ -83,7 +83,7 @@ func runRakNetFrontend(listen, backend, adapter, backendAuth string) error {
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	listener, err := (raknet.ListenConfig{}).Listen(listen)
+	listener, err := (raknet.ListenConfig{ProtocolVersions: []byte{9, 10, 11}, DisableCookies: true}).Listen(listen)
 	if err != nil {
 		return err
 	}

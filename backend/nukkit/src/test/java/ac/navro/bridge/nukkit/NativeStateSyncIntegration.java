@@ -43,9 +43,14 @@ public final class NativeStateSyncIntegration {
         @Override public PlayerUIInventory getUIInventory(){return ui;}
         @Override public CraftingGrid getCraftingGrid(){return grid;}
         @Override public boolean dataPacket(DataPacket packet){
-            var event=new DataPacketSendEvent(this,packet);sync.onSend(event);
-            if(packet instanceof InventorySlotPacket&&cancelSlot||packet instanceof ItemStackResponsePacket&&cancelResponse){event.setCancelled(true);return false;}
-            delivered.add(packet);for(var task:event.getPostSendActions())task.run();return true;
+            var afterSend=new ArrayList<Runnable>();var previous=PostSend.setTestScheduler(afterSend::add);
+            try {
+                var event=new DataPacketSendEvent(this,packet);sync.onSend(event);
+                if(packet instanceof InventorySlotPacket&&cancelSlot||packet instanceof ItemStackResponsePacket&&cancelResponse){event.setCancelled(true);return false;}
+                delivered.add(packet);
+                while(!afterSend.isEmpty())afterSend.remove(0).run();
+                return true;
+            } finally { PostSend.setTestScheduler(previous); }
         }
     }
     static class Transaction extends InventoryTransaction {

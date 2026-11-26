@@ -8,6 +8,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\nethernet\NetherNetInterface;
+use pocketmine\network\mcpe\raklib\RakLibInterface;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
@@ -21,6 +22,7 @@ final class NavroBridge extends PluginBase{
     private Config $mutedPlayers;
     private ?FireworkBridge $fireworks = null;
     private ?NetherNetInterface $privateNetherNet = null;
+    private ?RakLibInterface $privateRakNet = null;
 
     protected function onEnable() : void{
         $this->saveDefaultConfig();
@@ -40,14 +42,28 @@ final class NavroBridge extends PluginBase{
         if(is_array($netherNet) && ($netherNet["enabled"] ?? false) === true){
             try{
                 $this->privateNetherNet = PrivateNetherNet::start($this, $netherNet);
-                $this->getLogger()->info("Private NetherNet listening on " . $this->privateNetherNet->getAddress());
+                $this->getLogger()->info("Private NetherNet listening on " . ($netherNet['signaling-bind-address'] ?? '127.0.0.1') . ':' . ($netherNet['signaling-port'] ?? 19608));
             }catch(\Exception $error){
                 $this->getLogger()->error("Private NetherNet could not start: " . $error->getMessage());
+            }
+        }
+        $rakNet = $config->get("private-raknet", []);
+        if(is_array($rakNet) && ($rakNet["enabled"] ?? false) === true){
+            try{
+                $this->privateRakNet = PrivateRakNet::start($this, $rakNet);
+                $this->getLogger()->info("Private RakNet listening on " . ($rakNet["bind-address"] ?? "127.0.0.1") . ":" . ($rakNet["port"] ?? 19133));
+            }catch(\Throwable $error){
+                $this->getLogger()->error("Private RakNet could not start: " . $error->getMessage());
+                throw $error;
             }
         }
     }
 
     protected function onDisable() : void{
+        if($this->privateRakNet !== null){
+            PrivateRakNet::stop($this->getServer(), $this->privateRakNet);
+            $this->privateRakNet = null;
+        }
         if($this->privateNetherNet !== null){
             PrivateNetherNet::stop($this->getServer(), $this->privateNetherNet);
             $this->privateNetherNet = null;

@@ -2,6 +2,8 @@ module ac.navro/nethernet-probe
 
 go 1.26.0
 
+replace github.com/sandertv/go-raknet => ./third_party/go-raknet
+
 require (
 	github.com/go-jose/go-jose/v4 v4.1.8
 	github.com/helix-bedrock/nethernet v0.0.0-20261109175854-3c60f0396e41

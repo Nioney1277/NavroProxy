@@ -36,6 +36,7 @@ public final class NetherNetInspectServer {
         boolean smoothSetback = false;
         boolean operatorCommandTable = false;
         boolean backendStateSync = false;
+        java.security.PrivateKey backendSigningKey = null;
         var palettes = new HashMap<Integer, RuntimePalette>();
         for (int i = 1; i < args.length; i++) {
             switch(args[i]) {
@@ -46,6 +47,10 @@ public final class NetherNetInspectServer {
                 case "--smooth-setback" -> smoothSetback = true;
                 case "--operator-command-table" -> operatorCommandTable = true;
                 case "--backend-state-sync" -> backendStateSync = true;
+                case "--backend-signing-key" -> {
+                    if (++i >= args.length) throw new IllegalArgumentException("Missing backend signing key path");
+                    backendSigningKey = ac.navro.proxy.protocol.PrivateBackendLogin.loadProxySigningKey(Path.of(args[i]));
+                }
                 case "--block-palette" -> {
                     if (++i >= args.length) throw new IllegalArgumentException("Missing block palette path");
                     var palette = NetworkBlockStateRegistry.readRuntimePalette(Path.of(args[i]));
@@ -64,17 +69,21 @@ public final class NetherNetInspectServer {
         final boolean selectedSmoothSetback = smoothSetback;
         final boolean restrictCommandTable = operatorCommandTable;
         final boolean allowBackendStateSync = backendStateSync;
+        final var selectedBackendSigningKey = backendSigningKey;
         var selectedPalettes = Map.copyOf(palettes);
         var pool=new ThreadPoolExecutor(0,32,30,TimeUnit.SECONDS,new SynchronousQueue<>(),
                 new ThreadPoolExecutor.AbortPolicy());
         try(var server=new ServerSocket()){
             server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(),port));
             System.out.println("NETHERNET_ADAPTER_READY loopback="+server.getLocalSocketAddress()+" mode=per_connection backendType="+backendType);
-            while(true){var socket=server.accept();try{pool.execute(()->handle(socket, selectedBackend, selectedSmoothSetback, selectedPalettes, restrictCommandTable, allowBackendStateSync));}
+            while(true){var socket=server.accept();try{pool.execute(()->handle(socket, selectedBackend, selectedSmoothSetback,
+                    selectedPalettes, restrictCommandTable, allowBackendStateSync, selectedBackendSigningKey));}
                 catch(RejectedExecutionException e){socket.close();}}
         }finally{pool.shutdownNow();}
     }
-    private static void handle(Socket socket, ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback, Map<Integer, RuntimePalette> palettes, boolean restrictCommandTable, boolean allowBackendStateSync){
+    private static void handle(Socket socket, ac.navro.proxy.protocol.BackendType backendType, boolean smoothSetback,
+                               Map<Integer, RuntimePalette> palettes, boolean restrictCommandTable,
+                               boolean allowBackendStateSync, java.security.PrivateKey backendSigningKey){
         var gson=new Gson();
         try(socket;var in=new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             var out=new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()))){
@@ -112,11 +121,17 @@ public final class NetherNetInspectServer {
             }
             boolean detect=detectBridge||magic==0x4e564233&&in.readBoolean();
             boolean backendStateSync = !detectBridge || rakNetBackend || allowBackendStateSync;
-            try(var session=rakNetFrontend
-                    ? NetherNetBatchSession.forRakNetFrontend(backendKey,backendType,smoothSetback,backendStateSync)
-                    : new NetherNetBatchSession(key,backendKey,detect,backendType,smoothSetback,backendStateSync,peerAddress,rakNetBackend)){
-                session.setRuntimePalettes(palettes);
-                session.setOperatorCommandTable(restrictCommandTable);
+            final var selectedBackendKey = backendKey;
+            final var selectedPeer = peerAddress;
+            try(var session=new VersionedBatchSession(() -> {
+                var existing = rakNetFrontend
+                    ? NetherNetBatchSession.forRakNetFrontend(selectedBackendKey,backendType,smoothSetback,backendStateSync)
+                    : new NetherNetBatchSession(key,selectedBackendKey,detect,backendType,smoothSetback,backendStateSync,
+                            selectedPeer,rakNetBackend,backendSigningKey);
+                existing.setRuntimePalettes(palettes);
+                existing.setOperatorCommandTable(restrictCommandTable);
+                return existing;
+            },key,selectedBackendKey,rakNetBackend,rakNetFrontend,selectedPeer,backendSigningKey)){
                 if(detectBridge){out.writeInt(magic);out.flush();}
                 Set<String> observed=new HashSet<>();
                 boolean verbose=!grouped||Boolean.getBoolean("navro.nethernet.trace-batches");

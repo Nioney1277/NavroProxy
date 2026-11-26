@@ -55,7 +55,7 @@ func main() {
 	local := flag.String("local-ip", "", "Optional local IPv4 filter for ICE candidates (default: automatic interface discovery)")
 	keyPath := flag.String("identity", "keys/nethernet-identity.pem", "Persistent public NetherNet listener identity key")
 	backendAuth := flag.String("backend-auth", "private", "Backend identity: private, pmmp-ng, or geyser")
-	backendSigningKey := flag.String("backend-signing-key", "", "RSA private key for the pinned private NetherNet backend")
+	backendSigningKey := flag.String("backend-signing-key", "", "RSA private key for the pinned PMMP-NG backend")
 	initSigningKey := flag.String("init-backend-signing-key", "", "Generate a backend RSA private key and its .pub.pem public key, then exit")
 	flag.Parse()
 	if *initSigningKey != "" {
@@ -107,8 +107,11 @@ func run(listen, backend, adapter, local, keyPath, backendAuth string, signer *r
 	if err != nil {
 		return err
 	}
-	if rakNetAddress != "" && (backendAuth != "native" || signer != nil) {
-		return errors.New("RakNet backends require -backend-auth native")
+	if rakNetAddress != "" && backendAuth != "native" && backendAuth != "pmmp-ng" {
+		return errors.New("RakNet backends require -backend-auth native or pmmp-ng")
+	}
+	if rakNetAddress != "" && backendAuth == "pmmp-ng" && signer == nil {
+		return errors.New("RakNet pmmp-ng backends require -backend-signing-key")
 	}
 	if rakNetAddress == "" {
 		if backendAuth == "native" {
@@ -189,7 +192,7 @@ type event struct {
 
 func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api *webrtc.API, backendAuth string, signer *rsa.PrivateKey) error {
 	defer front.Close()
-	privateAuth := backendAuth == "private" || backendAuth == "pmmp-ng"
+	privateAuth := rakNetAddress == "" && (backendAuth == "private" || backendAuth == "pmmp-ng")
 	stock := backendAuth == "geyser"
 	if front.PublicKey() == nil {
 		return errors.New("missing frontend DTLS identity")
@@ -264,14 +267,24 @@ func session(front *nethernet.Conn, backend, adapter, rakNetAddress string, api 
 		}
 	}
 	if rakNetAddress != "" {
+		front.SetReadDeadline(time.Now().Add(10 * time.Second))
+		first, err := front.ReadPacket()
+		front.SetReadDeadline(time.Time{})
+		if err != nil {
+			return fmt.Errorf("read initial client batch: %w", err)
+		}
+		version, err := initialRakNetVersion(first)
+		if err != nil {
+			return err
+		}
 		ctx, cancel := context.WithTimeout(front.Context(), 10*time.Second)
-		back, err := dialRakNetBackend(ctx, rakNetAddress)
+		back, err := dialRakNetBackendVersion(ctx, rakNetAddress, version)
 		cancel()
 		if err != nil {
 			return fmt.Errorf("dial RakNet backend: %w", err)
 		}
 		defer back.Close()
-		return bridgeBatches(front, back, ipc, in, out)
+		return bridgeBatches(&prefetchedBatches{batchConn: front, first: first}, back, ipc, in, out)
 	}
 
 	var identity *nethernet.Identity

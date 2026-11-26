@@ -56,12 +56,7 @@ public class PrivateNetherNetPlayer extends Player {
 
     static JwtClaims verifyForwardedLogin(byte[] payload,io.netty.channel.Channel channel) throws Exception {
         var input=new BinaryStream(payload);
-        int size=input.getLInt();
-        if (size<1 || size>65536) throw new IllegalArgumentException("Invalid login token size");
-        var auth=JsonParser.parseString(new String(input.get(size),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
-        if (!auth.has("Token") || !auth.has("AuthenticationType") || auth.get("AuthenticationType").getAsInt()!=2)
-            throw new IllegalArgumentException("Private listener requires a SELF_SIGNED token login");
-        String token=auth.get("Token").getAsString();
+        String token=ForwardedLoginToken.read(input);
         if (token.length()>60000 || token.split("\\.").length!=3)
             throw new IllegalArgumentException("Invalid forwarded token");
         var preview=JwtClaims.parse(new String(Base64.getUrlDecoder().decode(token.split("\\.")[1]),java.nio.charset.StandardCharsets.UTF_8));
@@ -81,7 +76,7 @@ public class PrivateNetherNetPlayer extends Player {
         UUID.fromString(claims.getStringClaimValue("leguuid"));
         String name=claims.getStringClaimValue("xname");
         if (name==null || name.isBlank()) throw new IllegalArgumentException("Missing forwarded name");
-        size=input.getLInt();
+        int size=input.getLInt();
         if (size<1 || size>3*1024*1024) throw new IllegalArgumentException("Invalid client data size");
         String clientToken=new String(input.get(size),java.nio.charset.StandardCharsets.UTF_8);
         if (EncryptionUtils.verifyClientData(clientToken,key)==null) throw new IllegalArgumentException("Invalid client data signature");

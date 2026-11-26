@@ -11,7 +11,7 @@ backend-type: navro
 adapter-port: 19138
 smooth-setback: false
 backend-encryption: false
-# Required only for backend-transport: nethernet with backend-auth: pmmp-ng.
+# Required for either backend transport when backend-auth: pmmp-ng.
 backend-signing-key: keys/navro-backend.pem
 # Optional when the client frontend is nethernet.
 local-ip: ""

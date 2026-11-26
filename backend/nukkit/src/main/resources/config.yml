@@ -14,3 +14,13 @@ private-nethernet:
   ice-port-range: [20000, 20127]
   max-connections: 128
   proxy-public-key-file: navro-backend.pub.pem
+
+# Optional, separate RakNet listener for signed Navro proxy logins.
+private-raknet:
+  enabled: false
+  bind-address: "127.0.0.1"
+  port: 19134
+  proxy-public-key-file: navro-backend.pub.pem
+
+# Generate the PEM pair once on the proxy host; keep the private PEM there and
+# copy only navro-backend.pub.pem to this plugin data folder.

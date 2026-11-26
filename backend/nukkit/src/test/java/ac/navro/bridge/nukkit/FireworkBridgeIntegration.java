@@ -46,12 +46,15 @@ public final class FireworkBridgeIntegration {
         @Override public void addMotion(double x,double y,double z) { }
         @Override public void updateMovement() { }
         @Override public boolean dataPacket(DataPacket p){
-            var event=new DataPacketSendEvent(this,p);
-            bridge.onPacketSend(event);
-            if(event.isCancelled()){suppressed.add(p);return false;}
-            delivered.add(p);
-            for(var callback:event.getPostSendActions())callback.run();
-            return true;
+            var afterSend=new ArrayList<Runnable>();var previous=PostSend.setTestScheduler(afterSend::add);
+            try {
+                var event=new DataPacketSendEvent(this,p);
+                bridge.onPacketSend(event);
+                if(event.isCancelled()){suppressed.add(p);return false;}
+                delivered.add(p);
+                while(!afterSend.isEmpty())afterSend.remove(0).run();
+                return true;
+            } finally { PostSend.setTestScheduler(previous); }
         }
     }
     public static class Rocket extends EntityElytraFirework {
@@ -98,8 +101,10 @@ public final class FireworkBridgeIntegration {
         var field=NavroFireworkBridge.class.getDeclaredField("stateSync");field.setAccessible(true);var sync=(NativeStateSync)field.get(bridge);
         for(var peer:List.of(player,other)) {var hello=new ScriptMessagePacket();hello.channel=NativeStateSync.CHANNEL;hello.message="hello|12345678-1234-1234-1234-123456789012";sync.onReceive(new cn.nukkit.event.server.DataPacketReceiveEvent(peer,hello));peer.delivered.clear();}
 
-        var cancelled=new DataPacketSendEvent(player,spawn(100));cancelled.setCancelled(true);bridge.onPacketSend(cancelled);
-        check(cancelled.getPostSendActions().isEmpty(),"Cancelled spawn must not stage a boost");
+        var cancelled=new DataPacketSendEvent(player,spawn(100));cancelled.setCancelled(true);
+        var cancelledCallbacks=new ArrayList<Runnable>();var previous=PostSend.setTestScheduler(cancelledCallbacks::add);
+        bridge.onPacketSend(cancelled);PostSend.setTestScheduler(previous);
+        check(cancelledCallbacks.isEmpty(),"Cancelled spawn must not stage a boost");
         check(effects(player,1_000_000)==0,"Cancelled spawn must not send effect");
 
         other.dataPacket(spawn(100));check(effects(other,1_000_000)==0,"Remote viewer cannot own local boost");

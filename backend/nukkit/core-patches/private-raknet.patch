@@ -1,0 +1,116 @@
+--- a/src/main/java/cn/nukkit/Player.java
++++ b/src/main/java/cn/nukkit/Player.java
+@@ -67,6 +67,7 @@
+ import cn.nukkit.nbt.NBTIO;
+ import cn.nukkit.nbt.tag.*;
+ import cn.nukkit.network.NetherNetInterface;
++import cn.nukkit.network.RakNetInterface;
+ import cn.nukkit.network.SourceInterface;
+ import cn.nukkit.network.encryption.LoginChainVerifier;
+ import cn.nukkit.network.encryption.PrepareEncryptionTask;
+@@ -10041,7 +10042,9 @@
+     // Called only by the main-thread AsyncTask completion after successful verification.
+     void continueVerifiedLogin(Skin loginSkin, ClientChainData validated) {
+         this.loginChainData = validated;
+-        if (!loginChainData.isXboxAuthed() && server.xboxAuth) {
++        boolean privateProxyLogin = this.interfaz instanceof RakNetInterface rakNetInterface
++                && rakNetInterface.isPrivateProxyListener();
++        if (!loginChainData.isXboxAuthed() && server.xboxAuth && !privateProxyLogin) {
+             this.close("", "disconnectionScreen.notAuthenticated");
+             if (server.banXBAuthFailed) {
+                 this.server.getNetwork().blockAddress(this.socketAddress.getAddress(), 5);
+--- a/src/main/java/cn/nukkit/network/RakNetInterface.java
++++ b/src/main/java/cn/nukkit/network/RakNetInterface.java
+@@ -50,6 +50,10 @@
+     static final long MAX_INBOUND_BYTES_PER_INTERFACE_TICK = 6L * 1024L * 1024L;
+ 
+     private final Server server;
++    private final String bindAddress;
++    private final int bindPort;
++    private final Class<? extends Player> playerClass;
++    private final boolean privateProxyListener;
+     private Network network;
+ 
+     private final Channel channel;
+@@ -63,7 +67,17 @@
+     private int inboundRoundRobinCursor;
+ 
+     public RakNetInterface(Server server) {
++        this(server, server.getIp().isBlank() ? "0.0.0.0" : server.getIp(), server.getPort(), Player.class, false);
++    }
++
++    public RakNetInterface(Server server, String bindAddress, int bindPort,
++                           Class<? extends Player> playerClass, boolean privateProxyListener) {
+         this.server = server;
++        this.bindAddress = Objects.requireNonNull(bindAddress, "bindAddress");
++        if (bindPort < 1 || bindPort > 65535) throw new IllegalArgumentException("RakNet port must be between 1 and 65535");
++        this.bindPort = bindPort;
++        this.playerClass = Objects.requireNonNull(playerClass, "playerClass");
++        this.privateProxyListener = privateProxyListener;
+ 
+         boolean disableNative = Boolean.parseBoolean(System.getProperty("disableNativeEventLoop"));
+ 
+@@ -122,19 +136,19 @@
+                     }
+                 });
+ 
+-        String address = this.server.getIp().isBlank() ? "0.0.0.0" : this.server.getIp();
++        String address = this.bindAddress;
+ 
+         Channel v4Channel = null;
+         Channel v6Channel = null;
+         try {
+-            ChannelFuture v4Future = bootstrap.bind(address, this.server.getPort()).awaitUninterruptibly();
++            ChannelFuture v4Future = bootstrap.bind(address, this.bindPort).awaitUninterruptibly();
+             if (!v4Future.isSuccess()) {
+-                throw new RuntimeException("Failed to bind IPv4 listener on " + address + ":" + this.server.getPort(), v4Future.cause());
++                throw new RuntimeException("Failed to bind IPv4 listener on " + address + ":" + this.bindPort, v4Future.cause());
+             }
+             v4Channel = v4Future.channel();
+             addLocalhostExceptions(v4Channel);
+ 
+-            if (this.server.isIpv6Enabled()) {
++            if (!this.privateProxyListener && this.server.isIpv6Enabled()) {
+                 String ipv6Address = this.server.getIpv6Address().isBlank() ? "::" : this.server.getIpv6Address();
+                 ChannelFuture v6Future = bootstrap.bind(ipv6Address, this.server.getIpv6Port()).awaitUninterruptibly();
+                 if (!v6Future.isSuccess()) {
+@@ -151,6 +165,14 @@
+         }
+         this.channel = v4Channel;
+         this.ipv6Channel = v6Channel;
++    }
++
++    public boolean isPrivateProxyListener() {
++        return this.privateProxyListener;
++    }
++
++    private Class<? extends Player> getPlayerClass() {
++        return this.playerClass;
+     }
+ 
+     private static void closeQuietly(Channel channel) {
+@@ -208,8 +230,12 @@
+             }
+             InetSocketAddress address = session.getChannel().remoteAddress();
+             try {
+-                PlayerCreationEvent event = new PlayerCreationEvent(this, Player.class, Player.class, null, address);
++                PlayerCreationEvent event = new PlayerCreationEvent(this, Player.class, this.playerClass, null, address);
+                 this.server.getPluginManager().callEvent(event);
++                if (this.privateProxyListener && event.getPlayerClass() != this.playerClass) {
++                    session.disconnect("Private RakNet listener requires its authenticated player class");
++                    continue;
++                }
+ 
+                 this.sessions.put(event.getSocketAddress(), session);
+ 
+@@ -438,8 +464,8 @@
+         String[] names = name.split("!@#"); // Split double names within the program
+         String motd = Utils.rtrim(names[0].replace(";", "\\;"), '\\');
+         String subMotd = names.length > 1 ? Utils.rtrim(names[1].replace(";", "\\;"), '\\') : "";
+-        String ipv4Port = Integer.toString(this.server.getPort());
+-        String ipv6Port = Integer.toString(this.ipv6Channel != null ? this.server.getIpv6Port() : this.server.getPort());
++        String ipv4Port = Integer.toString(this.bindPort);
++        String ipv6Port = Integer.toString(this.ipv6Channel != null ? this.server.getIpv6Port() : this.bindPort);
+         StringJoiner joiner = new StringJoiner(";", "", ";")
+                 .add("MCPE")
+                 .add(motd)

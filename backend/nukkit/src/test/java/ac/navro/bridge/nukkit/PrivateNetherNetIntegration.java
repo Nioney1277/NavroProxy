@@ -66,13 +66,22 @@ public final class PrivateNetherNetIntegration {
         byte[] client=clientToken.getBytes(java.nio.charset.StandardCharsets.UTF_8);payload.putLInt(client.length);payload.put(client);
         var channel=new EmbeddedChannel();
         try {
-            var peer=new PlayerInfo("","","",new InetSocketAddress("127.0.0.1",19132),valid);
+            var peer=new PlayerInfo("","","",new InetSocketAddress("127.0.0.1",19132),null,valid);
             channel.attr(org.cloudburstmc.netty.channel.nethernet.NetherNetChildChannel.PLAYER_INFO).set(peer);
             TransportIdentityBinding.install(channel,TransportIdentityBinding.forPlayer(peer));
             var forwarded=PrivateNetherNetPlayer.verifyForwardedLogin(payload.getBuffer(),channel);
             check(forwarded.getStringClaimValue("leguuid").equals(loginClaims.getStringClaimValue("leguuid")),"Verified game UUID preserved");
+            for(String authJson:List.of("{\"chain\":[\""+gameToken+"\"]}",
+                    new com.google.gson.Gson().toJson(Map.of("AuthenticationType",2,"Token","", "Certificate","{\"chain\":[\""+gameToken+"\"]}")))) {
+                var certificatePayload=new cn.nukkit.utils.BinaryStream();
+                byte[] encodedAuth=authJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                certificatePayload.putLInt(encodedAuth.length);certificatePayload.put(encodedAuth);
+                certificatePayload.putLInt(client.length);certificatePayload.put(client);
+                var legacy=PrivateNetherNetPlayer.verifyForwardedLogin(certificatePayload.getBuffer(),channel);
+                check(legacy.getStringClaimValue("leguuid").equals(loginClaims.getStringClaimValue("leguuid")),"Legacy certificate identity preserved");
+            }
             var other=tokenClaims(EncryptionUtils.createKeyPair().getPublic());
-            channel.attr(org.cloudburstmc.netty.channel.nethernet.NetherNetChildChannel.PLAYER_INFO).set(new PlayerInfo("","","",null,other));
+            channel.attr(org.cloudburstmc.netty.channel.nethernet.NetherNetChildChannel.PLAYER_INFO).set(new PlayerInfo("","","",null,null,other));
             rejects(()->PrivateNetherNetPlayer.verifyForwardedLogin(payload.getBuffer(),channel),"Mismatched session key accepted");
         } finally {channel.finishAndReleaseAll();}
         var unbound=new EmbeddedChannel();

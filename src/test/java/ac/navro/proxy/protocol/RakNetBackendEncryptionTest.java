@@ -22,15 +22,35 @@ import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec_v
 import org.cloudburstmc.protocol.bedrock.packet.ClientToServerHandshakePacket;
 import org.cloudburstmc.protocol.bedrock.util.EncryptionUtils;
 import org.junit.jupiter.api.Test;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
+import java.security.KeyPairGenerator;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class RakNetBackendEncryptionTest {
+    @Test void privateRakNetAssertionUsesThePinnedRsaKeyAndBindsTheSessionIdentity() throws Exception {
+        var generator=KeyPairGenerator.getInstance("RSA");generator.initialize(2048);var rsa=generator.generateKeyPair();
+        var encryption=new RakNetBackendEncryption(rsa.getPrivate());
+        var identity=new LoginIdentity(UUID.randomUUID(),"PrivateBackendPlayer");
+        var login=encryption.login(2193,identity,Map.of("xid","123456789"),"{}".getBytes(StandardCharsets.UTF_8));
+        var chain=EncryptionUtils.validatePayload(login.getAuthPayload());
+        var gameClaims=chain.rawIdentityClaims();
+        assertTrue(gameClaims.get("proxyAuth") instanceof String);
+        var verified=new JwtConsumerBuilder().setVerificationKey(rsa.getPublic())
+                .setExpectedIssuer("navro-proxy").setExpectedSubject("navro-proxy")
+                .setExpectedAudience("urn:navro:raknet-backend").setRequireExpirationTime().build()
+                .processToClaims((String)gameClaims.get("proxyAuth"));
+        assertEquals(identity.uuid().toString(),verified.getStringClaimValue("leguuid"));
+        assertEquals("PrivateBackendPlayer",verified.getStringClaimValue("xname"));
+        assertEquals("123456789",verified.getStringClaimValue("xid"));
+        assertEquals(gameClaims.get("cpk"),verified.getStringClaimValue("cpk"));
+    }
+
     @Test void theBackendDecodesTheEncryptedConfirmationUsingTheKeyFromTheNewLogin() throws Exception {
         var encryption = new RakNetBackendEncryption();
         var identity = new LoginIdentity(UUID.randomUUID(), "BridgeTest");
