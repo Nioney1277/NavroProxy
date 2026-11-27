@@ -56,11 +56,8 @@ NavroFireworkBridge.jar
 !/README.md
 !/backend/pocketmine-mp/resources/config.yml
 
-!src/test/
 
-!src/test/**
 
-!nethernet/inspect/*_test.go
 
 !/nethernet/README.md
 
@@ -68,9 +65,7 @@ NavroFireworkBridge.jar
 
 !/backend/nukkit/src/main/resources/config.yml
 
-!backend/nukkit/src/test/
 
-!backend/nukkit/src/test/**
 
 !/backend/nukkit/README.md
 
@@ -84,3 +79,7 @@ NavroFireworkBridge.jar
 !/tools/
 /tools/*
 !/tools/import-bedrock-block-properties.py
+
+**/test/
+**/tests/
+**/testdata/

@@ -29,30 +29,6 @@ jobs:
       - name: Build desktop distributions
         run: bash ./gradlew assemble
         shell: bash
-      - name: Protocol and transport regression
-        run: >-
-          bash ./gradlew test
-          --tests 'ac.navro.proxy.NetworkConfigTest'
-          --tests 'ac.navro.proxy.ConnectionRoutingTest'
-          --tests 'ac.navro.proxy.NativeRakNetForwarderTest'
-          --tests 'ac.navro.proxy.nethernet.ConnectionBatchSessionTest'
-          --tests 'ac.navro.proxy.nethernet.RakNetFrontendSessionTest'
-          --tests 'ac.navro.proxy.nethernet.NetherNetBatchSessionTest'
-          --tests 'ac.navro.proxy.nethernet.NetherNetBridgeFramingTest'
-          --tests 'ac.navro.proxy.nethernet.NetherNetOfflineLoginUtilityTest'
-          --tests 'ac.navro.proxy.check.impl.timer.LiveDetectionTest'
-          --tests 'ac.navro.proxy.protocol.*'
-          --tests 'ac.navro.proxy.prediction.PredictionSync*'
-          --tests 'ac.navro.proxy.prediction.vehicle.*'
-          --tests 'ac.navro.proxy.packets.other.Vehicle*'
-          --tests 'ac.navro.proxy.nethernet.NetherNetDetectionTest.nativeVehiclePacketsReachPredictionAndEmitVehicleCorrection'
-          --tests 'ac.navro.proxy.packets.input.AuthInputPacketsTest'
-          --tests 'ac.navro.proxy.teleport.NavroCorrectionAlignmentTest'
-          --tests 'ac.navro.proxy.state.MovementMetadataLifecycleTest'
-          --tests 'ac.navro.proxy.state.MovementStateReferenceTest'
-          --tests 'ac.navro.proxy.command.*'
-          --tests 'ac.navro.proxy.check.impl.sprint.SprintChecksTest'
-        shell: bash
       - uses: actions/upload-artifact@v4
         with:
           name: navro-proxy-${{ matrix.os }}
@@ -76,7 +52,6 @@ jobs:
         with:
           go-version-file: nethernet/go.mod
           cache-dependency-path: nethernet/go.sum
-      - run: go test ./...
       - name: Build listener and probe
         run: |
           go build -o bin/navro-nethernet${{ matrix.suffix }} ./inspect

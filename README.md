@@ -46,6 +46,8 @@ Windows PowerShell
 .\gradlew.bat distZip
 ```
 
+The build workflow compiles and packages production code.
+
 The distribution ZIP is written to `build/distributions/`. Extract the entire archive to keep the launcher and its dependencies together.
 
 To build an unpacked distribution
