@@ -5,11 +5,18 @@ api: [5.0.0]
 description: Bridges NavroProxy alerts, server state and private authenticated RakNet on PocketMine-MP-NG
 softdepend: [Customies, Customies-NG]
 commands:
-  navroalerts:
-    description: Toggle your NavroProxy alerts in chat
-    usage: "/navroalerts"
-    permission: navrobridge.alerts
+  navro:
+    description: Manage NavroProxy alerts and diagnostics
+    usage: "/navro <alert|reload|debug|debug2>"
+    aliases: [navroalerts]
+    permission: navrobridge.command
 permissions:
+  navrobridge.command:
+    description: Access the Navro command
+    default: true
   navrobridge.alerts:
     description: Receive NavroProxy alerts in chat
+    default: op
+  navrobridge.reload:
+    description: Reload Navro bridge alert and trusted proxy settings
     default: op
