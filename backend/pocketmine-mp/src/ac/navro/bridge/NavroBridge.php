@@ -20,6 +20,7 @@ final class NavroBridge extends PluginBase{
     private bool $consoleAlerts;
     private bool $staffChatAlerts;
     private Config $mutedPlayers;
+    private ?NativeStateSync $stateSync = null;
     private ?FireworkBridge $fireworks = null;
     private ?NetherNetInterface $privateNetherNet = null;
     private ?RakLibInterface $privateRakNet = null;
@@ -33,6 +34,7 @@ final class NavroBridge extends PluginBase{
         $this->staffChatAlerts = $config->get("staff-chat-alerts", true) === true;
         $this->mutedPlayers = new Config($this->getDataFolder() . "muted-alerts.json", Config::JSON);
         $stateSync = new NativeStateSync($this);
+        $this->stateSync = $stateSync;
         $stateSync->register();
         if(FireworkBridge::isSupported()){
             $this->fireworks = new FireworkBridge($stateSync);
@@ -73,11 +75,36 @@ final class NavroBridge extends PluginBase{
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-        if($command->getName() !== "navroalerts" || $args !== []){
+        if($command->getName() !== "navro"){
             return false;
         }
         if(!$sender instanceof Player){
-            $sender->sendMessage("Run this command in game to toggle your chat alerts.");
+            $sender->sendMessage("Run /navro in game through NavroProxy.");
+            return true;
+        }
+        if($this->stateSync === null || !$this->stateSync->bridgeCommands($sender->getNetworkSession())){
+            $sender->sendMessage("This connection uses proxy commands or has no active Navro command bridge.");
+            return true;
+        }
+        $action = strtolower($args[0] ?? "");
+        if(in_array($action, ["debug", "debug2", "reload", "proxyping"], true)){
+            if(!$sender->hasPermission($action === "reload" ? "navrobridge.reload" : ($action === "proxyping" ? "navrobridge.proxyping" : "navrobridge.debug"))){
+                $sender->sendMessage("You do not have permission to use this command.");
+                return true;
+            }
+            if(count($args) > 2 || ($action === "debug" && count($args) !== 2) || ($action === "reload" && count($args) !== 1)){
+                $sender->sendMessage("/navro alert | reload | debug <player> | debug2 [player] | proxyping [player]");
+                return true;
+            }
+            $target = $args[1] ?? "";
+            if(strlen($target) > 256 || preg_match('/[\\x00-\\x1f\\x7f]/', $target) === 1 ||
+                !$this->stateSync->command($sender->getNetworkSession(), $action, $target)){
+                $sender->sendMessage("Could not send command to NavroProxy.");
+            }
+            return true;
+        }
+        if($action !== "alert" || count($args) !== 1){
+            $sender->sendMessage("/navro alert | reload | debug <player> | debug2 [player] | proxyping [player]");
             return true;
         }
         if(!$sender->hasPermission("navrobridge.alerts")){
@@ -115,7 +142,7 @@ final class NavroBridge extends PluginBase{
         }
         if($this->staffChatAlerts){
             foreach($this->getServer()->getOnlinePlayers() as $player){
-                if($player->hasPermission("navrobridge.alerts") &&
+                if($this->stateSync?->bridgeCommands($player->getNetworkSession()) === true && $player->hasPermission("navrobridge.alerts") &&
                     !$this->mutedPlayers->exists($player->getUniqueId()->toString())){
                     $player->sendMessage($message);
                 }

@@ -16,7 +16,7 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-/** Relays RakNet payloads without terminating the backend's Bedrock authentication or encryption. */
+
 final class NativeRakNetForwarder extends ChannelInboundHandlerAdapter {
     private static final int MAX_QUEUED_BYTES = 4 * 1024 * 1024;
     private static final int MAX_QUEUED_PACKETS = 128;

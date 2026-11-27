@@ -42,8 +42,8 @@ class RotationPlaceCameraTest {
                     bed ? 26 : 0, 0, !bed, !bed, false, false, bed ? outline : null);
         }
         public UseItemData placementData(InventoryTransactionPacket p) {
-            // Deliberately no clickPos or reported playerPos: those client claims
-            // cannot rescue a geometrically invalid ray.
+
+
             return new UseItemData(target, face, new ItemView(1, 0, true, true, 1, false),
                     0, 1, 1, 0, null, null);
         }
@@ -105,7 +105,7 @@ class RotationPlaceCameraTest {
             c.outline = new Box(box[0], box[1], box[2], box[3], box[4], box[5]); c.face = Direction.valueOf(row.get("face").getAsString());
             double[] direction = values(row.getAsJsonArray("direction"));
             double pitch = Math.toDegrees(-Math.asin(direction[1])), yaw = Math.toDegrees(Math.atan2(-direction[0], direction[2]));
-            // Reproduce the old miss independently of queue/camera snapshot state.
+
             assertFalse(RotationPlace.canHit(new RotationPlace.Point(a[0], a[1], a[2]), new RotationPlace.Point(b[0], b[1], b[2]),
                     new RotationPlace.Point(direction[0], direction[1], direction[2]), c.outline, c.face, List.of()));
             deliver(check, input(1, a, pitch, yaw, true)); deliver(check, input(2, b, pitch, yaw, true));
@@ -125,7 +125,7 @@ class RotationPlaceCameraTest {
             click(check); pose(p, flag, false);
             deliver(check, input(3, wire, 0, 0, false));
             assertEquals(0, check.flags, flag + " " + c.logs); assertEquals(1, c.applied);
-            // New standing frames must not keep the old low view origin.
+
             deliver(check, input(4, wire, 0, 0, false)); deliver(check, input(5, wire, 0, 0, false));
             click(check); deliver(check, input(6, wire, 0, 0, false));
             assertEquals(1, check.flags, "Standing ray should miss the low bed: " + flag);

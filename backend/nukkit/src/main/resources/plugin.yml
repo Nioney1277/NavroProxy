@@ -1,16 +1,28 @@
 name: NavroFireworkBridge
 main: ac.navro.bridge.nukkit.NavroFireworkBridge
-version: 0.5.0
+version: 0.6.0
 api: ["1.0.14"]
 load: POSTWORLD
 author: NavroProxy
 description: Bridges NavroProxy alerts, native state, fireworks and private authenticated RakNet on Nukkit-MOT.
 commands:
-  navroalerts:
-    description: Toggle your NavroProxy alerts in chat
-    usage: "/navroalerts"
-    permission: navrobridge.alerts
+  navro:
+    description: NavroProxy alert and debug management
+    usage: "/navro alert | reload | debug <player> | debug2 [player] | proxyping [player]"
+    permission: navrobridge.command
 permissions:
+  navrobridge.command:
+    description: View the Navro command
+    default: true
+  navrobridge.debug:
+    description: View NavroProxy prediction debug output
+    default: op
+  navrobridge.reload:
+    description: Reload NavroProxy configuration
+    default: op
   navrobridge.alerts:
     description: Receive NavroProxy alerts in chat
+    default: op
+  navrobridge.proxyping:
+    description: View proxy forwarding latency
     default: op

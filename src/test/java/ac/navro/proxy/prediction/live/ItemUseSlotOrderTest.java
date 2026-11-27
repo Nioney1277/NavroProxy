@@ -51,7 +51,7 @@ class ItemUseSlotOrderTest {
             metadata(s,true,900);assertTrue(s.player().getLatencyUtil().onResponse(900));
         }
         void move(float factor, boolean start) {
-            // Independent flat-ground integration: acceleration, movement, then surface drag.
+
             float travel=velocity+.1F*.98F*factor;z+=travel;velocity=travel*.54600006F;
             var input=AuthInputPacketsTest.input(tick++,8,64,z,new Vec3(0,-.0784F,velocity));
             input.setMotion(Vector2f.from(0,factor));input.setRawMoveVector(Vector2f.from(0,1));

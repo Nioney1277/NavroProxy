@@ -28,7 +28,7 @@ class SprintAttributeSyncTest {
         assertTrue(s.player().getLatencyUtil().onResponse(10));assertTrue(speed(s).getModifiers().isEmpty());
         input(s,2,PlayerAuthInputData.STOP_SPRINTING);
         assertFalse(s.player().predictionSprinting());assertEquals(.13F,speed(s).getValue());
-        // The backend's stop response owns the subsequent speed change.
+
         s.player().getLatencyUtil().queue(11,true);s.observeBackend(attributes(s,.1F,.1F));
         assertEquals(.13F,speed(s).getValue());s.player().getLatencyUtil().onResponse(11);
         assertEquals(.1F,speed(s).getValue());

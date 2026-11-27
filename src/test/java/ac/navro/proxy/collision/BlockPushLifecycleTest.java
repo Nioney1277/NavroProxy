@@ -60,14 +60,14 @@ class BlockPushLifecycleTest {
     @Test void closestRequestIsConsumedBeforeCollisionFlagAndMountGatesWithoutFetching() {
         var s = session(); var p = s.player(); var calls = new AtomicInteger();
         var fetch = (java.util.function.Supplier<List<Box>>) () -> { calls.incrementAndGet(); return List.of(p.boundingBox()); };
-        MoveTowardsClosestSpace.prepare(p, false, fetch); // No pending request.
+        MoveTowardsClosestSpace.prepare(p, false, fetch);
         assertEquals(0, calls.get());
         p.collisionPhysics.requestClosestSpace(true, true);
-        MoveTowardsClosestSpace.prepare(p, false, fetch); // No HAS_COLLISION flag.
+        MoveTowardsClosestSpace.prepare(p, false, fetch);
         assertEquals(0, calls.get()); assertFalse(p.collisionPhysics.consumeClosestSpaceRequest());
         flag(s, EntityFlag.HAS_COLLISION, true);
         p.collisionPhysics.requestClosestSpace(true, true);
-        MoveTowardsClosestSpace.prepare(p, true, fetch); // Compensated mount gate.
+        MoveTowardsClosestSpace.prepare(p, true, fetch);
         assertEquals(0, calls.get()); assertFalse(p.collisionPhysics.consumeClosestSpaceRequest());
         p.collisionPhysics.requestClosestSpace(true, true);
         MoveTowardsClosestSpace.prepare(p, false, fetch);
@@ -133,7 +133,7 @@ class BlockPushLifecycleTest {
         actor(s, new Box(1.04F, 64.1F, 0.2F, 1.64F, 65.9F, 0.8F)); var p = s.player();
         Vec3 before = p.position().clone();
         ShulkerPushPhysics.finish(p, s.collisionWorld(), false);
-        vectorEquals(before, p.position()); // Cached closed box, openness already 0.05.
+        vectorEquals(before, p.position());
         next(s, 2);
         var expanded = p.collisionPhysics.shulkers().get(0).shape(); assertTrue(expanded.maxX > 1.04F);
         s.world().handleCollisionBlockEvent(0, 64, 0, 1, 0); next(s, 3); next(s, 4);

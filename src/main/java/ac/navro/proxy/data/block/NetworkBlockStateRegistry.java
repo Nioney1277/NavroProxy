@@ -56,7 +56,7 @@ public final class NetworkBlockStateRegistry {
         var components = new NetworkBlockComponents(packet.getBlockProperties(), protocol);
         NbtList<NbtMap> definitions = packet.getBlockPalette();
         Tables tables;
-        if (definitions != null && !definitions.isEmpty()) tables = orderedTables(definitions, knownLegacy(protocol));
+        if (definitions != null && !definitions.isEmpty()) tables = orderedTables(protocol, definitions, knownLegacy(protocol));
         else if (supplied != null && supplied.protocol() == protocol) tables = supplied.tables;
         else {
             tables = forProtocol(protocol, hashed).tables;
@@ -127,7 +127,7 @@ public final class NetworkBlockStateRegistry {
             if (states.stream().anyMatch(state -> state.getString("name").isBlank()))
                 throw new IOException("Unnamed block state");
             Map<StateKey, Integer> legacy = knownLegacy(protocol);
-            var tables = orderedTables(states, legacy);
+            var tables = orderedTables(protocol, states, legacy);
             if (tables.airRuntime == Integer.MIN_VALUE)
                 throw new IOException("Missing air entry in palette");
             return new RuntimePalette(protocol, tables);
@@ -153,7 +153,7 @@ public final class NetworkBlockStateRegistry {
         }
     }
 
-    private static Tables orderedTables(Iterable<NbtMap> definitions, Map<StateKey, Integer> knownLegacy) {
+    private static Tables orderedTables(int protocol, Iterable<NbtMap> definitions, Map<StateKey, Integer> knownLegacy) {
         Map<Integer, NetworkBlockState> runtime = new HashMap<>(), hashes = new HashMap<>();
         Map<Integer, Integer> legacyRuntime = new HashMap<>(), legacyHashes = new HashMap<>();
         var overloads = new java.util.ArrayList<ForwardState>();
@@ -163,8 +163,8 @@ public final class NetworkBlockStateRegistry {
             NbtMap state = networkTag(source);
             int hash = Hash.hashBlock(state);
             int legacy = source.containsKey("id") ? legacyId(source) : knownLegacy.getOrDefault(StateKey.of(state), -1);
-            runtime.putIfAbsent(runtimeId, new NetworkBlockState(runtimeId, legacy, state));
-            hashes.putIfAbsent(hash, new NetworkBlockState(hash, legacy, state));
+            runtime.putIfAbsent(runtimeId, physicalState(protocol, runtimeId, legacy, state));
+            hashes.putIfAbsent(hash, physicalState(protocol, hash, legacy, state));
             if (legacy >= 0) registerForward(source, legacy, runtimeId, hash, legacyRuntime, legacyHashes, overloads);
             if ("minecraft:air".equals(state.getString("name"))) { airRuntime = runtimeId; airHash = hash; }
             runtimeId++;
@@ -220,8 +220,8 @@ public final class NetworkBlockStateRegistry {
                     int runtimeId = source.getInt("runtimeId");
                     NbtMap state = networkTag(source);
                     int hash = Hash.hashBlock(state);
-                    runtime.putIfAbsent(runtimeId, new NetworkBlockState(runtimeId, legacy, state));
-                    hashes.putIfAbsent(hash, new NetworkBlockState(hash, legacy, state));
+                    runtime.putIfAbsent(runtimeId, physicalState(protocol, runtimeId, legacy, state));
+                    hashes.putIfAbsent(hash, physicalState(protocol, hash, legacy, state));
                     if (legacy >= 0) registerForward(source, legacy, runtimeId, hash, legacyRuntime, legacyHashes, overloads);
                     if ("minecraft:air".equals(state.getString("name"))) { airRuntime = runtimeId; airHash = hash; }
                 }
@@ -236,6 +236,10 @@ public final class NetworkBlockStateRegistry {
         int id = ac.navro.proxy.util.NbtNumber.getInt(source, "id");
         int data = ac.navro.proxy.util.NbtNumber.getShort(source, "data");
         return BlockStateEncoding.fullId(id, data);
+    }
+
+    private static NetworkBlockState physicalState(int protocol, int networkId, int legacy, NbtMap state) {
+        return new NetworkBlockState(networkId, legacy, state, null, BedrockBlockProperties.forState(protocol, state));
     }
 
     private record ForwardState(int legacy, int runtime, int hash) { }

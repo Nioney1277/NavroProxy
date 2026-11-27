@@ -21,7 +21,7 @@ class ElytraPipelineTest {
             var armor=new InventoryContentPacket();armor.setContainerId(120);armor.setContents(List.of(ItemData.AIR,ItemData.AIR,ItemData.AIR,ItemData.AIR));s.observeBackend(armor);
             var input=AuthInputPacketsTest.input(10,x,64,8,new Vec3(0,-.0784F,0));
             input.getInputData().add(PlayerAuthInputData.START_GLIDING);
-            // Payload exists but PERFORM_ITEM_INTERACTION is absent: unrelated content remains intact.
+
             var payload=new org.cloudburstmc.protocol.bedrock.data.inventory.transaction.ItemUseTransaction();input.setItemUseTransaction(payload);
             assertFalse(s.receiveClient(input,8500));
             assertSame(payload,input.getItemUseTransaction());

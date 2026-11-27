@@ -17,7 +17,7 @@ func (pk *OpenConnectionReply1) UnmarshalBinary(data []byte) error {
 	if len(data) < 27 || len(data) < 27+int(data[24])*4 {
 		return io.ErrUnexpectedEOF
 	}
-	// Magic: 16 bytes.
+
 	pk.ServerGUID = int64(binary.BigEndian.Uint64(data[16:]))
 	pk.ServerHasSecurity = data[24] != 0
 	if pk.ServerHasSecurity {

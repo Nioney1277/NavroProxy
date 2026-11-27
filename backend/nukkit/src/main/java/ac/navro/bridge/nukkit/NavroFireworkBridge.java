@@ -40,6 +40,9 @@ public final class NavroFireworkBridge extends PluginBase implements Listener {
         consoleAlerts=getConfig().getBoolean("console-alerts",true);
         staffChatAlerts=getConfig().getBoolean("staff-chat-alerts",true);
         mutedPlayers=new Config(new File(getDataFolder(),"muted-alerts.json"),Config.JSON);
+        ((Command)getCommand("navro")).setCommandParameters(Map.of("default", new cn.nukkit.command.data.CommandParameter[]{
+                cn.nukkit.command.data.CommandParameter.newEnum("subcommand",true,new String[]{"alert","reload","debug","debug2","proxyping"}),
+                cn.nukkit.command.data.CommandParameter.newType("player",true,cn.nukkit.command.data.CommandParamType.STRING)}));
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(stateSync, this);
         getServer().getScheduler().scheduleRepeatingTask(this,()-> {stateSync.tick();tickRockets();},1);
@@ -85,15 +88,35 @@ public final class NavroFireworkBridge extends PluginBase implements Listener {
         if(message.isBlank())return;
         if(consoleAlerts)getLogger().info(TextFormat.clean(message));
         if(staffChatAlerts)for(Player player:getServer().getOnlinePlayers().values()) {
-            if(player.hasPermission("navrobridge.alerts")&&!mutedPlayers.exists(player.getUniqueId().toString()))
+            if(stateSync.bridgeCommands(player)&&player.hasPermission("navrobridge.alerts")&&!mutedPlayers.exists(player.getUniqueId().toString()))
                 player.sendMessage(message);
         }
     }
 
     @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args) {
-        if(!command.getName().equals("navroalerts")||args.length!=0)return false;
+        if(!command.getName().equals("navro"))return false;
         if(!(sender instanceof Player player)) {
-            sender.sendMessage("Run this command in game to toggle your chat alerts.");return true;
+            sender.sendMessage("Run /navro in game through NavroProxy.");return true;
+        }
+        if(!stateSync.bridgeCommands(player)) {
+            player.sendMessage("This connection uses proxy commands or has no active Navro command bridge.");return true;
+        }
+        if(args.length==0) {player.sendMessage("/navro alert | reload | debug <player> | debug2 [player] | proxyping [player]");return true;}
+        String action=args[0].toLowerCase(Locale.ROOT);
+        if(Set.of("debug","debug2","reload","proxyping").contains(action)) {
+            if(!player.hasPermission(action.equals("reload")?"navrobridge.reload":action.equals("proxyping")?"navrobridge.proxyping":"navrobridge.debug")) {
+                player.sendMessage("You do not have permission to use this command.");return true;
+            }
+            if(args.length>2||action.equals("debug")&&args.length!=2||action.equals("reload")&&args.length!=1) {
+                player.sendMessage("/navro alert | reload | debug <player> | debug2 [player] | proxyping [player]");return true;
+            }
+            String target=args.length==2?args[1]:"";
+            if(target.length()>64||target.chars().anyMatch(Character::isISOControl)||!stateSync.command(player,action,target))
+                player.sendMessage("Could not send command to NavroProxy.");
+            return true;
+        }
+        if(!action.equals("alert")||args.length!=1) {
+            player.sendMessage("/navro alert | reload | debug <player> | debug2 [player] | proxyping [player]");return true;
         }
         if(!player.hasPermission("navrobridge.alerts")) {
             player.sendMessage("You do not have permission to receive Navro chat alerts.");return true;

@@ -15,10 +15,10 @@ import java.io.InputStreamReader;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Actual SessionState movement boundary. Timing validators and transport are
- * outside this boundary; real input actions, physics, checks and ACK tasks run.
- * Recorded raw client position/delta, never old predictions, supply the oracle.
- */
+
+
+
+
 class NativeSprintMovementTest {
     static JsonObject data()throws Exception{
         try(var in=new InputStreamReader(NativeSprintMovementTest.class.getResourceAsStream(
@@ -57,12 +57,12 @@ class NativeSprintMovementTest {
         var p=AuthInputPacketsTest.input(tick,.5F,-60,.5F,Vec3.ZERO);
         p.setMotion(Vector2f.from(0,1));p.setRawMoveVector(Vector2f.from(0,1));
         p.getInputData().add(sprint?PlayerAuthInputData.START_SPRINTING:PlayerAuthInputData.STOP_SPRINTING);
-        // Initial accepted action history is external to this recorded segment.
+
         s.player().apply(p,null,null);
     }
     @Test void recordedSprintStopAfterAttributeAckKeepsActualMovementAndChecksLive()throws Exception{
         var segment=data().getAsJsonArray("segments").get(0).getAsJsonObject();var s=session();
-        // Explicit native adapter policy; legacy Navro references test the default.
+
         s.player().setNativeSprintSynchronization(true);
         edge(s,144,true);attributes(s,144,.13F);
         s.player().acceptTeleport(new Vec3(vec(segment.getAsJsonArray("initialFeet"))).down(1.62001F),true);
@@ -75,7 +75,7 @@ class NativeSprintMovementTest {
         }
         assertTrue(alerts.isEmpty(),alerts.toString());assertFalse(s.player().predictionSprinting());
         assertEquals(.1F,s.player().attributes().get("minecraft:movement").getValue(),.000001F);
-        // Adversarial follow-up must still execute the actual solid-block check.
+
         var invalid=AuthInputPacketsTest.input(200,s.player().position().x,-60.5F,s.player().position().z,Vec3.ZERO);
         s.observeClient(invalid);assertTrue(alerts.stream().anyMatch(x->x.contains("Phase")),alerts.toString());
     }
@@ -92,11 +92,11 @@ class NativeSprintMovementTest {
         s.player().getLatencyUtil().queue(2,true);s.observeBackend(old);s.player().getLatencyUtil().onResponse(2);
         p.setTick(211);s.player().apply(p,null,null);
         assertTrue(s.player().predictionSprinting());assertEquals(.13F,s.player().attributes().get("minecraft:movement").getValue(),.000001F);
-        // A server-selected speed remains authoritative; no fixed default reset.
+
         attributes(s,211,.26F);edge(s,212,false);
         assertEquals(.2F,s.player().attributes().get("minecraft:movement").getValue(),.000001F);
-        // Current server metadata must still take effect; only older input
-        // echoes are superseded. An unconditional metadata bypass fails here.
+
+
         old.setTick(230);EntityMetadataUtil.writeFlags(old.getMetadata(),Set.of(3,19));
         s.player().getLatencyUtil().queue(3,true);s.observeBackend(old);s.player().getLatencyUtil().onResponse(3);
         attributes(s,230,.39F);p.setTick(231);s.player().apply(p,null,null);

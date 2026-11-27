@@ -8,7 +8,7 @@ import cn.nukkit.utils.Config;
 import java.net.InetAddress;
 import java.nio.file.Path;
 
-/** Separate RakNet listener which assigns the proxy-authenticated player implementation. */
+
 final class PrivateRakNetInterface extends RakNetInterface {
     private final PrivateRakNetLoginTrust trust;
 

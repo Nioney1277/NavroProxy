@@ -1,0 +1,15 @@
+{
+  "kind": "live-original-bds-memory",
+  "version": "1.26.63.1",
+  "protocol": 2225,
+  "binarySha256": "dc9b3c566a014cf53930eb1b54c6b599a99a81cc32c68aba06a5d73a0fd63179",
+  "propertyMaskScope": "BlockType (shared by states of the type)",
+  "materialScope": "Native Material value in BlockType; solid is material solidity, not full-cube collision",
+  "hardnessScope": "Block cached base destroy speed; item-specific mining rules recorded separately",
+  "paletteSha256": "3fc8ae722351281867f2ca2bf4a642adc45735968fbf92ebf728167d555cd87d",
+  "schema": "navro-native-physical-properties/NPH2",
+  "stateCount": 23960,
+  "blockTypeCount": 1480,
+  "exportSha256": "d6970d2cfae98c5a0f69c2c8ce91b2559e3b17210759bbfa2d4cc1116a644f0d",
+  "resourceSha256": "faefec4bae951997e941a7f57090d04561373a7d6d6662319747724d92b13a23"
+}

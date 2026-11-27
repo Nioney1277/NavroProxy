@@ -13,7 +13,7 @@ import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 
-/** Player implementation used only by the RSA-authenticated private RakNet interface. */
+
 public final class PrivateRakNetPlayer extends Player {
     private final PrivateRakNetInterface source;
     private UUID forwardedUuid;

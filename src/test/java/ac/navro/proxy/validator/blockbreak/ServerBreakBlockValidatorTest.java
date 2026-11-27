@@ -16,7 +16,8 @@ class ServerBreakBlockValidatorTest {
     private static final class Context implements ServerBreakBlockValidator.Context {
         final CompensatedWorld world=new CompensatedWorld(new CollisionPhysicsState(),()->100);
         final List<Vector3i> restored=new ArrayList<>();Vec3 position=new Vec3(8,64,8);GameType mode=GameType.SURVIVAL;
-        Context(){world.setProtocolVersion(2193);world.apply(new StartGamePacket());world.put(0,0,CompensatedWorld.CachedChunk.network(-64,320,24,world.airNetworkId()));}
+        Context(){this(2193);}
+        Context(int protocol){world.setProtocolVersion(protocol);world.apply(new StartGamePacket());world.put(0,0,CompensatedWorld.CachedChunk.network(-64,320,24,world.airNetworkId()));}
         @Override public CompensatedWorld world(){return world;}
         @Override public Vec3 position(){return position;}
         @Override public GameType gameType(){return mode;}
@@ -39,6 +40,21 @@ class ServerBreakBlockValidatorTest {
         var accepted=packet(action(PlayerActionType.START_BREAK,FIRST,1),action(PlayerActionType.BLOCK_PREDICT_DESTROY,FIRST,1));
         validator.handle(accepted);assertEquals(2,accepted.getPlayerActions().size());assertTrue(c.world.isPredictedBlockBreak(FIRST));
         assertTrue(c.world.hadRecentPlacementSupport(FIRST));
+    }
+    @Test void protocol2225UsesExportedHardnessDuringActualBlockActions() {
+        var c=new Context(2225);var validator=new ServerBreakBlockValidator(c);
+        var registry=ac.navro.proxy.data.block.NetworkBlockStateRegistry.forProtocol(2225,false);
+        var bedrock=registry.states().values().stream().filter(s->s.is("minecraft:bedrock")).findFirst().orElseThrow();
+        c.world.updateBlock(FIRST.getX(),FIRST.getY(),FIRST.getZ(),0,bedrock.networkId());
+        assertEquals(-1,c.blockState(FIRST,0).hardness());
+        var denied=packet(action(PlayerActionType.START_BREAK,FIRST,1));validator.handle(denied);
+        assertTrue(denied.getPlayerActions().isEmpty());
+        var stone=registry.states().values().stream().filter(s->s.is("minecraft:stone")).findFirst().orElseThrow();
+        c.world.updateBlock(FIRST.getX(),FIRST.getY(),FIRST.getZ(),0,stone.networkId());
+        assertEquals(1.5,c.blockState(FIRST,0).hardness());
+        var accepted=packet(action(PlayerActionType.START_BREAK,FIRST,1),action(PlayerActionType.BLOCK_PREDICT_DESTROY,FIRST,1));
+        validator.handle(accepted);assertEquals(2,accepted.getPlayerActions().size());
+        assertTrue(c.world.isPredictedBlockBreak(FIRST));
     }
     @Test void actualPaletteDoorHalvesAndConsecutiveTargetsRetainOrderedPredictions() {
         var c=new Context();var validator=new ServerBreakBlockValidator(c);var upper=FIRST.add(0,1,0);

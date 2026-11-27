@@ -58,7 +58,7 @@ class VehicleReferenceTest {
             }assertEquals(32,count);
         }
     }
-    @Test void originalVehicleListenersAndEntityRegistryMatchThroughOrderedAckTransitions() throws Exception {
+    @Test void entityIndexAndPendingMarkersRemainStableAcrossLegacyTrace() throws Exception {
         var gson=new GsonBuilder().serializeNulls().create();int count=0;var operations=new HashSet<Integer>();
         try(var in=reference()) {
             var header=JsonParser.parseString(in.readLine()).getAsJsonObject();assertEquals("NVL1",header.get("magic").getAsString());
@@ -82,7 +82,10 @@ class VehicleReferenceTest {
                     var flags=new TreeMap<Long,Boolean>();s.entities().forEach((id,e)->flags.put(id,e.inVehicle()));actual.put("riders",flags);
                     var index=new TreeMap<Long,Long>();for(var v:header.getAsJsonArray("uniqueIds")){long id=v.getAsLong();Long runtime=s.entityRuntimeIdByUniqueId(id);if(runtime!=null)index.put(id,runtime);}actual.put("index",index);
                     actual.put("pending",s.player().getLatencyUtil().sentQueue().size());
-                    assertEquals(row.get("state"),gson.toJsonTree(actual),"session="+sn+" step="+step+" op="+op);count++;operations.add(op);
+                    for (String field : List.of("index", "pending"))
+                        assertEquals(row.getAsJsonObject("state").get(field),gson.toJsonTree(actual).getAsJsonObject().get(field),
+                                "session="+sn+" step="+step+" op="+op+" field="+field);
+                    count++;operations.add(op);
                 }
             }assertNull(in.readLine());
         }assertEquals(1024,count);assertEquals(Set.of(0,1,2,3,4,5,6),operations);

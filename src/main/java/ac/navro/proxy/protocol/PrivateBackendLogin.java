@@ -45,9 +45,9 @@ public final class PrivateBackendLogin {
         payload.put("aud","api://auth-minecraft-services/multiplayer");
         payload.put("cpk",cpk);payload.put("xname",verified.displayName());
         payload.put("leguuid",verified.uuid().toString());
-        // This value was verified at the public frontend. Preserve it for the
-        // private backend's account/OP lookup; the new token still explicitly
-        // remains SELF_SIGNED, never presented as a Microsoft signature.
+
+
+
         Object xuid=claims.get("xid");
         if(!(xuid instanceof String)&&claims.get("extraData") instanceof Map<?,?> extra)xuid=extra.get("XUID");
         payload.put("xid",xuid instanceof String value?value:"");payload.put("ipt","");

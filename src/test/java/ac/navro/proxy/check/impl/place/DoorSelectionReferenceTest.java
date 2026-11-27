@@ -10,10 +10,10 @@ import org.junit.jupiter.api.Test;
 import java.io.*;
 import java.util.zip.GZIPInputStream;
 
-/**
- * Exercises the complete native door outline component against independent core executions. The
- * lifecycle scenario below separately exercises click dispatch and N+1 forwarding.
- */
+
+
+
+
 class DoorSelectionReferenceTest {
     @Test
     void doorSelectionComponentMatchesNativeBoundsAndMetadata() throws Exception {

@@ -139,9 +139,9 @@ class MovementStateSyncTest {
         for(int version:new int[]{729,776,786,800,819,860,898,924,944,975,1001,2168,2169,2192,2193,2225}) {
             for(boolean base:new boolean[]{true,false}) {
                 var source=new EntityDataMap();
-                // Actual packets use their codec's supported flags. Newer false
-                // padding entries in an internal snapshot cannot be encoded by
-                // older codecs that do not define those flags.
+
+
+
                 for(EntityFlag flag:base?List.of(EntityFlag.SNEAKING,EntityFlag.SPRINTING,EntityFlag.GLIDING,EntityFlag.SWIMMING):List.of(EntityFlag.DESCEND_THROUGH_BLOCK,EntityFlag.CRAWLING))source.setFlag(flag,true);
                 var codec=SupportedCodecs.forProtocol(version);var buffer=Unpooled.buffer();var decoded=new EntityDataMap();
                 try {codec.createHelper().writeEntityData(buffer,source);codec.createHelper().readEntityData(buffer,decoded);}

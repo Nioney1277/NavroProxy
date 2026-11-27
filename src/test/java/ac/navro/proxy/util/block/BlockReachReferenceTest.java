@@ -13,7 +13,7 @@ import java.io.*;
 import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Verifies only the reach decision boundary; it does not claim packet rejection or resync coverage. */
+
 class BlockReachReferenceTest {
     @Test void placementReachPolicyMatchesOriginalEyeCandidatesRangePrecedenceAndDiagnosticText() throws Exception {
         int cases=0;

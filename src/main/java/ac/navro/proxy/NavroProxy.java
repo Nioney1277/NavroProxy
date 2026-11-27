@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Standalone Bedrock proxy entry point. */
+
 public final class NavroProxy {
     private final ac.navro.proxy.alert.AlertManager alertManager;
     private final ac.navro.proxy.permission.ProxyPermissions permissions =
@@ -55,7 +55,7 @@ public final class NavroProxy {
         boolean firstRun = !java.nio.file.Files.exists(subscriptions);
         alertManager = new ac.navro.proxy.alert.AlertManager(subscriptions, ()->commands.config().prefix(),
                 System.out::println, () -> java.util.Map.copyOf(onlineAlerts));
-        // Console alerts were requested for this proxy test; preserve later subscription changes.
+
         if (firstRun) alertManager.setAlert(ac.navro.proxy.alert.AlertManager.CONSOLE_UUID, true);
     }
 
@@ -115,7 +115,8 @@ public final class NavroProxy {
         String javaCommand = Path.of(System.getProperty("java.home"), "bin",
                 System.getProperty("os.name").toLowerCase().contains("windows") ? "java.exe" : "java").toString();
         String adapter = "127.0.0.1:" + config.adapterPort();
-        var adapterCommand = new ArrayList<>(List.of(javaCommand, "-cp", root.resolve("lib/*").toString(),
+        String adapterClasspath=root.resolve("lib")+java.io.File.separator+"*";
+        var adapterCommand = new ArrayList<>(List.of(javaCommand, "-cp", adapterClasspath,
                 "ac.navro.proxy.nethernet.NetherNetAdapter", Integer.toString(config.adapterPort()),
                 "--backend-type", config.backendType()));
         if (config.backendAuth().equals("pmmp-ng")) {
@@ -242,7 +243,7 @@ public final class NavroProxy {
 
             @Override
             protected void preInitChannel(Channel channel) throws Exception {
-                // Cookie transport versions use the same Bedrock framing as RakNet 11.
+
                 channel.config().setOption(RakChannelOption.RAK_PROTOCOL_VERSION, 11);
                 super.preInitChannel(channel);
             }

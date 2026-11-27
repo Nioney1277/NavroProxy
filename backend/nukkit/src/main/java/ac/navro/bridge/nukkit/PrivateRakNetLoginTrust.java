@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** Verifies the proxy assertion and its binding to a forwarded Bedrock login. */
+
 final class PrivateRakNetLoginTrust {
     private static final String PROXY_ISSUER = "navro-proxy";
     private static final String PROXY_AUDIENCE = "urn:navro:raknet-backend";

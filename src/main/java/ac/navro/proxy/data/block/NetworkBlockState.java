@@ -11,20 +11,28 @@ public final class NetworkBlockState {
     private final NbtMap properties;
     private final String identifier;
     private final Float declaredSlipperiness;
+    private final BedrockBlockProperties.Properties bedrockProperties;
 
     NetworkBlockState(int networkId, int legacyFullId, NbtMap state) {
         this(networkId, legacyFullId, state, null);
     }
 
     NetworkBlockState(int networkId, int legacyFullId, NbtMap state, Float declaredSlipperiness) {
+        this(networkId, legacyFullId, state, declaredSlipperiness, null);
+    }
+
+    NetworkBlockState(int networkId, int legacyFullId, NbtMap state, Float declaredSlipperiness,
+                      BedrockBlockProperties.Properties bedrockProperties) {
         this.networkId = networkId;
         this.legacyFullId = legacyFullId;
         this.state = ItemUtil.copyTag(state);
         this.properties = this.state == null ? NbtMap.EMPTY : this.state.getCompound("states");
         this.identifier = this.state == null ? "" : this.state.getString("name");
         this.declaredSlipperiness = declaredSlipperiness;
+        this.bedrockProperties = bedrockProperties;
     }
     public Float declaredSlipperiness() { return declaredSlipperiness; }
+    public BedrockBlockProperties.Properties bedrockProperties() { return bedrockProperties; }
     public static NetworkBlockState legacy(int legacyFullId) { return new NetworkBlockState(Integer.MIN_VALUE, legacyFullId, null); }
     public int networkId() { return networkId; }
     public int legacyFullId() { return legacyFullId; }

@@ -28,7 +28,9 @@ public final class PredictionItemUse implements ItemUseTracker.Context<ItemData>
     private int sinceTridentUse;
     public PredictionItemUse(SessionState session){this.session=session;this.flags=session.player().trackedFlags();}
     public ItemUseTracker<ItemData> getItemUseTracker(){return tracker;}
-    public void onHeldItemChanged(ItemData item){tracker.onHeldItemChanged(nativeItem(item));}
+    public void onHeldItemChanged(ItemData item){
+        tracker.onHeldItemChanged(nativeItem(item));
+    }
     public ItemData airItem(){return ItemData.AIR;}
     private NativePredictionItems.Traits traits(ItemData item){return NativePredictionItems.resolve(session.player().protocolVersion(),item);}
     public String identifier(ItemData item){return ItemUtil.identifier(nativeItem(item));}

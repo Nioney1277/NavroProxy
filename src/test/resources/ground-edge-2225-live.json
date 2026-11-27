@@ -1,0 +1,223 @@
+[
+  {
+    "name": "falling_off_stone",
+    "source": "Real protocol 2225 input, 2026-11-27, pre-fix client coordinates and delta.",
+    "origin": [
+      120.84683,
+      5.0,
+      220.40306
+    ],
+    "velocity": [
+      -0.12898724,
+      -0.0784,
+      0.21766643
+    ],
+    "onGround": true,
+    "sprinting": true,
+    "tick": 5451,
+    "blocks": [
+      {
+        "position": [
+          120,
+          4,
+          219
+        ],
+        "name": "minecraft:stone"
+      }
+    ],
+    "frames": [
+      {
+        "feet": [
+          120.64356,
+          4.9216,
+          220.72423
+        ],
+        "delta": [
+          -0.11098585,
+          -0.155232,
+          0.17535813
+        ],
+        "raw": {
+          "tick": 5452,
+          "position": "(120.64356, 6.54161, 220.72423)",
+          "delta": "(-0.11098585, -0.155232, 0.17535813)",
+          "input": "[JUMP_DOWN, JUMPING, UP, WANT_UP, BLOCK_BREAKING_DELAY_ENABLED, JUMP_CURRENT_RAW]",
+          "motion": "(0.0, 1.0)",
+          "rawMoveVector": "(0.0, 1.0)",
+          "rotation": "(3.9132996, 35.666992, 35.666992)"
+        }
+      }
+    ]
+  },
+  {
+    "name": "body_still_touches_stone",
+    "source": "Real protocol 2225 input, 2026-11-27, pre-fix client coordinates and delta.",
+    "origin": [
+      121.12644,
+      5.0,
+      220.14076
+    ],
+    "velocity": [
+      0.0073041604,
+      -0.0784,
+      0.18982807
+    ],
+    "onGround": true,
+    "sprinting": true,
+    "tick": 5520,
+    "blocks": [
+      {
+        "position": [
+          120,
+          4,
+          219
+        ],
+        "name": "minecraft:stone"
+      }
+    ],
+    "frames": [
+      {
+        "feet": [
+          121.12929,
+          5.0,
+          220.45792
+        ],
+        "delta": [
+          0.0015520819,
+          -0.0784,
+          0.17316388
+        ],
+        "raw": {
+          "tick": 5521,
+          "position": "(121.12929, 6.62001, 220.45792)",
+          "delta": "(0.0015520819, -0.0784, 0.17316388)",
+          "input": "[UP, BLOCK_BREAKING_DELAY_ENABLED, VERTICAL_COLLISION]",
+          "motion": "(0.0, 1.0)",
+          "rawMoveVector": "(0.0, 1.0)",
+          "rotation": "(26.8322, 2.006897, 2.006897)"
+        }
+      }
+    ]
+  },
+  {
+    "name": "opposite_edge",
+    "source": "Real protocol 2225 input, 2026-11-27, pre-fix client coordinates and delta.",
+    "origin": [
+      120.611786,
+      5.0,
+      218.93393
+    ],
+    "velocity": [
+      -0.05424424,
+      -0.0784,
+      -0.102148384
+    ],
+    "onGround": true,
+    "sprinting": false,
+    "tick": 5555,
+    "blocks": [
+      {
+        "position": [
+          120,
+          4,
+          219
+        ],
+        "name": "minecraft:stone"
+      }
+    ],
+    "frames": [
+      {
+        "feet": [
+          120.5101,
+          5.0,
+          218.74603
+        ],
+        "delta": [
+          -0.055521313,
+          -0.0784,
+          -0.10259281
+        ],
+        "raw": {
+          "tick": 5556,
+          "position": "(120.5101, 6.62001, 218.74603)",
+          "delta": "(-0.055521313, -0.0784, -0.10259281)",
+          "input": "[UP, BLOCK_BREAKING_DELAY_ENABLED, VERTICAL_COLLISION]",
+          "motion": "(0.0, 1.0)",
+          "rawMoveVector": "(0.0, 1.0)",
+          "rotation": "(54.442657, 151.0456, 151.0456)"
+        }
+      }
+    ]
+  },
+  {
+    "name": "coasting_at_edge",
+    "source": "Real protocol 2225 input, 2026-11-27, pre-fix client coordinates and delta.",
+    "origin": [
+      120.63324,
+      5.0,
+      220.07597
+    ],
+    "velocity": [
+      3.7787086e-05,
+      -0.0784,
+      0.054160997
+    ],
+    "onGround": true,
+    "sprinting": false,
+    "tick": 5618,
+    "blocks": [
+      {
+        "position": [
+          120,
+          4,
+          219
+        ],
+        "name": "minecraft:stone"
+      }
+    ],
+    "frames": [
+      {
+        "feet": [
+          120.63328,
+          5.0,
+          220.13013
+        ],
+        "delta": [
+          2.063175e-05,
+          -0.0784,
+          0.029571908
+        ],
+        "raw": {
+          "tick": 5619,
+          "position": "(120.63328, 6.62001, 220.13013)",
+          "delta": "(2.063175E-5, -0.0784, 0.029571908)",
+          "input": "[BLOCK_BREAKING_DELAY_ENABLED, VERTICAL_COLLISION]",
+          "motion": "(0.0, 0.0)",
+          "rawMoveVector": "(0.0, 0.0)",
+          "rotation": "(65.28815, 0.095703125, 0.095703125)"
+        }
+      },
+      {
+        "feet": [
+          120.6333,
+          5.0,
+          220.1597
+        ],
+        "delta": [
+          1.1264938e-05,
+          -0.0784,
+          0.016146263
+        ],
+        "raw": {
+          "tick": 5620,
+          "position": "(120.6333, 6.62001, 220.1597)",
+          "delta": "(1.1264938E-5, -0.0784, 0.016146263)",
+          "input": "[BLOCK_BREAKING_DELAY_ENABLED, VERTICAL_COLLISION]",
+          "motion": "(0.0, 0.0)",
+          "rawMoveVector": "(0.0, 0.0)",
+          "rotation": "(65.6236, 0.095703125, 0.095703125)"
+        }
+      }
+    ]
+  }
+]

@@ -112,8 +112,8 @@ class RakNetFrontendSessionTest {
         }
     }
     @Test void validatesSignedLoginThenWaitsForEncryptedConfirmationAndRebindsBackendIdentity() throws Exception {
-        // A local test authority supplies a real RSA signature through the SDK's JWKS fetcher.
-        // Production authentication is unchanged; no test key is present in main sources.
+
+
         var authority=RsaJwkGenerator.generateJwk(2048);authority.setKeyId("reverse-test-authority");
         var jwksField=EncryptionUtils.class.getDeclaredField("JWKS");jwksField.setAccessible(true);
         var jwks=(HttpsJwks)jwksField.get(null);

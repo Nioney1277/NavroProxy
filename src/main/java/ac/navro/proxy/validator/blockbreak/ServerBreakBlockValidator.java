@@ -132,7 +132,7 @@ public class ServerBreakBlockValidator {
 
                 continue;
             }
-            if (!BlockUtil.determineCanBreak(player.gameType(), state.nativeState())) {
+            if (!BlockUtil.determineCanBreak(player.gameType(), state)) {
 
                 trace(packet.getTick(), "skip=unbreakable action=" + BlockActionText.name(actionType) + " pos=" + BlockActionText.position(position)
                         + " state=" + state.networkState().identifier()

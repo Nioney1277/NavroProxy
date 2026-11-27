@@ -2,7 +2,7 @@ package ac.navro.proxy;
 
 import java.util.Set;
 
-/** Versions accepted for native RakNet forwarding, independent of detection codecs. */
+
 public final class ConnectionProtocols {
     private static final Set<Integer> VERSIONS = Set.of(
             291, 313, 332, 340, 354, 361, 388, 389, 390, 407, 408, 419, 422, 428,

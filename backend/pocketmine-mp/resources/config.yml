@@ -1,11 +1,13 @@
-# Source addresses of NavroProxy's game connections to PocketMine-MP.
+
+
+
 trusted-proxy-addresses:
   - "127.0.0.1"
   - "::1"
 console-alerts: true
 staff-chat-alerts: true
 
-# Optional PocketMine-MP-NG NetherNet backend for Navro.
+
 private-nethernet:
   enabled: false
   signaling-port: 19608
@@ -16,12 +18,9 @@ private-nethernet:
   max-connections: 128
   proxy-public-key-file: navro-backend.pub.pem
 
-# Optional, separate RakNet listener that accepts only Navro's signed proxy logins.
+
 private-raknet:
   enabled: false
   bind-address: "127.0.0.1"
   port: 19133
   proxy-public-key-file: navro-backend.pub.pem
-
-# Generate the PEM pair once with the proxy's key setup command; copy only
-# navro-backend.pub.pem to this plugin data folder.

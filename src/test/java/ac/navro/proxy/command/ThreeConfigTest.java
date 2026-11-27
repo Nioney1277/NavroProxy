@@ -106,7 +106,7 @@ class ThreeConfigTest {
     @Test void defaultRulesHaveOneGroupPerCheckWithoutSharedViolationCounts()throws Exception {
         var runtime=runtime(new AtomicLong());
         var loaded=ConfigLoader.loadAll(folder.resolve("config.yml"),CheckConfig.defaults(false,8500));
-        assertEquals(22,loaded.punishments().groups().size());
+        assertEquals(23,loaded.punishments().groups().size());
         assertEquals(ac.navro.proxy.config.PunishmentConfig.defaults(),loaded.punishments());
         for(var group:loaded.punishments().groups())assertEquals(List.of(group.name()),group.checks());
         Files.writeString(folder.resolve("messages.yml"),"alerts-format: '%check%/%vl%'\n");runtime.reload();

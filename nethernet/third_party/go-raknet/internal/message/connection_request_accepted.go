@@ -10,9 +10,9 @@ type ConnectionRequestAccepted struct {
 	ClientAddress   netip.AddrPort
 	SystemIndex     uint16
 	SystemAddresses systemAddresses
-	// PingTime is filled out with ConnectionRequest.RequestTime.
+
 	PingTime int64
-	// PongTime is a timestamp from the moment the packet is sent.
+
 	PongTime int64
 }
 
@@ -26,7 +26,7 @@ func (pk *ConnectionRequestAccepted) UnmarshalBinary(data []byte) error {
 	offset += 2
 	for i := range 20 {
 		if len(data[offset:]) == 16 {
-			// Some implementations send fewer system addresses.
+
 			break
 		}
 		if len(data[offset:]) < addrSize(data[offset:]) {

@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-/** Reads only the first protocol declaration; forwarded bytes are never rewritten. */
+
 final class InitialBedrockHandshake {
     static final int MAX_BYTES = 3 * 1024 * 1024;
     record Declaration(int protocol, int raknetVersion) { }
@@ -31,7 +31,7 @@ final class InitialBedrockHandshake {
         }
         byte[] compressed = new byte[batch.readableBytes()];
         batch.getBytes(batch.readerIndex(), compressed);
-        // Older RakNet clients used both wrapped zlib and raw DEFLATE batches.
+
         byte[] clear;
         boolean wrapped = false;
         try { clear = inflate(compressed, true); }

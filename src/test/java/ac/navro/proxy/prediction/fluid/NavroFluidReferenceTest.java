@@ -10,9 +10,9 @@ import java.io.*;
 import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Expected values execute the original Navro source, without replacement
- * collision predicates or copied expected-value formulas. See the fixture tool.
- */
+
+
+
 class NavroFluidReferenceTest {
     private static CompensatedWorld world(){
         var world=new CompensatedWorld();world.setProtocolVersion(2225);world.apply(new StartGamePacket());

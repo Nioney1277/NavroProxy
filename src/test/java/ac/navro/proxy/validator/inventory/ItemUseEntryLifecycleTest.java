@@ -87,7 +87,7 @@ class ItemUseEntryLifecycleTest {
             public boolean handleRelease(InventoryTransactionPacket p){throw new AssertionError();}
         };
         assertTrue(validator.handle(raw,c));assertSame(armor,inventory.inventoryContainer.getHeldItemCache());assertSame(hotbar,inventory.armorContainer.get(3));
-        // Native code reads the mutable held slot again after the child returns.
+
         var next=packet(armor.getData(),1);next.getActions().add(new InventoryActionData(null,0,armor.getData(),ItemData.AIR));next.getLegacySlots().add(new LegacySetItemSlotData(6,new byte[]{3}));
         var ctx=new Context();ctx.click=p->{inventory.heldItemSlot=1;return true;};assertTrue(validator.handle(next,ctx));assertSame(armor,inventory.inventoryContainer.get(0));assertSame(hotbar,inventory.armorContainer.get(3));
     }

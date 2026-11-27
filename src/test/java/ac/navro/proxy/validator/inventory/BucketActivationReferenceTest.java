@@ -52,7 +52,7 @@ class BucketActivationReferenceTest {
                 catch(RuntimeException e){error=e.getClass().getSimpleName()+":"+e.getMessage();}w.capture=false;
                 String label="native bucket/activation case="+i;boolean creativeBucket=mode==0&&player.gameType()==GameType.CREATIVE;
                 assertEquals(in.readBoolean(),result,label);String expectedError=in.readUTF();
-                // The retained original reference consumed creative buckets. Only that inventory behavior is intentionally corrected.
+
                 if(creativeBucket&&expectedError.equals("IllegalStateException:inventory write failed"))expectedError="";
                 assertEquals(expectedError,error,label);int size=in.readInt();var expected=new ArrayList<String>();
                 for(int e=0;e<size;e++)expected.add(in.readUTF());

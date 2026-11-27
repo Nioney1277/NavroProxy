@@ -26,16 +26,19 @@ import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData;
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
 
 
+
 public final class AuthInputPackets {
     private final SessionState session;
     private final PredictionContext player;
     private final PredictionItemUse itemUse;
+    private final ac.navro.proxy.prediction.vehicle.VehiclePrediction vehicles;
     private Result lastResult;
     private final PlayerVelocityPackets velocityPackets;
     private final ServerBreakBlockValidator blockBreakValidator;
 
     public AuthInputPackets(SessionState session) {
         this.session=session;
+        this.vehicles=new ac.navro.proxy.prediction.vehicle.VehiclePrediction(session);
         this.player=new PredictionContext(session);
         this.velocityPackets=new PlayerVelocityPackets(session, player);
         this.blockBreakValidator=new ServerBreakBlockValidator(new ServerBreakBlockValidator.Context() {
@@ -52,11 +55,13 @@ public final class AuthInputPackets {
         session.player().setPredictionRewind(session::rewindPrediction);
         session.player().getCheckHolder().registerPredictionHandlers(player);
     }
+    public ac.navro.proxy.prediction.vehicle.VehiclePrediction vehicles(){return vehicles;}
     public PredictionContext context(){return player;}
     public Result lastResult(){return lastResult;}
 
     public PredictionItemUse itemUse(){return itemUse;}
     public void reset(){
+        vehicles.reset();
         player.uncertainVelocity=player.certainVelocity=null;
         player.stuckSpeedMultiplier=Vec3.ZERO.clone();player.lastTickFinalVelocity=session.player().velocity().clone();
         player.climbJumpDelay=player.scaffoldingSneakHoldTicks=player.ticksSinceCanSlowdown=0;
@@ -74,11 +79,14 @@ public final class AuthInputPackets {
     public void run(PlayerAuthInputPacket input){
         if (session.player().awaitingRespawnHealth() || session.awaitingBackendSpawnPosition()) return;
         player.begin();
+        if(session.vehicleTransitions().blocked()) {lastResult=null;session.player().completePredictionInput();return;}
+        if(session.vehicleTransitions().skipTravel()) {finishPrediction(input);return;}
         if(session.teleports().isTeleporting() || session.teleports().hasPendingBackendRewind() || !session.spawned())return;
         if(player.vehicleData!=null){
-            session.player().setResolvedPosition(player.unvalidatedPosition,player.boundingBox,false,true);
+            lastResult=vehicles.run(input);
             return;
         }
+        vehicles.reset();
         if(session.player().predictionFlag(org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag.SLEEPING))return;
         if(session.player().isMovementExempted()){
             session.teleports().finishCorrectionCooldown();
@@ -141,8 +149,15 @@ public final class AuthInputPackets {
     }
 
 
+
     public void finishTeleportConfirmation(PlayerAuthInputPacket input) {
         player.begin();
+        if(session.player().vehicleData!=null) {
+            session.player().completePredictionInput();
+            lastResult=new Result(player.tick,player.position.distanceTo(player.unvalidatedPosition),0,
+                    player.position.clone(),player.velocity.clone(),true);
+            return;
+        }
         finishPrediction(input);
     }
 
@@ -154,6 +169,7 @@ public final class AuthInputPackets {
             session.teleports().teleport(session.teleports().getLastKnowValid());
         }
         if(session.teleports().isTeleporting() || session.player().inLoadingScreen)return;
+
 
         session.cachePredictionFrame(player);
         float raw=player.inputPositionDistance(player.position),offset=raw;
@@ -204,6 +220,7 @@ public final class AuthInputPackets {
     public PlayerVelocityPackets velocityPackets(){return velocityPackets;}
 
 
+
     public void beforeInput(PlayerAuthInputPacket input){
         boolean digging=input.getInputData().contains(PlayerAuthInputData.PERFORM_BLOCK_ACTIONS);
         long revision=session.world().bucketPredictionRevision();
@@ -227,6 +244,7 @@ public final class AuthInputPackets {
                 player.inLoadingScreen = true;
                 player.loadingScreenStartMs=System.currentTimeMillis();
             }
+
 
             acknowledgedReset.run();
         });

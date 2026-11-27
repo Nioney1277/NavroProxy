@@ -1,5 +1,7 @@
 # NavroProxy
 
+载具预测支持船/运输船及马类，按独立公式接入共享检测链路；版本门槛、检测范围与已知限制见 [载具物理说明](docs/vehicle-physics.md)。
+
 An anti-cheat proxy for Minecraft Bedrock Edition. NavroProxy runs between players and a backend server, tracks the world and player state, and checks movement and gameplay packets.
 
 It runs on Windows and Linux with Java 21. Clients can connect over RakNet or through the separate NetherNet frontend.
@@ -101,7 +103,7 @@ Settings are stored in `plugins/Navro/`:
 | File | Purpose |
 | --- | --- |
 | `network.yml` | Client listener, backend transport, address and backend authentication |
-| `config.yml` | Movement tolerances, corrections, disabled checks and latency limits |
+| `config.yml` | Movement tolerances, corrections, disabled checks, latency limits and player command source |
 | `punishments.yml` | Check groups, recent violation windows and alert/log/kick thresholds |
 | `messages.yml` | Prefix, alert format, command replies and disconnect messages |
 
@@ -117,9 +119,11 @@ Keep the backend on a private network or restrict it to connections from the pro
 
 ## Player commands
 
+- `command-source: proxy` (default) publishes and handles player commands in the proxy; `bridge` delegates them to the updated Nukkit/PMMP bridge. Reload and reconnect after changing this option. See [command-source.md](docs/command-source.md).
 - `/navro alert` toggles alerts.
 - `/navro reload` reloads configuration.
 - `/navro debug` and `/navro debug2` control diagnostic output.
+- `/navro proxyping [player]` reports upstream/downstream proxy processing time (average, P95 and maximum) and client RTT. See [proxyping.md](docs/proxyping.md).
 
 ## NetherNet and backend adapters
 
@@ -128,7 +132,7 @@ The distribution includes the Go transport and Java packet adapter. Configure `f
 - Nukkit bridge source and build script: `backend/nukkit/`.
 - PocketMine-MP 5 bridge source and build script: `backend/pocketmine-mp/`.
 
-The Nukkit-MOT bridge also forwards NavroProxy alerts to the backend console and permitted staff. `/navroalerts` toggles persistent chat alerts for players with `navrobridge.alerts` (operators by default). Set `trusted-proxy-addresses`, `console-alerts`, and `staff-chat-alerts` in the plugin's `config.yml`; trusted addresses refer to the actual proxy connection, before player IP forwarding. Use the updated proxy together with bridge version 0.3.0 for alert forwarding. Existing native tick and inventory synchronization remain negotiated per connection, and firework boosts end when the attached rocket or glide ends.
+The Nukkit-MOT bridge also forwards NavroProxy alerts to the backend console and permitted staff. `/navro alert` in bridge mode toggles persistent chat alerts for players with `navrobridge.alerts` (operators by default). Set `trusted-proxy-addresses`, `console-alerts`, and `staff-chat-alerts` in the plugin's `config.yml`; trusted addresses refer to the actual proxy connection, before player IP forwarding. Use the updated proxy together with bridge version 0.3.0 for alert forwarding. Existing native tick and inventory synchronization remain negotiated per connection, and firework boosts end when the attached rocket or glide ends.
 
 Nukkit bridge 0.4.0 provides an optional RSA-authenticated private NetherNet listener, and 0.5.0 adds a separate private RakNet listener. The NetherNet listener uses TCP 19608 and ICE UDP 20000–20127; the RakNet listener defaults to UDP 19134. Both use the same proxy public key and private signing key. The Nukkit RakNet listener keeps global `xbox-auth` policy intact and only admits the verified proxy player class on its private interface. See `backend/nukkit/README.md` for setup.
 
@@ -199,3 +203,7 @@ AirLiquidPlace and RotationPlace require a valid native server tick from the bac
 [MIT](LICENSE)
 
 Input timing uses a server-owned counter that advances once per input. Client tick values are stored separately for correction frame matching. Negative frames disconnect the client; duplicate, backward and jumping frames do not add VL. BadPacketsC checks respawn requests (formerly BadPacketsD).
+
+## Vehicle setbacks
+
+With `smooth-setback: false`, a vehicle setback ends the ride, waits for backend dismount confirmation, then sends a strict on-foot teleport. It does not automatically remount the player. With `true`, the proxy keeps the player mounted and uses vehicle prediction correction. See [vehicle physics](docs/vehicle-physics.md).

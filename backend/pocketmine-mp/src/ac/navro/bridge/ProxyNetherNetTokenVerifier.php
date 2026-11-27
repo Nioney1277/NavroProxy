@@ -41,6 +41,6 @@ final class ProxyNetherNetTokenVerifier implements TokenVerifier{
             !is_int($iat) || !is_int($exp) || $iat > $now + 5 || $exp <= $now || $exp <= $iat || $exp - $iat > 120){
             throw new IdentityException('Invalid proxy token claims');
         }
-        // The native AssertionIdentityVerifier also verifies the P-384 proof against DTLS.
+
     }
 }

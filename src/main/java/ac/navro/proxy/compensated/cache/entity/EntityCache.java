@@ -17,6 +17,7 @@ import java.util.EnumMap;
 import java.util.List;
 
 
+
 public final class EntityCache {
     private final WirePlayerState player;
     private final long runtimeId, uniqueId;
@@ -24,11 +25,18 @@ public final class EntityCache {
     private final String identifier;
     private final float definitionWidth, definitionHeight, definitionOffset;
     private EntityDimensions dimensions;
-    private Vec3 serverPosition = Vec3.ZERO;
+    private Vec3 serverPosition = Vec3.ZERO, acknowledgedPosition = Vec3.ZERO;
+    private long forcedPositionRevision, physicsRevision;
+    public Vec3 acknowledgedPosition() { return acknowledgedPosition.clone(); }
+    public long forcedPositionRevision() { return forcedPositionRevision; }
+    public void forcePosition() { forcedPositionRevision++; }
+    public long physicsRevision() { return physicsRevision; }
     private boolean inVehicle;
     private EntityDataMap metadata = new EntityDataMap();
     private final EnumMap<EntityFlag, Boolean> collisionFlags = new EnumMap<>(EntityFlag.class);
     private boolean hasCollisionFlags;
+    private long standingRevision;
+    public long standingRevision() { return standingRevision; }
     private EntityProperties properties = new EntityProperties();
     private List<AttributeData> attributes = List.of();
     private long lastWireTick, queuedPositionUpdateSequence, appliedPositionUpdateSequence;
@@ -53,19 +61,20 @@ public final class EntityCache {
 
     public void metadata(EntityDataMap update) {
         if (update == null) return;
+        physicsRevision++;
         if (update.getFlags() != null) {
+            if (update.getFlags().containsKey(EntityFlag.STANDING)) standingRevision++;
             collisionFlags.putAll(update.getFlags());
             hasCollisionFlags = true;
         }
-        metadata = new EntityDataMap();
         update.forEach((type, value) -> metadata.put(type, value instanceof EnumMap<?, ?> flags ? flags.clone() : value));
-        Float width = EntityMetadataUtil.getFloat(update, EntityDataTypes.WIDTH);
-        Float height = EntityMetadataUtil.getFloat(update, EntityDataTypes.HEIGHT);
-        Float scale = EntityMetadataUtil.getFloat(update, EntityDataTypes.SCALE);
-        if (width != null) dimensions = EntityDimensions.fixed(width, definitionHeight);
-        if (height != null) dimensions = EntityDimensions.fixed(definitionWidth, height);
+        Float storedWidth = EntityMetadataUtil.getFloat(metadata, EntityDataTypes.WIDTH);
+        Float storedHeight = EntityMetadataUtil.getFloat(metadata, EntityDataTypes.HEIGHT);
+        dimensions = EntityDimensions.fixed(storedWidth == null ? definitionWidth : storedWidth,
+                storedHeight == null ? definitionHeight : storedHeight);
         if (boat()) dimensions = EntityDimensions.fixed(definitionWidth, definitionHeight);
-        if (scale != null) dimensions = dimensions.hardScaled(scale);
+        Float storedScale = EntityMetadataUtil.getFloat(metadata, EntityDataTypes.SCALE);
+        if (storedScale != null) dimensions = dimensions.hardScaled(storedScale);
     }
 
     public Boolean collidableFlag() { return hasCollisionFlags ? Boolean.TRUE.equals(collisionFlags.get(EntityFlag.COLLIDABLE)) : null; }
@@ -77,6 +86,34 @@ public final class EntityCache {
         return entityType == 90 || entityType == 218 || "minecraft:boat".equalsIgnoreCase(identifier)
                 || "minecraft:chest_boat".equalsIgnoreCase(identifier);
     }
+    public boolean horse() { return equine(identifier); }
+    public static boolean equine(String identifier) {
+        return java.util.Set.of("minecraft:horse", "minecraft:donkey", "minecraft:mule",
+                "minecraft:skeleton_horse", "minecraft:zombie_horse").contains(identifier == null ? "" : identifier);
+    }
+    public boolean flagOr(EntityFlag flag, boolean fallback) { return collisionFlags.getOrDefault(flag, fallback); }
+    public boolean flag(EntityFlag flag) { return Boolean.TRUE.equals(collisionFlags.get(flag)); }
+    public float attribute(String name, float fallback) {
+        for (var attribute : attributes) if (name.equals(attribute.getName()) && Float.isFinite(attribute.getValue()))
+            return attribute.getValue();
+        return fallback;
+    }
+    private long motionRevision, rotationRevision;
+    private float yaw;
+    public long motionRevision() { return motionRevision; }
+    public long rotationRevision() { return rotationRevision; }
+    public float yaw() { return yaw; }
+    public void yaw(float value) { if (Float.isFinite(value)) { yaw = value; rotationRevision++; } }
+    private final java.util.Map<Integer, Effect> effects = new java.util.HashMap<>();
+    private record Effect(int amplifier, long expires) { }
+    public void effect(int id, int amplifier, int duration, boolean remove, long tick) {
+        physicsRevision++;
+        if (remove) effects.remove(id); else effects.put(id, new Effect(amplifier, tick + Math.max(0, duration)));
+    }
+    public int effectLevel(int id, long tick) {
+        var effect = effects.get(id);
+        return effect == null || effect.expires <= tick ? 0 : effect.amplifier + 1;
+    }
     public boolean isBoat() { return boat(); }
     public boolean isMinecart() { return entityType == 84 || entityType == 98 || entityType == 96 || entityType == 97 || entityType == 100; }
     public float getYOffset() { return affectedByOffset ? definitionOffset : 0; }
@@ -86,6 +123,7 @@ public final class EntityCache {
     public void setServerPosition(Vec3 value) { serverPosition = value; }
     public void init() { current = new CachedEntityState(player, this); }
     public void interpolate(Vec3 position, boolean lerp) {
+        acknowledgedPosition = position.clone();
         if (!lerp) current.setTeleportPos(position);
         else if (current.getInterpolator() != null) current.getInterpolator().refreshPositionAndAngles(position);
     }
@@ -131,6 +169,7 @@ public final class EntityCache {
     }
     public List<AttributeData> attributes() { return attributes; }
     public void attributes(List<AttributeData> value) {
+        physicsRevision++;
         var updated = new java.util.LinkedHashMap<String, AttributeData>();
         for (var attribute : attributes) updated.put(attribute.getName(), attribute);
         for (var attribute : copyAttributes(value)) updated.put(attribute.getName(), attribute);
@@ -142,9 +181,30 @@ public final class EntityCache {
                 attribute.getMaximum(), attribute.getValue(), attribute.getDefaultMinimum(), attribute.getDefaultMaximum(),
                 attribute.getDefaultValue(), attribute.getModifiers() == null ? null : List.copyOf(attribute.getModifiers()))).toList();
     }
+
+    public record VehiclePose(Vec3 velocity, float angularVelocity, boolean ground,
+                              long forced, long motion, long rotation, long positionSequence) { }
+    private VehiclePose vehiclePose;
+    public VehiclePose vehiclePose() {
+        return vehiclePose != null && vehiclePose.forced == forcedPositionRevision
+                && vehiclePose.motion == motionRevision && vehiclePose.rotation == rotationRevision
+                && vehiclePose.positionSequence == appliedPositionUpdateSequence ? vehiclePose : null;
+    }
+    public void publishVehiclePose(Vec3 previous, Vec3 position, Vec3 velocity, float yaw,
+                                   float angularVelocity, boolean ground) {
+        if (current == null) return;
+
+        current.setInterpolator(new ac.navro.proxy.util.reach.PositionInterpolator(current));
+        current.setPrevPos(previous.clone());
+        current.setPos(position.clone());
+        this.yaw = yaw;
+        this.motion = new WireVec3(velocity.x, velocity.y, velocity.z);
+        vehiclePose = new VehiclePose(velocity.clone(), angularVelocity, ground,
+                forcedPositionRevision, motionRevision, rotationRevision, appliedPositionUpdateSequence);
+    }
     public WireVec3 motion() { return motion; }
     private WireVec3 motion;
-    public void motion(WireVec3 value) { motion = value; }
+    public void motion(WireVec3 value) { motion = value; motionRevision++; }
     public long lastWireTick() { return lastWireTick; }
     public void lastWireTick(long value) { lastWireTick = value; }
     public boolean inVehicle() { return inVehicle; }

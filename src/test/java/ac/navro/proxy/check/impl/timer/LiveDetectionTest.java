@@ -17,11 +17,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Exercises the same accept/reject and ACK dispatch boundaries used by ProxySession. */
+
 class LiveDetectionTest {
     record Fixture(SessionState state,AtomicLong clock,List<String> alerts,Timer positive,NegativeTimer negative) {
         static Fixture create(boolean detection)throws Exception{
-            // Live input forwarding requires initialized terrain and a spawned actor, as in Navro.
+
             var state=AuthInputPacketsTest.session();var p=state.player();p.rebasePosition(new Vec3(0,64,0),false);
             state.teleports().setLastKnowValid(new Vec3(0,65.62001F,0));
             p.setProtocolVersion(2193);p.setName("TimerTest");p.inLoadingScreen=false;p.sinceLoadingScreen=0;p.commitInputTick(0);var clock=new AtomicLong(1_000_000_000L);p.sinceAuthInput=1000;var alerts=new ArrayList<String>();p.setAlertSink(alerts::add);

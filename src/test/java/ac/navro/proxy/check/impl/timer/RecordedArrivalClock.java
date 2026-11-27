@@ -3,12 +3,12 @@ package ac.navro.proxy.check.impl.timer;
 import ac.navro.proxy.state.WirePlayerState;
 import java.util.function.LongSupplier;
 
-/** Supplies recorded arrival times; both installed checks retain their real accounting and actions. */
+
 public final class RecordedArrivalClock {
     private RecordedArrivalClock() { }
 
-    /** Time is an external fixture condition. Preserve the actual marker, tasks,
-     * ordering and checks; substitute only its captured send timestamp. */
+
+
     public static void sentAt(WirePlayerState player, long recordedNanos) throws Exception {
         var last = player.getLatencyUtil().sentQueue().peekLast();
         if (last == null) throw new IllegalStateException("No outbound marker to timestamp");

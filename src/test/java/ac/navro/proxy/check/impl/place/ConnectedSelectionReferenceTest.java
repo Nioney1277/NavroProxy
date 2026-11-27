@@ -14,11 +14,11 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-/**
- * NativeConnectedSelection.selection is the complete connection/outline component boundary.
- * Expected bounds and sturdy values are frozen executions of the independent MOT core. Packet
- * forwarding is verified separately through SessionState.receiveClient.
- */
+
+
+
+
+
 class ConnectedSelectionReferenceTest {
     @Test
     void selectionComponentMatchesNativeBoundsForEveryRecordedNeighbor() throws Exception {

@@ -38,6 +38,8 @@ public final class NativeStateSync implements Listener {
         long sequence;
         int lastTick;
         boolean tickSent;
+        String commandSource="proxy";
+        long commandSequence;
         final Map<Slot,Pending> pending=new LinkedHashMap<>();
         long uiRevision;
         int due;
@@ -52,6 +54,25 @@ public final class NativeStateSync implements Listener {
             String value=message.message;
             if(value==null)return;
             Session session=sessions.get(player);
+            if(session!=null&&value.startsWith("commands|"+session.nonce+"|")) {
+                String mode=value.substring(10+session.nonce.length());
+                if(mode.equals("proxy")||mode.equals("bridge")) {
+                    session.commandSource=mode;
+                    if(player.spawned)player.sendCommandData();
+                }
+                return;
+            }
+            if(session!=null&&value.startsWith("command_reply|"+session.nonce+"|")) {
+                if(!session.commandSource.equals("bridge"))return;
+                try {
+                    String[] fields=value.split("\\|",4);
+                    if(fields.length!=4||!Set.of("debug","debug2","reload","proxyping").contains(fields[2])
+                            ||!player.hasPermission(fields[2].equals("reload")?"navrobridge.reload":fields[2].equals("proxyping")?"navrobridge.proxyping":"navrobridge.debug"))return;
+                    byte[] bytes=Base64.getDecoder().decode(fields[3]);
+                    if(bytes.length<=4096)player.sendMessage(new String(bytes,StandardCharsets.UTF_8));
+                }catch(IllegalArgumentException ignored) { }
+                return;
+            }
             if(session!=null&&value.startsWith("alert|"+session.nonce+"|")) {
                 String alert=value.substring(7+session.nonce.length());
                 if(alert.getBytes(StandardCharsets.UTF_8).length<=4096)plugin.displayAlert(alert);
@@ -62,7 +83,9 @@ public final class NativeStateSync implements Listener {
             sessions.put(player,new Session(nonce));
             var ready=new ScriptMessagePacket();ready.channel=CHANNEL;ready.message="nk_ready|"+nonce;
             player.dataPacket(ready);
-            sendTick(player);return;
+            sendTick(player);
+            var commands=new ScriptMessagePacket();commands.channel=CHANNEL;commands.message="commands_ready|"+nonce;
+            player.dataPacket(commands);return;
         }
         if(!sessions.containsKey(player))return;
         if(packet instanceof ContainerClosePacket close && !event.isCancelled()) {
@@ -74,6 +97,18 @@ public final class NativeStateSync implements Listener {
                     input.getInputData().contains(AuthInputAction.PERFORM_ITEM_INTERACTION)
                     ||input.getInputData().contains(AuthInputAction.PERFORM_ITEM_STACK_REQUEST));
         if(transaction)capture(player);
+    }
+    public boolean bridgeCommands(Player player) {
+        Session session=sessions.get(player);
+        return session!=null&&session.commandSource.equals("bridge");
+    }
+    public boolean command(Player player,String action,String target) {
+        Session session=sessions.get(player);
+        if(!bridgeCommands(player))return false;
+        var packet=new ScriptMessagePacket();packet.channel=CHANNEL;
+        packet.message="command|"+session.nonce+"|"+(session.commandSequence++)+"|"+action+"|"
+                +Base64.getEncoder().encodeToString(target.getBytes(StandardCharsets.UTF_8));
+        return player.dataPacket(packet);
     }
     @EventHandler(priority=EventPriority.MONITOR,ignoreCancelled=false)
     public void onTransaction(InventoryTransactionEvent event) {

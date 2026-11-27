@@ -4,7 +4,7 @@ import cn.nukkit.utils.BinaryStream;
 import com.google.gson.*;
 import java.nio.charset.StandardCharsets;
 
-/** Reads either a pre-1.26 certificate or the modern token without trusting its claims. */
+
 final class ForwardedLoginToken {
     private ForwardedLoginToken() { }
     static String read(BinaryStream input) {

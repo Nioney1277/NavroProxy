@@ -31,6 +31,9 @@ import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ItemStackRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket;
 import org.cloudburstmc.protocol.bedrock.packet.AddEntityPacket;
+import org.cloudburstmc.protocol.bedrock.packet.AddPlayerPacket;
+import org.cloudburstmc.protocol.bedrock.packet.InteractPacket;
+import org.cloudburstmc.protocol.bedrock.packet.SetEntityLinkPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ChangeDimensionPacket;
 import org.cloudburstmc.protocol.bedrock.packet.CorrectPlayerMovePredictionPacket;
 import org.cloudburstmc.protocol.bedrock.packet.InventoryContentPacket;
@@ -134,9 +137,10 @@ public final class SessionState {
         if(placementPipeline==null)placementPipeline=new PlacementPipeline(this);
         return placementPipeline;
     }
-    public void placementTick(){if(placementPipeline!=null)placementPipeline.tick();}
+    public void placementTick(){if(placementPipeline!=null)placementPipeline.tick();if(vehicleHardSetback!=null)vehicleHardSetback.tick();}
     public void closePlacement(){if(placementPipeline!=null)placementPipeline.close();}
     public void closeBackendWorld() {
+        if(vehicleHardSetback!=null)vehicleHardSetback.clear();
         if (placementPipeline != null) placementPipeline.close();
         backendSync.reset();
         configuredRuntimePalette = null;
@@ -207,6 +211,12 @@ public final class SessionState {
 
     public boolean hasBackendCommands() {
         return backendSync.hasBackendCommands() || isPocketMineBackend();
+    }
+    public ac.navro.proxy.config.CommandSource commandSource() { return commandSource; }
+    public boolean proxyCommands() { return commandSource==ac.navro.proxy.config.CommandSource.PROXY; }
+    public void sendBackendSync(BedrockPacket packet) { backendSyncTransport.accept(packet); }
+    public void bridgeCommand(String action,String target,java.util.function.Consumer<String> reply) {
+        if(commandRuntime!=null)commandRuntime.bridgeCommand(this,action,target,reply);
     }
 
     public void forwardBackendAlert(String message) {
@@ -285,6 +295,20 @@ public final class SessionState {
     public void setTeleportTransport(java.util.function.Function<MovePlayerPacket, Boolean> transport){
         teleportTransport=java.util.Objects.requireNonNull(transport);
     }
+
+    public boolean sendVehicleExitPlacement(Vec3 feet) {
+        if(!resetVehiclePassengerVelocity())return false;
+        var packet=new MovePlayerPacket();packet.setRuntimeEntityId(player.runtimeId());
+        packet.setMode(MovePlayerPacket.Mode.TELEPORT);packet.setPosition(feet.up(1.62001F).toVector3f());
+        packet.setRotation(org.cloudburstmc.math.vector.Vector3f.ZERO);packet.setOnGround(false);
+        packet.setTeleportationCause(MovePlayerPacket.TeleportationCause.UNKNOWN);
+        return teleportTransport.apply(packet);
+    }
+    public boolean resetVehiclePassengerVelocity() {
+        var motion=new SetEntityMotionPacket();motion.setRuntimeEntityId(player.runtimeId());
+        motion.setMotion(org.cloudburstmc.math.vector.Vector3f.ZERO);motion.setTick(0);
+        return predictionMotionTransport.apply(motion);
+    }
     public ac.navro.proxy.teleport.data.TeleportData onProxyTeleport(MovePlayerPacket packet){
         var data=queueMovementTeleport(packet, false);
         recordEvent(WireEvent.Direction.PROXY,packet);
@@ -299,6 +323,13 @@ public final class SessionState {
         ac.navro.proxy.teleport.data.TeleportData data=predictionResetPackets.remove(packet);
         if(data==null){if(authInputPackets!=null)authInputPackets.velocityPackets().clearExternalMotion();data=new ac.navro.proxy.teleport.data.TeleportData(new Vec3(p),packet.isOnGround(),packet.getMode().ordinal());}
         var queued = data;
+        if (fromBackend && detectionEnabled && (player.vehicleData != null || vehicleTransitions().awaitingPlacement())) {
+
+
+            vehicleTransitions().teleport(queued);
+            player.queueAcknowledgment(packet, queued::accept);
+            return queued;
+        }
         boolean backendTeleport = fromBackend && packet.getMode() == MovePlayerPacket.Mode.TELEPORT;
         teleports.queue(queued, accept -> player.queueAcknowledgment(packet, () -> {
             accept.run();
@@ -323,6 +354,11 @@ public final class SessionState {
         backendBlocks.setRuntimeBlockPalette(palette);
     }
 
+    private ac.navro.proxy.prediction.vehicle.VehicleTransitions vehicleTransitions;
+    public ac.navro.proxy.prediction.vehicle.VehicleTransitions vehicleTransitions() {
+        if(vehicleTransitions==null)vehicleTransitions=new ac.navro.proxy.prediction.vehicle.VehicleTransitions(this);
+        return vehicleTransitions;
+    }
     private boolean detectionEnabled;
     private ac.navro.proxy.packets.input.AuthInputPackets authInputPackets;
     public ac.navro.proxy.packets.input.AuthInputPackets authInputPackets(){
@@ -338,8 +374,10 @@ public final class SessionState {
         bdsCorrectionAcknowledgmentDispatcher = java.util.Objects.requireNonNull(dispatcher);
     }
     private ac.navro.proxy.command.CommandRuntime commandRuntime;
+    private ac.navro.proxy.config.CommandSource commandSource=ac.navro.proxy.config.CommandSource.PROXY;
     public void setCommandRuntime(ac.navro.proxy.command.CommandRuntime runtime) {
         commandRuntime=runtime;
+        commandSource=runtime.commandSource();
         player.setViolationSink(event->runtime.violation(this,event));
     }
     public String configuredMessage(String key,java.util.Map<String,?> values) {
@@ -371,6 +409,8 @@ public final class SessionState {
     private boolean smoothSetback;
     public void setSmoothSetback(boolean enabled) { smoothSetback = enabled; }
     public boolean smoothSetback() { return smoothSetback; }
+    private final ac.navro.proxy.util.ForwardingLatency forwardingLatency=new ac.navro.proxy.util.ForwardingLatency();
+    public ac.navro.proxy.util.ForwardingLatency forwardingLatency() { return forwardingLatency; }
     private java.util.function.Function<CorrectPlayerMovePredictionPacket, Boolean> softCorrectionTransport = packet -> false;
     public void setSoftCorrectionTransport(java.util.function.Function<CorrectPlayerMovePredictionPacket, Boolean> transport) {
         softCorrectionTransport = java.util.Objects.requireNonNull(transport);
@@ -391,6 +431,111 @@ public final class SessionState {
         packetCounts.merge("proxy:CorrectPlayerMovePredictionPacket", 1, Integer::sum);
         return acknowledgment;
     }
+    public boolean correctVehicle(Vec3 position, Vec3 velocity, float yaw, boolean ground) {
+        return correctVehicle(position,velocity,yaw,ground,null);
+    }
+    public boolean correctVehicle(Vec3 position, Vec3 velocity, float yaw, boolean ground, Float angularVelocity) {
+        return correctVehicle(position,velocity,yaw,ground,angularVelocity,true);
+    }
+    public boolean synchronizeVehicleMount(Vec3 position,Vec3 velocity,float yaw,boolean ground,Float angularVelocity) {
+        return correctVehicle(position,velocity,yaw,ground,angularVelocity,false);
+    }
+    private boolean correctVehicle(Vec3 position,Vec3 velocity,float yaw,boolean ground,Float angularVelocity,boolean setback) {
+        if (teleports.isTeleporting() || teleports.hasPendingCorrection() || player.isMovementExempted()) return false;
+        if(smoothSetback) {
+            var packet=new CorrectPlayerMovePredictionPacket();
+            packet.setPosition(position.up(playerYOffset()).toVector3f());
+            packet.setDelta(velocity.toVector3f());packet.setTick(player.simulationFrame());packet.setOnGround(ground);
+            packet.setVehicleRotation(org.cloudburstmc.math.vector.Vector2f.from(0,yaw));
+            packet.setVehicleAngularVelocity(angularVelocity);
+            packet.setPredictionType(org.cloudburstmc.protocol.bedrock.data.PredictionType.VEHICLE);
+            return softCorrectionTransport.apply(packet);
+        }
+        if(setback)return vehicleHardSetback().request(position,yaw,ground);
+        var mount=player.vehicleData;
+        var actor=mount==null?null:entity(mount.vehicleRuntimeId);
+        if(actor==null)return false;
+        var actorMove=new MoveEntityAbsolutePacket();actorMove.setRuntimeEntityId(actor.runtimeId());
+        actorMove.setPosition(position.up(actor.getYOffset()).toVector3f());
+        actorMove.setRotation(org.cloudburstmc.math.vector.Vector3f.from(0,yaw,0));
+        actorMove.setOnGround(ground);actorMove.setTeleported(true);actorMove.setForceMove(true);
+        actorMove.setForceCompletion(true);
+        var motion=new SetEntityMotionPacket();motion.setRuntimeEntityId(actor.runtimeId());motion.setMotion(velocity.toVector3f());
+        var hardPackets=List.<BedrockPacket>of(actorMove,motion);
+        var resetPosition=new Vec3(actorMove.getPosition()).down(actor.getYOffset());
+        var resetVelocity=new Vec3(motion.getMotion());
+
+        float encodedYaw=(byte)(int)(yaw/1.40625F)*1.40625F;
+
+
+
+        var confirmation=teleports.addPendingCorrection(player.simulationFrame());
+        boolean[] sentAndAcknowledged={false,false};
+        Runnable complete=()->{
+            if(teleports.removePendingCorrection(confirmation)) {
+                if(player.vehicleData==mount&&entity(actor.runtimeId())==actor)
+                    authInputPackets().vehicles().applyAcknowledgedHardReset(actor,resetPosition,resetVelocity,encodedYaw,ground);
+                teleports.finishCorrectionCooldown();
+                if(player.worldDiagnostics()!=null)player.worldDiagnostics().event("vehicle_hard_reset_acknowledged",
+                        ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields("vehicle",actor.runtimeId(),"sourceFrame",confirmation.tick()));
+            }
+        };
+        player.queueAcknowledgment(motion,()->{
+            sentAndAcknowledged[1]=true;
+            if(sentAndAcknowledged[0])complete.run();
+        });
+        try {
+            boolean sent=vehicleHardCorrectionTransport.apply(hardPackets);
+            sentAndAcknowledged[0]=sent;
+            if(sent&&sentAndAcknowledged[1])complete.run();
+            if(sent&&player.worldDiagnostics()!=null)player.worldDiagnostics().event("vehicle_hard_reset_sent",
+                    ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields("vehicle",actor.runtimeId(),"target",position.toString(),"velocity",velocity.toString()));
+            if(!sent&&teleports.removePendingCorrection(confirmation))teleports.finishCorrectionCooldown();
+            return sent;
+        } catch(RuntimeException|Error error) {
+            if(teleports.removePendingCorrection(confirmation))teleports.finishCorrectionCooldown();
+            throw error;
+        }
+    }
+
+    public void discardVehicleCorrections() {
+        teleports.getQueuedTeleports().removeIf(data->data instanceof ac.navro.proxy.teleport.data.CorrectionResetData reset
+                && reset.vehicle()!=null);
+        teleports.resetCorrection();
+    }
+    private java.util.function.Function<List<BedrockPacket>,Boolean> vehicleHardCorrectionTransport=packets->false;
+    public void setVehicleHardCorrectionTransport(java.util.function.Function<List<BedrockPacket>,Boolean> transport) {
+        vehicleHardCorrectionTransport=java.util.Objects.requireNonNull(transport);
+    }
+    private ac.navro.proxy.prediction.vehicle.VehicleHardSetback vehicleHardSetback;
+    public ac.navro.proxy.prediction.vehicle.VehicleHardSetback vehicleHardSetback() {
+        if(vehicleHardSetback==null)vehicleHardSetback=new ac.navro.proxy.prediction.vehicle.VehicleHardSetback(this);
+        return vehicleHardSetback;
+    }
+    private java.util.function.Function<InteractPacket,Boolean> backendVehicleExit=packet->false;
+    public void setBackendVehicleExitTransport(java.util.function.Function<InteractPacket,Boolean> transport) {backendVehicleExit=java.util.Objects.requireNonNull(transport);}
+    public boolean requestBackendVehicleExit(long vehicleRuntimeId) {
+        var packet=new InteractPacket();packet.setAction(InteractPacket.Action.LEAVE_VEHICLE);packet.setRuntimeEntityId(vehicleRuntimeId);
+        packet.setMousePosition(player.position().toVector3f());
+        return backendVehicleExit.apply(packet);
+    }
+    public boolean sendVehicleHardPackets(List<BedrockPacket> packets) {return vehicleHardCorrectionTransport.apply(packets);}
+    public boolean sendVehicleHardPlacement(MovePlayerPacket packet) {
+        var frame=new ac.navro.proxy.teleport.data.RewindHistory(player.tick(),new Vec3(packet.getPosition()),
+                new ac.navro.proxy.data.input.PredictionData(Vec3.ZERO,Vec3.ZERO,Vec3.ZERO),null,1.62001F,packet.isOnGround());
+        predictionResetPackets.put(packet,new ac.navro.proxy.teleport.data.CorrectionResetData(frame));
+        try {return teleportTransport.apply(packet);}
+        finally {predictionResetPackets.remove(packet);}
+    }
+    public boolean suppressVehicleMount(BedrockPacket packet) {
+        if(vehicleHardSetback==null)return false;
+        if(packet instanceof SetEntityLinkPacket link&&link.getEntityLink()!=null)return vehicleHardSetback.suppresses(link.getEntityLink());
+        var links=packet instanceof AddEntityPacket entity?entity.getEntityLinks():packet instanceof AddPlayerPacket player?player.getEntityLinks():null;
+        if(links!=null)links.removeIf(vehicleHardSetback::suppresses);
+        return false;
+    }
+    private WireVec3 acknowledgedRiderSeat;
+    public WireVec3 acknowledgedRiderSeat() { return acknowledgedRiderSeat; }
     public float playerYOffset(){return playerYOffsetInternal();}
     private final java.util.NavigableMap<Long,ac.navro.proxy.teleport.data.RewindHistory> predictionHistory=new java.util.TreeMap<>();
     private final java.util.IdentityHashMap<MovePlayerPacket,ac.navro.proxy.teleport.data.CorrectionResetData> predictionResetPackets=new java.util.IdentityHashMap<>();
@@ -429,7 +574,11 @@ public final class SessionState {
         if(teleports.isTeleporting() || teleports.hasPendingCorrection() || player.isMovementExempted())return;
         var frame=predictionHistory.get(tick);
         if(frame==null)return;
-        if(smoothSetback || player.vehicleData != null) {
+        if (player.vehicleData != null) {
+            authInputPackets().vehicles().correctCurrent();
+            return;
+        }
+        if(smoothSetback) {
             teleports.correct(frame, player.vehicleData != null && player.vehicleData.canWeControlThisVehicle, softCorrectionTransport);
             return;
         }
@@ -470,6 +619,7 @@ public final class SessionState {
 
     public boolean receiveClient(BedrockPacket packet, long maxBalanceAdvantageMs) {
         if(player.disconnectRequested())return false;
+        if(vehicleHardSetback!=null&&vehicleHardSetback.blocks(packet))return false;
         if(ac.navro.proxy.backend.BackendStateSync.privatePacket(packet))return false;
         refreshExemptionPermission();
         applyCheckConfig();
@@ -482,7 +632,7 @@ public final class SessionState {
                 return placementPipeline().finish(event,false);
             }
         }
-        ac.navro.proxy.packets.other.VehiclePackets.onPacketReceive(player, packet);
+        ac.navro.proxy.packets.other.VehiclePackets.onPacketReceive(this, packet);
         final boolean checked = detectionEnabled && !player.isExempted();
         if (detectionEnabled && !ac.navro.proxy.listener.PacketListener.onPacketReceived(
                 this, packet, maxBalanceAdvantageMs)) {
@@ -521,7 +671,7 @@ public final class SessionState {
 
     public void observeClient(BedrockPacket packet) {
         refreshExemptionPermission();
-        ac.navro.proxy.packets.other.VehiclePackets.onPacketReceive(player, packet);
+        ac.navro.proxy.packets.other.VehiclePackets.onPacketReceive(this, packet);
         observeClient(packet, false);
     }
 
@@ -593,6 +743,7 @@ public final class SessionState {
             if(detectionEnabled)authInputPackets();
 
 
+            if(detectionEnabled)vehicleTransitions().prepare(input);
             player.apply(input, world, detectionEnabled ? null : fluidState, movementCoordinates ? playerYOffset() : 0);
             if (!inventoryInteractions.onPacketReceive(input, checked)) {
                 rejectInventoryInteraction(input);
@@ -616,9 +767,10 @@ public final class SessionState {
             }
             tickSnapshots.addLast(player.snapshot(fluidState));
             while (tickSnapshots.size() > (detectionEnabled ? 20 : 4096)) tickSnapshots.removeFirst();
-            if(detectionEnabled && spawned && player.vehicleData==null && !player.predictionFlag(org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag.SLEEPING)){player.finishPredictionInput();authInputPackets().itemUse().finishInput();}
-            if (detectionEnabled) forward = ac.navro.proxy.packets.input.PostAuthInputPackets.onPacket(this, input, false);
+            if(detectionEnabled && spawned && !player.predictionFlag(org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag.SLEEPING)){player.finishPredictionInput();authInputPackets().itemUse().finishInput();}
+            if (detectionEnabled) forward = ac.navro.proxy.packets.input.PostAuthInputPackets.onPacket(this, input, vehicleTransitions().blocked());
             else ac.navro.proxy.packets.input.PostAuthInputPackets.finishInput(player);
+            if(vehicleHardSetback!=null)vehicleHardSetback.afterInput(input);
         }
         if(detectionEnabled && packet instanceof org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket transaction) {
             var result=PlayerInventoryPackets.onTransactionReceive(this,transaction);
@@ -704,6 +856,7 @@ public final class SessionState {
     }
 
     public void observeBackend(BedrockPacket packet) {
+        if(suppressVehicleMount(packet))return;
         if(consumeBackendSync(packet))return;
         if (packet instanceof StartGamePacket) {
             var supplied = backendSync.takeRuntimePalette();
@@ -721,6 +874,25 @@ public final class SessionState {
         ac.navro.proxy.packets.server.ServerDataPackets.onPacket(player, packet,
                 backendType == ac.navro.proxy.protocol.BackendType.BDS);
         serverChunkPackets.onPacket(packet);
+        if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.RemoveEntityPacket remove && detectionEnabled) {
+            var mounted = vehicleTransitions().announceRemoval(remove.getUniqueEntityId());
+            var exitTeleport = detectionEnabled ? vehicleTransitions().lastTeleport() : null;
+            if(mounted!=null) {
+                vehicleTransitions().removalSent(mounted.vehicleUniqueId, player.uniqueId());
+                player.queueAcknowledgment(packet, () -> {
+                    if (player.vehicleData == mounted && detectionEnabled)
+                        vehicleTransitions().acknowledged(mounted.vehicleUniqueId, mounted, exitTeleport);
+                });
+            }
+        }
+        if (detectionEnabled) {
+            if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.AddEntityPacket spawn
+                    && ("minecraft:boat".equals(spawn.getIdentifier()) || "minecraft:chest_boat".equals(spawn.getIdentifier())))
+                ac.navro.proxy.prediction.vehicle.BoatParameters.prepare(spawn.getMetadata());
+            else if (packet instanceof SetEntityDataPacket update && entities.get(update.getRuntimeEntityId()) != null
+                    && entities.get(update.getRuntimeEntityId()).boat())
+                ac.navro.proxy.prediction.vehicle.BoatParameters.prepare(update.getMetadata());
+        }
         serverEntityPackets.onPacket(packet);
         ac.navro.proxy.packets.other.VehiclePackets.onPacketSend(this, packet);
         PlayerInventoryPackets.onPacketSend(player, inventory, packet);
@@ -729,6 +901,8 @@ public final class SessionState {
         packetCounts.merge("backend:" + packet.getClass().getSimpleName(), 1, Integer::sum);
         long sequence = recordEvent(WireEvent.Direction.BACKEND, packet);
         if (packet instanceof StartGamePacket start) {
+            if(vehicleHardSetback!=null)vehicleHardSetback.clear();
+            acknowledgedRiderSeat = null;
             if (backendType == ac.navro.proxy.protocol.BackendType.BDS) { awaitingBackendSpawnPosition = true; backendSpawnRevision++; }
             world.apply(start);
             acknowledgedTerrainGeneration = backendBlocks.generation();
@@ -754,6 +928,8 @@ public final class SessionState {
                 if (authInputPackets != null) authInputPackets.velocityPackets().clearExternalMotion();
                 player.queueAcknowledgment(packet, () -> {
                     if (revision != backendSpawnRevision) return;
+                    player.vehicleData = null;
+                    if(vehicleTransitions!=null)vehicleTransitions.clear();
                     player.acceptTeleport(foot, false);
                     if (authInputPackets != null) authInputPackets.reset();
                     fluidState.resetMovement();
@@ -772,12 +948,16 @@ public final class SessionState {
                 });
             }
         } else if (packet instanceof ChangeDimensionPacket change) {
+            if(vehicleHardSetback!=null)vehicleHardSetback.clear();
             pendingStartGamePosition = null;
             if(authInputPackets!=null)authInputPackets.velocityPackets().clearExternalMotion();
 
             final ChangeDimensionPacket snapshot = change.clone();
             final long terrainGeneration = backendBlocks.generation();
             ac.navro.proxy.packets.input.AuthInputPackets.onPacketSend(player, world, change, () -> {
+                player.vehicleData = null;
+                if(vehicleTransitions!=null)vehicleTransitions.clear();
+                acknowledgedRiderSeat = null;
                 world.changeDimension(snapshot.getDimension());
                 acknowledgedTerrainGeneration = terrainGeneration;
                 player.collisionPhysics.reset();
@@ -827,7 +1007,15 @@ public final class SessionState {
             }
         } else if (packet instanceof MobEffectPacket effect) {
             EntityCache cached = entities.get(effect.getRuntimeEntityId());
-            if (cached != null) cached.lastWireTick(effect.getTick());
+            if (cached != null) {
+                int id = effect.getEffectId(), amplifier = effect.getAmplifier(), duration = effect.getDuration();
+                boolean remove = effect.getEvent() == MobEffectPacket.Event.REMOVE;
+                player.queueAcknowledgment(packet, () -> {
+                    if (entities.get(cached.runtimeId()) == cached)
+                        cached.effect(id, amplifier, duration, remove, player.simulationFrame());
+                });
+                cached.lastWireTick(effect.getTick());
+            }
         }
 
 
@@ -843,7 +1031,13 @@ public final class SessionState {
             backendCorrectionPackets++;
             lastCorrectionTick = correction.getTick();
             serverPosition = correction.getPosition();
-            queueBackendPredictionCorrection(correction);
+            if (detectionEnabled && correction.getPredictionType() == org.cloudburstmc.protocol.bedrock.data.PredictionType.VEHICLE) {
+                var snapshot = correction.clone();
+                var mounted = player.vehicleData;
+                player.queueAcknowledgment(packet, () -> {
+                    if (mounted != null && player.vehicleData == mounted) authInputPackets().vehicles().correctFromServer(snapshot);
+                });
+            } else queueBackendPredictionCorrection(correction);
             var trace=player.worldDiagnostics();
             if(trace!=null){trace.beginMotionTrace();trace.event("backend_prediction_correction",ac.navro.proxy.diagnostics.WorldCollisionDiagnostics.fields(
                     "sourceTick",correction.getTick(),"position",String.valueOf(correction.getPosition()),
@@ -870,6 +1064,11 @@ public final class SessionState {
             }
         }
         if (packet instanceof AddEntityPacket add) player.apply(add);
+        if (packet instanceof SetEntityDataPacket data && data.getRuntimeEntityId() == player.runtimeId()
+                && data.getMetadata().containsKey(org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes.SEAT_OFFSET)) {
+            var seat = WireVec3.of(data.getMetadata().get(org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes.SEAT_OFFSET));
+            player.queueAcknowledgment(packet, () -> acknowledgedRiderSeat = seat != null && seat.finite() ? seat : null);
+        }
         if (packet instanceof SetEntityDataPacket data && player.vehicleData == null) {
             player.apply(data);
             if (data.getRuntimeEntityId() == player.runtimeId()) {
@@ -1155,6 +1354,13 @@ public final class SessionState {
         if (player.vehicleData == null) return 1.62001F;
         EntityCache vehicle = entities.get(player.vehicleData.vehicleRuntimeId);
         if (vehicle != null && vehicle.boat()) return 0.375F;
+        if (vehicle != null && vehicle.horse()) {
+            if (acknowledgedRiderSeat != null) return acknowledgedRiderSeat.y() + 1.62001F;
+            float seat = vehicle.getDimensions().height() * .75F + 1.27001F;
+            if (vehicle.identifier().equals("minecraft:donkey") || vehicle.identifier().equals("minecraft:mule")) seat -= .25F;
+            else if (vehicle.identifier().equals("minecraft:skeleton_horse")) seat -= .1875F;
+            return seat;
+        }
         return 0.0F;
     }
 

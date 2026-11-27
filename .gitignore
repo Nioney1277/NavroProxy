@@ -75,3 +75,12 @@ NavroFireworkBridge.jar
 !/backend/nukkit/README.md
 
 !/nethernet/third_party/go-raknet/NAVRO_CHANGES.md
+
+!/docs/vehicle-physics.md
+!/docs/command-source.md
+!/docs/bedrock-block-properties.md
+!/docs/grim-vehicle-setback.md
+!/docs/proxyping.md
+!/tools/
+/tools/*
+!/tools/import-bedrock-block-properties.py

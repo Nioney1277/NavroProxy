@@ -7,7 +7,7 @@ import java.security.*;
 import java.util.*;
 import java.util.function.Supplier;
 
-/** Selects an existing detection session or the connection-only compatibility path. */
+
 final class VersionedBatchSession implements AutoCloseable {
     private final Supplier<NetherNetBatchSession> detectionFactory;
     private final PublicKey transportKey;

@@ -16,6 +16,8 @@ public final class LatencyUtil {
     private final Deque<Latency> sentQueue = new ConcurrentLinkedDeque<>();
     public volatile Latency prevAcceptedLatency;
     public volatile long prevAcceptedTime = System.currentTimeMillis();
+    private volatile long lastClientRoundTripNanos=-1;
+    public long lastClientRoundTripNanos() { return lastClientRoundTripNanos; }
 
     public LatencyUtil(CheckHolder checks) {
         this.checks = checks;
@@ -55,6 +57,7 @@ public final class LatencyUtil {
         synchronized (this) {
             match = sentQueue.stream().filter(latency -> latency.id() == id).findFirst().orElse(null);
             if (match == null) return false;
+            if(match.ours())lastClientRoundTripNanos=Math.max(0,System.nanoTime()-match.ns());
             Latency head;
             do {
                 head = sentQueue.removeFirst();
@@ -71,6 +74,7 @@ public final class LatencyUtil {
             latency = sentQueue.pollFirst();
         }
         if (latency == null) return false;
+        if(latency.ours())lastClientRoundTripNanos=Math.max(0,System.nanoTime()-latency.ns());
         accept(latency);
         return latency.ours();
     }

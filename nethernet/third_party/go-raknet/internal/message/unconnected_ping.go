@@ -24,7 +24,7 @@ func (pk *UnconnectedPing) UnmarshalBinary(data []byte) error {
 		return io.ErrUnexpectedEOF
 	}
 	pk.PingTime = int64(binary.BigEndian.Uint64(data))
-	// Magic: 16 bytes.
+
 	pk.ClientGUID = int64(binary.BigEndian.Uint64(data[24:]))
 	return nil
 }

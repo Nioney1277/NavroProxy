@@ -124,7 +124,7 @@ class ConnectionBatchSessionTest {
                     var accepted = session.process(true, frame(protocol, handshake, PREFIX));
                     assertInstanceOf(ClientToServerHandshakePacket.class, decode(protocol, serverCipher.decrypt(accepted.backendbound().getFirst()), PREFIX));
                 }
-                // Unknown game packets are preserved, rather than decoded by a newer game schema.
+
                 byte[] opaque = {(byte)255, 5, (byte)0xff, 3, 1, 2, 3};
                 var sent = session.process(false, clientCipher == null ? opaque : clientCipher.encrypt(opaque));
                 assertArrayEquals(opaque, serverCipher == null ? sent.forwarded() : serverCipher.decrypt(sent.forwarded()));

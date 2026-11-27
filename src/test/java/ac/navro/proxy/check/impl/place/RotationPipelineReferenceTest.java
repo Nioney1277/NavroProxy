@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 import static ac.navro.proxy.util.block.PlacementContext.*;
 
-/** Original production listener supplies expectations. Context supplies world/time/transport only. */
+
 class RotationPipelineReferenceTest {
     static final class Context implements PlacementContext {
         final Set<Cell> stones=new HashSet<>(Set.of(new Cell(0,65,2)));final List<Runnable> expiries=new ArrayList<>();

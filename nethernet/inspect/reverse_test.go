@@ -141,7 +141,7 @@ func TestReverseTransportRealRakNetAndNetherNet(t *testing.T) {
 		expectedKey <- public
 		binary.Write(out, binary.BigEndian, magic)
 		out.Flush()
-		// A transport-only adapter fixture. Java tests separately exercise real login validation and encryption.
+
 		for {
 			count, err := in.ReadByte()
 			if err != nil {

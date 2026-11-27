@@ -9,9 +9,9 @@ import (
 type NewIncomingConnection struct {
 	ServerAddress   netip.AddrPort
 	SystemAddresses systemAddresses
-	// PingTime is filled out with ConnectionRequestAccepted.PongTime.
+
 	PingTime int64
-	// PongTime is a timestamp from the moment the packet is sent.
+
 	PongTime int64
 }
 
@@ -23,7 +23,7 @@ func (pk *NewIncomingConnection) UnmarshalBinary(data []byte) error {
 	pk.ServerAddress, offset = addr(data)
 	for i := range 20 {
 		if len(data[offset:]) == 16 {
-			// Some implementations send only 10 system addresses.
+
 			break
 		}
 		if len(data[offset:]) < addrSize(data[offset:]) {

@@ -32,8 +32,8 @@ class SpawnPositionLifecycleTest {
     }
 
     @Test void offsetStartupEchoAndFirstGroundedFramesDoNotCreateAnAirborneBaseline() {
-        // Live 2026-11-22 sequence: five pre-initialization echoes at Y=5.621,
-        // then one movement frame at that Y, then grounded input at Y=5.62001.
+
+
         var state = session("Unrecognized core", 5.621F);
         var alerts = new ArrayList<String>();
         state.player().setAlertSink(alerts::add);
@@ -60,7 +60,7 @@ class SpawnPositionLifecycleTest {
         }
         assertTrue(alerts.isEmpty(), alerts.toString());
         assertTrue(corrections.isEmpty(), corrections.toString());
-        // A later claim matching the other convention cannot switch origins.
+
         state.observeClient(AuthInputPacketsTest.input(59, 8, 5.62001F, 8, Vec3.ZERO));
         assertEquals(4, state.player().position().y, .00001F);
         assertEquals(1.62001F, state.authInputPackets().lastResult().rawOffset(), .00001F);
@@ -116,7 +116,7 @@ class SpawnPositionLifecycleTest {
         state.observeClient(input);
         assertEquals(4, state.player().position().y);
         assertFalse(state.teleports().isTeleporting());
-        // No deferred candidate adjustment may run after the real teleport.
+
         state.observeClient(AuthInputPacketsTest.input(41, 8, 4, 8, Vec3.ZERO));
         assertEquals(4, state.player().position().y);
     }

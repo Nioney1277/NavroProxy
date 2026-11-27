@@ -11,7 +11,7 @@ import java.nio.file.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Commands drive actual config reload, session subscriptions and real prediction/debug output. */
+
 class NavroCommandTest {
     @TempDir Path directory;
     static final UUID OBSERVER=UUID.fromString("00000000-0000-0000-0000-000000000111");
@@ -40,11 +40,28 @@ class NavroCommandTest {
         p.setMotion(org.cloudburstmc.math.vector.Vector2f.from(0,1));p.setRawMoveVector(org.cloudburstmc.math.vector.Vector2f.from(0,1));
         state.observeClient(p);
     }
+    @Test void proxypingDefaultsToSelfAndReportsIndependentDirectionsWithMissingRtt() {
+        var f=fixture();var sender=new Sender();
+        f.observer().forwardingLatency().record(false,2_000_000);
+        f.observer().forwardingLatency().record(false,4_000_000);
+        f.observer().forwardingLatency().record(true,7_000_000);
+        command("/navro proxyping",sender,f);
+        assertEquals(1,messages.size());
+        assertTrue(messages.getFirst().contains("Observer 代理处理耗时"));
+        assertTrue(messages.getFirst().contains("上行：§f平均 3.000 / P95 4.000 / 最大 4.000 ms（最近 2 次）"));
+        assertTrue(messages.getFirst().contains("下行：§f平均 7.000 / P95 7.000 / 最大 7.000 ms（最近 1 次）"));
+        assertTrue(messages.getFirst().contains("客户端 RTT：§f暂无样本"));
+        messages.clear();sender.player=false;command("/navro proxyping",sender,f);
+        assertEquals(List.of(PREFIX+"Usage: /navro proxyping [player]"),messages);
+        messages.clear();command("/navro proxyping Target",sender,f);
+        assertTrue(messages.getFirst().contains("Target 代理处理耗时"));
+        assertTrue(messages.getFirst().contains("上行：§f暂无样本"));
+    }
     @Test void allPrivilegedBranchesDenyBeforeChangingConfigOrSubscriptions() throws Exception {
         var f=fixture();var sender=new Sender();sender.allowed=false;
         Files.writeString(directory.resolve("config.yml"),"prefix: '&cChanged '\nsmooth-setback: true\n");
-        for(String s:List.of("alert","reload","debug Target","debug2"))command("/navro "+s,sender,f);
-        assertEquals(Collections.nCopies(4,"§cYou do not have permission to use this command."),messages);
+        for(String s:List.of("alert","reload","debug Target","debug2","proxyping"))command("/navro "+s,sender,f);
+        assertEquals(Collections.nCopies(5,"§cYou do not have permission to use this command."),messages);
         assertFalse(f.alerts().hasAlert(OBSERVER));assertFalse(f.target().hasDebugSubscribers());assertFalse(f.observer().hasDebugSubscribers());
         assertFalse(f.runtime().config().smoothSetback());assertEquals(PREFIX,f.alerts().getPrefix());
     }
@@ -83,7 +100,7 @@ class NavroCommandTest {
         f.target().observeClient(AuthInputPacketsTest.input(10,8,64,8,new Vec3(0,-.0784F,0)));
         assertEquals(.0002F,f.target().authInputPackets().context().maxOffset);assertEquals(.01F,f.target().authInputPackets().context().alertThreshold);
         assertTrue(f.target().smoothSetback());assertEquals(5,f.target().rewindHistorySize());assertEquals(21000,f.target().maxLatencyWait());assertEquals(4200,f.target().player().maxBalanceAdvantageMs());
-        // A configured disabled Prediction must not emit alerts or a correction for this constructed invalid input.
+
         var alerts=new ArrayList<String>();var corrections=AuthInputPacketsTest.transport(f.target());f.target().player().setAlertSink(alerts::add);
         f.target().observeClient(AuthInputPacketsTest.input(11,100,64,8,Vec3.ZERO));
         assertTrue(alerts.isEmpty());assertTrue(corrections.isEmpty());assertFalse(f.target().teleports().isTeleporting());
@@ -106,7 +123,7 @@ class NavroCommandTest {
     }
     @Test void unknownSubcommandsStayLocalAndDisplayAllNativeUsageLines() {
         var f=fixture();var sender=new Sender();command("/navro unknown",sender,f);
-        assertEquals(List.of(PREFIX+"Unknown subcommand.",PREFIX+"Usage: /navro alert",PREFIX+"Usage: /navro reload",PREFIX+"Usage: /navro debug <player>",PREFIX+"Usage: /navro debug2 [player]"),messages);
+        assertEquals(List.of(PREFIX+"Unknown subcommand.",PREFIX+"Usage: /navro alert",PREFIX+"Usage: /navro reload",PREFIX+"Usage: /navro debug <player>",PREFIX+"Usage: /navro debug2 [player]",PREFIX+"Usage: /navro proxyping [player]"),messages);
     }
     @Test void helpDenialAndMissingTargetRepliesMatchDirectlyExecutedOriginalNavro() throws Exception {
         var f=fixture();var sender=new Sender();sender.player=false;
@@ -117,6 +134,7 @@ class NavroCommandTest {
                 var row=item.getAsJsonObject();sender.allowed=row.get("allowed").getAsBoolean();messages.clear();
                 command("/navro "+row.get("subcommand").getAsString(),sender,f);
                 var expected=new ArrayList<String>();row.getAsJsonArray("messages").forEach(v->expected.add(v.getAsString()));
+                if(row.get("subcommand").getAsString().isEmpty()||row.get("subcommand").getAsString().equals("unknown"))expected.add(PREFIX+"Usage: /navro proxyping [player]");
                 assertEquals(expected,messages,row.toString());
             }
         }

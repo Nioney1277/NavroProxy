@@ -67,17 +67,38 @@ public final class ProxySession {
     private io.netty.util.concurrent.ScheduledFuture<?> serverTickTask;
     private java.util.UUID identity;
     private java.util.Set<String> proxyCommandNames = ac.navro.proxy.command.NavroCommand.NAMES;
-    private final java.util.function.Consumer<String> alertRecipient = this::sendAlertMessage;
+    private final java.util.function.Consumer<String> alertRecipient = this::sendProxyAlert;
 
     public ProxySession(NavroProxy proxy, BedrockServerSession client) {
         this.proxy = proxy;
         this.state = new SessionState(proxy.config().backendType());
         this.client = client;
-        state.setBackendSyncTransport(packet->{if(backendReady())backend.sendPacket(packet);});
+        state.setBackendVehicleExitTransport(packet->{
+            if(!backendReady()||closed.get())return false;
+            client.getPeer().getChannel().eventLoop().execute(()->{if(backendReady()&&!closed.get())backend.sendPacket(packet);});
+            return true;
+        });
+        state.setBackendSyncTransport(packet->{
+            Runnable send=()->{if(backendReady()&&!closed.get())backend.sendPacket(packet);};
+            var loop=client.getPeer().getChannel().eventLoop();
+            if(loop.inEventLoop())send.run();else loop.execute(send);
+        });
         this.teleportSender=new ac.navro.proxy.teleport.TeleportSender(client,state,()->!closed.get()&&clientHandshakeAccepted);
         state.setTeleportTransport(teleportSender::send);
         state.setPredictionMotionTransport(teleportSender::sendMotion);
         state.setSoftCorrectionTransport(teleportSender::send);
+        state.setVehicleHardCorrectionTransport(packets->{
+            if(closed.get()||!clientHandshakeAccepted||!client.isConnected()||state.player().getEntityBatchEncoder()==null)return false;
+            if(!client.isSubClient()&&packets.stream().noneMatch(org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket.class::isInstance)) {
+                client.getPeer().sendPacketsImmediately(0,0,packets.toArray(org.cloudburstmc.protocol.bedrock.packet.BedrockPacket[]::new));
+                return true;
+            }
+            for(var packet:packets) {
+                if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket move) {if(!teleportSender.send(move))return false;}
+                else client.sendPacket(packet);
+            }
+            return true;
+        });
         state.setSmoothSetback(proxy.config().smoothSetback());
         state.setCommandRuntime(proxy.commands());
         state.setClientStateCorrectionTransport(client::sendPacket);
@@ -208,7 +229,7 @@ public final class ProxySession {
             return;
         }
         if (proxy.config().encryptBackend() && !backendEncryptionReady) return;
-        if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.CommandRequestPacket command
+        if(state.proxyCommands() && packet instanceof org.cloudburstmc.protocol.bedrock.packet.CommandRequestPacket command
                 &&ac.navro.proxy.command.NavroCommand.handle(command.getCommand(),new ac.navro.proxy.command.NavroCommand.Sender(){
                     public java.util.UUID identity(){return identity;}
                     public String name(){return state.player().getName();}
@@ -217,6 +238,8 @@ public final class ProxySession {
                 },proxy.getAlertManager(),proxy.commands(),proxyCommandNames))return;
         forwardToBackend(packet);
     }
+
+    private void sendProxyAlert(String message) { if(state.proxyCommands())sendAlertMessage(message); }
 
     private void forwardToBackend(BedrockPacket packet) {
         state.onClientPacketForwarded(packet);
@@ -355,6 +378,7 @@ public final class ProxySession {
     }
 
     void handleBackendPacket(BedrockPacket packet) {
+        if(state.suppressVehicleMount(packet))return;
         if (closed.get()) {
             return;
         }
@@ -379,9 +403,8 @@ public final class ProxySession {
         PacketListener.onPacketSent(state.player(), packet);
         state.observeBackend(packet);
         if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands)
-            proxyCommandNames = state.hasBackendCommands()
-                    ? ac.navro.proxy.command.NavroCommand.unclaimedNames(commands)
-                    : ac.navro.proxy.command.NavroCommand.advertise(commands);
+            proxyCommandNames = state.proxyCommands()
+                    ? ac.navro.proxy.command.NavroCommand.advertise(commands) : java.util.Set.of();
         if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.StartGamePacket && serverTickTask == null) {
             serverTickTask = client.getPeer().getChannel().eventLoop().scheduleAtFixedRate(this::serverTick,
                     50, 50, java.util.concurrent.TimeUnit.MILLISECONDS);
@@ -412,13 +435,15 @@ public final class ProxySession {
 
             client.sendPacket(latency.clone());
         } else if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands
-                && !state.hasBackendCommands()){
+                && state.proxyCommands()){
             client.sendPacket(commands);
         } else if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket move
                 &&move.getRuntimeEntityId()==state.player().runtimeId()
                 &&move.getMode()!=org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket.Mode.HEAD_ROTATION){
             client.sendPacket(move);
-        } else PacketRelay.forward(backend, client, packet);
+        } else if(state.vehicleHardSetback().guardingMounts()&&(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AddEntityPacket
+                ||packet instanceof org.cloudburstmc.protocol.bedrock.packet.AddPlayerPacket))client.sendPacket(packet);
+        else PacketRelay.forward(backend, client, packet);
         state.onBackendPacketQueued(packet);
     }
 
@@ -522,7 +547,9 @@ public final class ProxySession {
     private final class ClientPacketHandler implements org.cloudburstmc.protocol.bedrock.packet.BedrockPacketHandler {
         @Override
         public PacketSignal handlePacket(BedrockPacket packet) {
-            handleClientPacket(packet);
+            long started=System.nanoTime();
+            try {handleClientPacket(packet);}
+            finally {state.forwardingLatency().record(false,System.nanoTime()-started);}
             return PacketSignal.HANDLED;
         }
 
@@ -535,7 +562,9 @@ public final class ProxySession {
     private final class BackendPacketHandler implements org.cloudburstmc.protocol.bedrock.packet.BedrockPacketHandler {
         @Override
         public PacketSignal handlePacket(BedrockPacket packet) {
-            handleBackendPacket(packet);
+            long started=System.nanoTime();
+            try {handleBackendPacket(packet);}
+            finally {state.forwardingLatency().record(true,System.nanoTime()-started);}
             return PacketSignal.HANDLED;
         }
 

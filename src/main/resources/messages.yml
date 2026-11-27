@@ -1,11 +1,11 @@
-# Display text only. Reload all three configuration files with /navro reload.
-# Color codes use &. Values substituted from players/checks are not reinterpreted.
+
+
 prefix: "&aNavro &7>&r "
 
-# %message% preserves Navro's detailed original check output.
-# Also available: %player%, %check_name%, %check%, %vl%, %check_vl%,
-# %verbose%, %experimental%. %vl% is the punishment group's recent count;
-# %check_vl% is the individual check's session count.
+
+
+
+
 alerts-format: "%prefix%&3%message%"
 
 alerts-enabled: "%prefix%&fEnabled alerts."
@@ -17,12 +17,13 @@ reload-failed: "%prefix%&cCould not reload config: %error%"
 player-not-found: "%prefix%&cFailed to find player session."
 debug-enabled: "%prefix%&fEnabled %mode% for %player%."
 debug-disabled: "%prefix%&fDisabled %mode% for %player%."
+proxyping: "%prefix%&f%player% 代理处理耗时\n&7上行：&f%upstream%\n&7下行：&f%downstream%\n&7客户端 RTT：&f%rtt%"
 unknown-subcommand: "%prefix%Unknown subcommand."
 usage: "%prefix%Usage: /navro %usage%"
 
-# Used when a kick action has no explicit reason.
+
 kick-message: "%prefix%&cDisconnected for %check_name% violations."
 disconnect-timeout: "Timed out!"
 
-# Internal input validation: negative client frames are impossible.
+
 disconnect-invalid-tick: "Impossible tick id=%tick%"

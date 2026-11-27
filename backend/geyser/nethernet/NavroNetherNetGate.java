@@ -418,8 +418,8 @@ final class NavroNetherNetGate extends ChannelDuplexHandler {
             }
 
             private void apply(boolean requested) {
-                // The Java channel's event loop controls reads. The Geyser session
-                // executor may already have a backlog of translated packet tasks.
+
+
                 var loop = channel.eventLoop();
                 if (loop.inEventLoop()) {
                     set(requested);

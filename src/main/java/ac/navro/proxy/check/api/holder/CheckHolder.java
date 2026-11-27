@@ -40,6 +40,8 @@ public final class CheckHolder extends LinkedHashMap<Class<?>, Check> {
         put(SprintC.class, new SprintC(player, prediction));
         put(SprintD.class, new SprintD(player, prediction));
         put(Prediction.class, new Prediction(player, prediction));
+        put(ac.navro.proxy.check.impl.prediction.VehiclePredictionCheck.class,
+                new ac.navro.proxy.check.impl.prediction.VehiclePredictionCheck(player,prediction));
         put(DebugOffsetA.class, new DebugOffsetA(player, prediction));
     }
 

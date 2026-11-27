@@ -28,7 +28,7 @@ public class AlertBridgeIntegration {
   set(plugin,NavroFireworkBridge.class,"staffChatAlerts",true);
   var directory=Files.createTempDirectory("nukkit-alerts-");var file=directory.resolve("muted-alerts.json").toFile();
   set(plugin,NavroFireworkBridge.class,"mutedPlayers",new Config(file,Config.JSON));
-  var sync=new NativeStateSync(plugin);var source=peer(sync,server);
+  var sync=new NativeStateSync(plugin);set(plugin,NavroFireworkBridge.class,"stateSync",sync);var source=peer(sync,server);
   var staff=(Staff)U.allocateInstance(Staff.class);staff.messages=new ArrayList<>();staff.uuid=UUID.randomUUID();staff.permitted=true;
   set(server,Server.class,"playerList",new HashMap<>(Map.of(staff.uuid,staff)));
   String nonce="12345678-1234-1234-1234-123456789012";
@@ -38,19 +38,36 @@ public class AlertBridgeIntegration {
   set(source,Player.class,"rawSocketAddress",new InetSocketAddress("127.0.0.1",19133));
   receive(sync,source,"hello|"+nonce);check(sync.hasSession(source),"Trusted raw source negotiates");
   check(((ScriptMessagePacket)source.delivered.get(0)).message.equals("nk_ready|"+nonce),"Engine-specific readiness");
+  set(staff,Player.class,"rawSocketAddress",new InetSocketAddress("127.0.0.1",19133));staff.delivered=new ArrayList<>();staff.windows=new HashMap<>();staff.sync=sync;staff.spawned=false;set(staff,cn.nukkit.entity.Entity.class,"server",server);
+  receive(sync,staff,"hello|"+nonce);receive(sync,staff,"commands|"+nonce+"|bridge");
   receive(sync,source,"alert|wrong|ignored");check(staff.messages.isEmpty(),"Wrong nonce rejected");
   receive(sync,source,"alert|"+nonce+"|§cNoSlow\nVL 1");check(staff.messages.equals(List.of("§cNoSlow VL 1")),"Chat alert preserves formatting and strips controls");
   staff.permitted=false;receive(sync,source,"alert|"+nonce+"|no permission");check(staff.messages.size()==1,"Permission required");staff.permitted=true;
-  var command=new Command("navroalerts") {public boolean execute(CommandSender s,String label,String[] arguments){return false;}};
-  check(plugin.onCommand(staff,command,"navroalerts",new String[0]),"Toggle accepted");
+  var command=new Command("navro") {public boolean execute(CommandSender s,String label,String[] arguments){return false;}};
+  check(plugin.onCommand(staff,command,"navro",new String[]{"alert"}),"Toggle accepted");
   check(new Config(file,Config.JSON).exists(staff.uuid.toString()),"Muted preference persisted");
   int count=staff.messages.size();receive(sync,source,"alert|"+nonce+"|muted");check(staff.messages.size()==count,"Muted staff excluded");
-  plugin.onCommand(staff,command,"navroalerts",new String[0]);check(!new Config(file,Config.JSON).exists(staff.uuid.toString()),"Enabled preference persisted");
+  plugin.onCommand(staff,command,"navro",new String[]{"alert"});check(!new Config(file,Config.JSON).exists(staff.uuid.toString()),"Enabled preference persisted");
   count=staff.messages.size();receive(sync,source,"alert|"+nonce+"|"+"界".repeat(1366));check(staff.messages.size()==count,"UTF-8 byte limit enforced");
   receive(sync,source,"alert|"+nonce+"|"+"界".repeat(1365));check(staff.messages.size()==count+1,"Within byte limit accepted");
   set(plugin,NavroFireworkBridge.class,"staffChatAlerts",false);count=staff.messages.size();receive(sync,source,"alert|"+nonce+"|disabled");check(staff.messages.size()==count,"Global chat switch respected");
   set(plugin,NavroFireworkBridge.class,"staffChatAlerts",true);receive(sync,source,"hello|aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");receive(sync,source,"alert|"+nonce+"|stale");check(staff.messages.size()==count,"Old connection nonce rejected");
-  check(!plugin.onCommand(staff,command,"navroalerts",new String[]{"extra"}),"Extra arguments rejected");
+  staff.delivered.clear();
+  plugin.onCommand(staff,command,"navro",new String[]{"debug","Target Player"});
+  check(staff.delivered.size()==1&&((ScriptMessagePacket)staff.delivered.get(0)).message.equals(
+    "command|"+nonce+"|0|debug|"+Base64.getEncoder().encodeToString("Target Player".getBytes(java.nio.charset.StandardCharsets.UTF_8))),"Debug uses session nonce and intact target");
+  int replies=staff.messages.size();
+  receive(sync,staff,"command_reply|wrong|debug|b2s=");check(staff.messages.size()==replies,"Wrong reply nonce rejected");
+  receive(sync,staff,"command_reply|"+nonce+"|debug|b2s=");check(staff.messages.get(staff.messages.size()-1).equals("ok"),"Debug response delivered");
+  staff.permitted=false;replies=staff.messages.size();
+  receive(sync,staff,"command_reply|"+nonce+"|debug|b2s=");check(staff.messages.size()==replies,"Revoked debug permission suppresses output");
+  int sent=staff.delivered.size();plugin.onCommand(staff,command,"navro",new String[]{"debug2"});
+  check(staff.delivered.size()==sent,"Denied command never reaches proxy");staff.permitted=true;
+  receive(sync,staff,"commands|"+nonce+"|proxy");plugin.onCommand(staff,command,"navro",new String[]{"debug2"});
+  check(staff.delivered.size()==sent,"Proxy mode bridge cannot handle commands");
+  replies=staff.messages.size();receive(sync,source,"alert|aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa|console only");
+  check(staff.messages.size()==replies,"Proxy recipients do not get duplicate bridge chat alerts");
+  check(plugin.onCommand(staff,command,"navro",new String[]{"extra"}),"Unknown argument handled with usage");
   System.out.println("ALERT_BRIDGE_INTEGRATION_PASSED raw trust, readiness, nonce, permissions, persistent toggle, UTF-8 bounds, control stripping, chat switch");
  }
 }

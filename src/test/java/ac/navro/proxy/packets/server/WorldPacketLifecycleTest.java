@@ -149,7 +149,7 @@ class WorldPacketLifecycleTest {
             f.ack(two);
             assertEquals(300, f.raw(34, -60, -47, 0));
             assertEquals(200, f.raw(34, -60, -47, 1));
-            // Navro never creates an unloaded chunk from a standalone update.
+
             f.send(block(80, 64, 80, 0, WATER)); f.ack(f.flush());
             assertFalse(f.state.isChunkLoaded(5, 5, 0));
         }
@@ -330,7 +330,7 @@ class WorldPacketLifecycleTest {
             loadShulker(f);
             var pos = Vector3i.from(1, -64, 1);
             var query = new ac.navro.anticheat.util.math.Box(2.01F, -63.9F, 1.1F, 2.05F, -63.1F, 1.9F);
-            // A shulker with no block-entity tag has no actor collision in Navro.
+
             assertTrue(f.state.world().getShulkerCollision(pos).isEmpty());
             f.send(entityData(1, -64, 1, shulkerTag(5)));
             f.send(blockEvent(1, -64, 1, 1, 1)); f.ack(f.flush());
@@ -388,7 +388,7 @@ class WorldPacketLifecycleTest {
             f.send(block(1, -64, 1, 0, new Definition(shulkerId(f))));
             f.send(blockEvent(1, -64, 1, 1, 1)); f.ack(f.flush());
             assertEquals(1, f.state.world().snapshotShulkerFrames().size());
-            loadShulker(f); // Whole chunk replacement clears both NBT and the old animation.
+            loadShulker(f);
             assertNull(f.state.world().getBlockEntityTag(1, -64, 1));
             assertTrue(f.state.world().snapshotShulkerFrames().isEmpty());
             f.send(entityData(1, -64, 1, shulkerTag(1)));
@@ -485,7 +485,7 @@ class WorldPacketLifecycleTest {
             section(data, 9, -5, 200);
             section(data, 9, -4, 400);
             data.writeByte(9).writeByte(2).writeByte(-3).writeByte(1);
-            VarInts.writeInt(data, 500); // Second layer is truncated: do not publish half of this section.
+            VarInts.writeInt(data, 500);
             LevelChunkPacket packet = new LevelChunkPacket(); packet.setData(data); packet.setSubChunksLength(4);
             var chunk = ServerChunkPackets.readLevelChunk(packet, -64, 320, 100);
             assertEquals(300, chunk.getFullBlock(0, 319, 0, 0));

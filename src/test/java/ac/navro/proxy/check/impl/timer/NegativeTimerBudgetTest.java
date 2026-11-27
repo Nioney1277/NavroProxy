@@ -4,7 +4,7 @@ import ac.navro.proxy.check.impl.timer.Timer.TimerBudget;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Budget regression cases ported from Navro's NegativeTimerTest. */
+
 class NegativeTimerBudgetTest {
     @Test void normalTwentyTpsDoesNotLoseBalance() {
         var budget = new TimerBudget();
@@ -32,7 +32,7 @@ class NegativeTimerBudgetTest {
         var boundary = budget.accountNegative(3_500_000_000L, 2, NegativeTimer.DRIFT_NS, false);
         assertEquals(-1_200_000_000L, boundary.evaluatedBalance());
         assertFalse(boundary.flag());
-        // Move the proven client clock just one nanosecond past the next permitted boundary.
+
         budget.acknowledgeNegative(3_550_000_001L, 3_700_000_000L);
         var over = budget.accountNegative(3_700_000_000L, 3, NegativeTimer.DRIFT_NS, false);
         assertTrue(over.flag());

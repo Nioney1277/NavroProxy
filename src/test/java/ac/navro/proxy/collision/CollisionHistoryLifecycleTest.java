@@ -72,7 +72,7 @@ class CollisionHistoryLifecycleTest {
         var collision = session.collisionWorld(); var actor = session.player().boundingBox();
         assertEquals(1, collision.nearbyEntityShapes(actor).size());
         var saved = session.player().snapshot(null);
-        // Deliberately mutate even the cached entity's vector; the historical actor must own it.
+
         session.entity(12).getCurrent().getPos().x = 100;
         assertEquals(1, collision.nearbyEntityShapes(actor).size());
         assertEquals(0.5F, saved.collisionState().actors().get(0).position().x);

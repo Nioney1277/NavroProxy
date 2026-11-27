@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Actual standalone/embedded placement entry points with negotiated clock capability. */
+
 class PlacementClockCapabilityTest {
     static ScriptMessagePacket sample(String nonce,long sequence,int tick) {
         var packet=new ScriptMessagePacket();packet.setChannel(BackendStateSync.CHANNEL);

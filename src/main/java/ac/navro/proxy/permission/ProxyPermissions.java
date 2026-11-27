@@ -28,7 +28,7 @@ public final class ProxyPermissions {
                     return value.getAsBoolean();
                 }
             }
-            return operator&&Set.of("navro.alert","navro.reload","navro.debug").contains(node);
+            return operator&&Set.of("navro.alert","navro.reload","navro.debug","navro.proxyping").contains(node);
         } catch(IOException|RuntimeException e) {log.accept("Could not load permissions: "+e.getMessage());return false;}
     }
 }

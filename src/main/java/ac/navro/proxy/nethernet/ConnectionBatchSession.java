@@ -15,7 +15,7 @@ import java.security.*;
 import java.util.*;
 import java.util.zip.*;
 
-/** Connection compatibility without creating any anti-cheat player/world state. */
+
 final class ConnectionBatchSession implements AutoCloseable {
     enum Encoding { NONE, RAW, ZLIB, PREFIXED }
     record Initial(int protocol, Encoding encoding) { }

@@ -159,7 +159,7 @@ func reverseSession(ctx context.Context, front *raknet.Conn, backend, adapter st
 	if err := binary.Write(out, binary.BigEndian, uint32(rakNetFrontendMagic)); err != nil {
 		return err
 	}
-	// RakNet authenticates in the Java login/Bedrock encryption handshake, not DTLS.
+
 	if err := binary.Write(out, binary.BigEndian, uint32(0)); err != nil {
 		return err
 	}

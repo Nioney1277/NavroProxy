@@ -15,9 +15,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Synthetic placement scenarios; all selection/dispatch/prediction decisions run in SessionState.
- */
+
+
+
 class WallVinePlacementLifecycleTest {
     @Test
     void wallPlacementWaitsForNextRayAndUsesItsNarrowOutlineWithoutDoubleConsumption() {
@@ -85,10 +85,10 @@ class WallVinePlacementLifecycleTest {
         knownSection(state, 1, 0, 8);
         state.world().updateLegacyBlock(16, 65, 8, 0, 1 << 13);
         var actual = state.placementPipeline().block(new Cell(15, 65, 8));
-        // The east connection reaches this block's east edge (15 + 1),
-        // not the far edge of the adjacent block at x=16.
+
+
         assertEquals(16F, actual.outline().maxX);
-        // An immediately forwarded transaction is never replayed when more facts arrive.
+
         for (int tick = 0; tick < 20; tick++) state.placementTick();
         assertTrue(forwarded.isEmpty());
     }
@@ -131,13 +131,13 @@ class WallVinePlacementLifecycleTest {
                         p -> {});
         PlacementPipelineLifecycleTest.history(state);
         var request = PlacementPipelineLifecycleTest.transaction();
-        request.setBlockFace(0); // Aim at the bottom surface of the ceiling-attached vine.
+        request.setBlockFace(0);
         assertFalse(state.receiveClient(request, 8500));
         assertEquals(3, state.inventory().inventoryContainer.get(0).count());
         assertTrue(forwarded.isEmpty());
         var next = PlacementPipelineLifecycleTest.input(3, 0);
-        // Construct a ray to the center of the native underside at y=65+15/16.
-        // These are world/eye coordinates, not output from the code under test.
+
+
         double dx = 0.5, dz = 2.5, dy = 65.9375 - (64 + 1.62001F);
         float yaw = (float) -Math.toDegrees(Math.atan2(dx, dz));
         float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.hypot(dx, dz)));

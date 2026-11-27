@@ -1,10 +1,12 @@
+
+
 trusted-proxy-addresses:
   - "127.0.0.1"
   - "::1"
 console-alerts: true
 staff-chat-alerts: true
 
-# Optional separate RSA-authenticated NetherNet listener (same configuration as PMMP).
+
 private-nethernet:
   enabled: false
   signaling-port: 19608
@@ -15,12 +17,9 @@ private-nethernet:
   max-connections: 128
   proxy-public-key-file: navro-backend.pub.pem
 
-# Optional, separate RakNet listener for signed Navro proxy logins.
+
 private-raknet:
   enabled: false
   bind-address: "127.0.0.1"
   port: 19134
   proxy-public-key-file: navro-backend.pub.pem
-
-# Generate the PEM pair once on the proxy host; keep the private PEM there and
-# copy only navro-backend.pub.pem to this plugin data folder.

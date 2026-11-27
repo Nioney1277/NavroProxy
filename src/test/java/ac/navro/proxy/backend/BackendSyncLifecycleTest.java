@@ -27,7 +27,7 @@ class BackendSyncLifecycleTest {
             assertEquals(8,state.player().position().x);assertEquals(64,state.player().position().y);
             assertFalse(state.teleports().isTeleporting());
             assertTrue(state.backendInventories().generation()>0);
-            // Reconnect/new StartGame invalidates old clock, even if old frames arrive later.
+
             state.observeBackend(start);assertFalse(state.world().hasNativeServerTick());state.observeBackend(sample(nonce,1,422));assertFalse(state.world().hasNativeServerTick());
         }
     }

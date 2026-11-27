@@ -77,7 +77,7 @@ final class NativeStateSync{
         if($event->getPacketId() === ScriptMessagePacket::NETWORK_ID && $event->getOrigin()->getPlayer() !== null &&
             $this->plugin->trusts($event->getOrigin())){
             $buffer = $event->getPacketBuffer();
-            if(strlen($buffer) <= self::MAX_ALERT_BYTES + 128 && str_contains($buffer, self::CHANNEL)){
+            if(strlen($buffer) <= 8192 && str_contains($buffer, self::CHANNEL)){
                 $event->uncancel();
             }
         }
@@ -96,6 +96,23 @@ final class NativeStateSync{
         }
         $message = $packet->getValue();
         $state = $this->sessions[$session] ?? null;
+        if($state !== null && str_starts_with($message, "commands|{$state->nonce}|")){
+            $mode = substr($message, strlen("commands|{$state->nonce}|"));
+            if(in_array($mode, ["proxy", "bridge"], true)){
+                $state->commandSource = $mode;
+                $session->syncAvailableCommands();
+            }
+            return;
+        }
+        if($state !== null && str_starts_with($message, "command_reply|{$state->nonce}|")){
+            if($state->commandSource !== "bridge"){ return; }
+            $fields = explode("|", $message, 4);
+            if(count($fields) !== 4 || !in_array($fields[2], ["debug", "debug2", "reload", "proxyping"], true) ||
+                !$player->hasPermission($fields[2] === "reload" ? "navrobridge.reload" : ($fields[2] === "proxyping" ? "navrobridge.proxyping" : "navrobridge.debug"))){ return; }
+            $text = base64_decode($fields[3], true);
+            if($text !== false && strlen($text) <= 4096){ $player->sendMessage($text); }
+            return;
+        }
         if($state !== null && str_starts_with($message, "alert|{$state->nonce}|")){
             $alert = substr($message, strlen("alert|{$state->nonce}|"));
             if(strlen($alert) <= self::MAX_ALERT_BYTES){
@@ -110,6 +127,18 @@ final class NativeStateSync{
         $this->sessions[$session] = $state;
         $session->sendDataPacket(ScriptMessagePacket::create(self::CHANNEL, "pm_ready|{$state->nonce}"));
         $this->sendTick($session, $state, $player->getServer()->getTick());
+        $session->sendDataPacket(ScriptMessagePacket::create(self::CHANNEL, "commands_ready|{$state->nonce}"));
+    }
+
+    public function bridgeCommands(NetworkSession $session) : bool{
+        return ($this->sessions[$session]->commandSource ?? "proxy") === "bridge";
+    }
+
+    public function command(NetworkSession $session, string $action, string $target) : bool{
+        $state = $this->sessions[$session] ?? null;
+        if($state === null || $state->commandSource !== "bridge"){ return false; }
+        return $session->sendDataPacket(ScriptMessagePacket::create(self::CHANNEL,
+            "command|{$state->nonce}|" . $state->commandSequence++ . "|$action|" . base64_encode($target)));
     }
 
     private function rememberSlots(InventoryTransactionEvent $event) : void{
@@ -130,6 +159,13 @@ final class NativeStateSync{
     }
 
     private function beforeWorldPacket(DataPacketSendEvent $event) : void{
+        if(count($event->getTargets()) === 1){
+            $session = $event->getTargets()[0];
+            if($this->bridgeCommands($session)){
+                $event->setPackets(array_map(static fn($packet) => $packet instanceof \pocketmine\network\mcpe\protocol\AvailableCommandsPacket
+                    ? CommandHints::apply($packet) : $packet, $event->getPackets()));
+            }
+        }
         foreach($event->getPackets() as $packet){
 
             if($packet instanceof StartGamePacket && !$packet->blockNetworkIdsAreHashes){
@@ -247,6 +283,8 @@ final class BackendPlayerSync{
     public ?int $slotsDue = null;
 
     public array $slots = [];
+    public string $commandSource = "proxy";
+    public int $commandSequence = 0;
 
     public function __construct(public readonly string $nonce){}
 }

@@ -13,11 +13,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Geometry utility regression from captured movement requests and collider inputs.
- * Positions used for expectations come from client observations. This boundary
- * excludes travel/input generation and is not a complete gameplay replay.
- * Provenance: recorded-contact-geometry-provenance.json.
- */
+
+
+
+
+
 class RecordedContactGeometryUtilityTest {
     private static JsonObject fixture(String name) throws Exception {
         try (var reader = new InputStreamReader(RecordedContactGeometryUtilityTest.class

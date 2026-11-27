@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Constructed protocol scenarios. Expectations are authoritative server targets,
- * stationary support and a wall's geometric contact plane, not a second simulator. */
+
+
 class PredictionRewindLifecycleTest {
     private static ac.navro.proxy.SessionState bdsSession() {
         return AuthInputPacketsTest.session(ac.navro.proxy.protocol.BackendType.BDS);
@@ -183,8 +183,8 @@ class PredictionRewindLifecycleTest {
         s.player().getLatencyUtil().onResponse(95);
         var motion=new SetEntityMotionPacket();motion.setRuntimeEntityId(7);motion.setMotion(Vector3f.from(0,.4F,0));
         s.player().getLatencyUtil().queue(96,true);s.observeBackend(motion);s.player().getLatencyUtil().onResponse(96);
-        // Navro TeleportHandler.processRewind runs tick 11 and then live tick 12.
-        // The one acknowledged .4 impulse belongs to the first prediction, not both.
+
+
         s.observeClient(AuthInputPacketsTest.input(12,10,64.7136F,8,new Vec3(0,.22892801F,0)));
         assertEquals(64.7136F,s.player().position().y);assertEquals(.22892801F,s.player().velocity().y);
         assertNull(s.authInputPackets().context().certainVelocity);
@@ -328,8 +328,8 @@ class PredictionRewindLifecycleTest {
         return Vector3f.from(Float.parseFloat(parts[0]),Float.parseFloat(parts[1]),Float.parseFloat(parts[2]));
     }
     @Test void recordedCorrectionEndpointsMatchWhenEarlierMotionIsAlreadyIncludedInTheBaseline()throws Exception {
-        // Captured motion/correction/current-input endpoints. Intermediate stationary
-        // inputs are constructed conditions; this does not claim full gameplay replay.
+
+
         try(var in=new java.io.InputStreamReader(getClass().getResourceAsStream("/recorded-motion-correction-endpoints.json"))) {
             var cases=com.google.gson.JsonParser.parseReader(in).getAsJsonObject().getAsJsonArray("cases");
             assertEquals(7,cases.size());
@@ -354,9 +354,9 @@ class PredictionRewindLifecycleTest {
                 for(long tick=source+1;tick<live;tick++)session.observeClient(AuthInputPacketsTest.input(tick,position.getX(),y,position.getZ(),new Vec3(0,-.0784F,0)));
                 session.player().getLatencyUtil().onResponse(131);
                 var observed=recordedVector(input.get("position").getAsString());
-                // Only the captured endpoint has an independent movement oracle.
-                // Constructed preparation at an arbitrary airborne position is not
-                // claimed to be a legitimate continuous trajectory.
+
+
+
                 alerts.clear();
                 var current=AuthInputPacketsTest.input(live,observed.getX(),observed.getY()-1.62001F,observed.getZ(),new Vec3(recordedVector(input.get("delta").getAsString())));
                 current.setPosition(observed);current.setRotation(recordedVector(input.get("rotation").getAsString()));session.observeClient(current);

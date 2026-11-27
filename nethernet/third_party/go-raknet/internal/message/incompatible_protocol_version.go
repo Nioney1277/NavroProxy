@@ -15,7 +15,7 @@ func (pk *IncompatibleProtocolVersion) UnmarshalBinary(data []byte) error {
 		return io.ErrUnexpectedEOF
 	}
 	pk.ServerProtocol = data[0]
-	// Magic: 16 bytes
+
 	pk.ServerGUID = int64(binary.BigEndian.Uint64(data[17:]))
 	return nil
 }

@@ -68,7 +68,7 @@ class ColliderLifecycleTest {
         assertNotNull(p.collisionPhysics.snapshot().movementQuery());
         assertFalse(p.movementCollisionEntries().isEmpty());
         assertEquals("minecraft:stone", p.movementCollisionEntries().get(0).block().identifier());
-        // Collider commits collision metadata; EntityTicker owns the later position update.
+
         assertTrue(actor.equals(p.boundingBox()));
         Collider.collideMove(p, world, fall);
         assertEquals(1, p.collisionPenetratingFrames());
@@ -141,7 +141,7 @@ class ColliderLifecycleTest {
         s.world().updateBlock(277, 3, 265, 0, dirt);
         s.world().updateBlock(277, 4, 265, 0, log);
         s.world().updateBlock(277, 5, 265, 0, log);
-        // Captured geometry: the client has fallen one block into the rejected dig.
+
         Box actor = new Box(276.4F, 3, 265.13882F, 277, 4.7999988F, 265.7388F);
         p.setResolvedPosition(actor.feetCenter(), actor, false);
         s.world().updateBlock(276, 3, 265, 0, grass);
@@ -212,7 +212,7 @@ class ColliderLifecycleTest {
     @Test void sneakControlUsesExplicitInputIncludingFalseAndAppliesVelocityClears() {
         SessionState s = session(); ground(s); metadata(s, EntityFlag.SNEAKING, true);
         Vec3 request = new Vec3(0.5F, -0.08F, 0.5F);
-        input(s); // A present input with no SNEAK_DOWN overrides the metadata flag.
+        input(s);
         assertEquals(0.5F, Collider.backOffFromEdge(s.player(), s.collisionWorld(), request).movement().x);
         input(s, PlayerAuthInputData.PERSIST_SNEAK);
         assertEquals(0.5F, Collider.backOffFromEdge(s.player(), s.collisionWorld(), request).movement().x);

@@ -12,8 +12,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Executes real session prediction/corrections. Packet selection and strict
- * confirmation expectations come from directly executing original Navro. */
+
+
 class NavroCorrectionAlignmentTest {
     @Test void nativeHardAndSmoothModesChooseTheSameCorrectionPacketsThroughRaknet() throws Exception {
         try(var in=new InputStreamReader(getClass().getResourceAsStream("/navro-correction-mode-reference.json"))) {
@@ -54,8 +54,8 @@ class NavroCorrectionAlignmentTest {
                 var input=AuthInputPacketsTest.input(row.get("tick").getAsLong(),row.get("target").getAsBoolean()?8:80,64,8,Vec3.ZERO);
                 if(row.get("handle").getAsBoolean())input.getInputData().add(PlayerAuthInputData.HANDLE_TELEPORT);
                 var processed=new ArrayList<Object>();state.teleports().drainReadyTeleports(input,processed::add);
-                // Reuse the native target/handle cases; Boar's independent clock
-                // deliberately removes the old client-frame ordering prerequisite.
+
+
                 int expected=row.get("target").getAsBoolean() && row.get("handle").getAsBoolean()?1:0;
                 assertEquals(expected,processed.size(),row.toString());
                 assertEquals(1-expected,state.teleports().getQueuedTeleports().size(),row.toString());
@@ -89,8 +89,8 @@ class NavroCorrectionAlignmentTest {
         var motion=new SetEntityMotionPacket();motion.setRuntimeEntityId(7);motion.setTick(9);
         motion.setMotion(org.cloudburstmc.math.vector.Vector3f.from(0,.4F,0));
         state.player().getLatencyUtil().queue(179,true);state.observeBackend(motion);
-        // The impulse was sent before our correction, but had not reached its
-        // prediction candidate when this canonical correction frame was captured.
+
+
         state.observeClient(AuthInputPacketsTest.input(10,80,64,8,Vec3.ZERO));
         assertEquals(1,corrections.size());
         assertTrue(state.teleports().hasPendingCorrection());

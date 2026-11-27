@@ -88,6 +88,13 @@ public final class TeleportHandler {
     }
 
     private void applyHardCorrection(CorrectionResetData reset, PlayerAuthInputPacket input, boolean acceptedInput) {
+        if(reset.vehicle()!=null) {
+            if(session.authInputPackets().vehicles().applyHardCorrection(reset)) {
+                session.resetMovementHistory();
+                session.teleports().setLastKnowValid(reset.getPosition().clone());
+            }
+            return;
+        }
         var player = session.player();
         var teleports = session.teleports();
         float offset = session.playerYOffset();

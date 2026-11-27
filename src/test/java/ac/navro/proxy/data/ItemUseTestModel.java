@@ -6,7 +6,7 @@ import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import java.util.*;
 
-/** Test-only native-boundary adapter. All capabilities are exported from actual native items. */
+
 public class ItemUseTestModel implements ItemUseTracker.Context<ItemUseTestModel.Item> {
     public static final class Item {
         public final int index;public final JsonObject profile;public int count;

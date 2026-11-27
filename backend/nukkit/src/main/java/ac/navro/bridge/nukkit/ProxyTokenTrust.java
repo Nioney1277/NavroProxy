@@ -15,7 +15,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
-/** The same RS256 issuer/audience and session-key claim used by the PMMP bridge. */
+
 final class ProxyTokenTrust implements TokenTrust {
     static final String ISSUER = "navro-proxy";
     static final String AUDIENCE = "urn:navro:nethernet-backend";

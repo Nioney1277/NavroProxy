@@ -25,6 +25,19 @@ public final class CommandRuntime {
         catch(java.io.IOException e) { System.err.println(e.getMessage()); }
     }
     public CheckConfig config() { return settings.checks(); }
+    public CommandSource commandSource() { return settings.commandSource(); }
+    public void bridgeCommand(SessionState caller, String action, String target, java.util.function.Consumer<String> reply) {
+        if (caller.commandSource()!=CommandSource.BRIDGE || !Set.of("debug","debug2","reload","proxyping").contains(action)) return;
+        var senderTarget=targets.values().stream().filter(t->t.state()==caller).findFirst().orElse(null);
+        if(senderTarget==null)return;
+        NavroCommand.execute(target.isEmpty()?List.of(action):List.of(action,target),new NavroCommand.Sender(){
+            public UUID identity(){return senderTarget.identity();}
+            public String name(){return caller.player().getName();}
+
+            public boolean hasPermission(String node){return node.equals(action.equals("reload")?"navro.reload":action.equals("proxyping")?"navro.proxyping":"navro.debug");}
+            public void sendMessage(String message){reply.accept(message);}
+        },null,this);
+    }
     public MessageConfig messages() { return settings.messages(); }
     public String message(String key,Map<String,?> values){return settings.messages().format(key,values);}
     public void useStartupDefaults(boolean smooth,long maxBalance) {

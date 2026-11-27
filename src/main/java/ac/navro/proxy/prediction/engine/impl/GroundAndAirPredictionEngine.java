@@ -26,7 +26,12 @@ public class GroundAndAirPredictionEngine extends PredictionEngine {
     @Override
     public Vec3 travel(Vec3 vec3) {
         org.cloudburstmc.math.vector.Vector3i blockPos = player.getBlockPosBelowThatAffectsMyMovement();
-        this.prevSlipperiness = player.onGround ? player.compensatedWorld.getBlockState(blockPos, 0).getFriction() : 1.0f;
+        var surface = player.compensatedWorld.getBlockState(blockPos, 0);
+
+
+        this.prevSlipperiness = player.onGround
+                ? surface.isAir() && surface.getNetworkState().declaredSlipperiness() == null ? 0.6F : surface.getFriction()
+                : 1.0F;
 
         final Vec3 result = this.halfRelativeMovementCalculate(vec3, this.prevSlipperiness);
 

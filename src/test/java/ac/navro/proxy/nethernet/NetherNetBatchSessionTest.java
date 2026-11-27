@@ -8,9 +8,9 @@ import java.util.*;
 import java.util.zip.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Actual native batch boundary, independent BDS handshake bytes and explicit
- * ACK invariants. No second model of the movement or ACK state machine.
- */
+
+
+
 class NetherNetBatchSessionTest {
     private static PlayerActionPacket action(){
         var p=new PlayerActionPacket();p.setAction(org.cloudburstmc.protocol.bedrock.data.PlayerActionType.JUMP);
@@ -19,7 +19,7 @@ class NetherNetBatchSessionTest {
     private static byte[] hex(String s){return HexFormat.of().parseHex(s);}
     private static void negotiate(NetherNetBatchSession s)throws Exception{
         assertEquals(List.of("RequestNetworkSettingsPacket"),s.process(false,hex("06c101000008b1")).packets());
-        // Actual direct BDS 1.26.63 probe response, saved in verification logs.
+
         assertEquals(List.of("NetworkSettingsPacket"),s.process(true,hex("0c8f0101000000000000000000")).packets());
     }
     @Test void remoteEntityRegistryAndMotionUseRealNetherNetFramesAndClosingAcknowledgment() throws Exception {
@@ -72,7 +72,7 @@ class NetherNetBatchSessionTest {
             negotiate(s);
             var start=new StartGamePacket();start.setRuntimeEntityId(7);
             start.setPlayerPosition(org.cloudburstmc.math.vector.Vector3f.from(8,64,8));
-            s.state().observeBackend(start); // external established-actor fixture
+            s.state().observeBackend(start);
             var data=new SetEntityDataPacket();data.setRuntimeEntityId(7);data.getMetadata().put(EntityDataTypes.HEIGHT,.6F);
             var result=s.process(true,s.encode(data));
             assertEquals(1,result.clientbound().size());
@@ -103,8 +103,8 @@ class NetherNetBatchSessionTest {
         try(var s=new NetherNetBatchSession(null)){
             negotiate(s);
             var login=new LoginPacket();login.setProtocolVersion(2225);
-            // Drive the same verifier through the decoded packet boundary. A
-            // guest payload cannot supply the missing DTLS key binding.
+
+
             login.setAuthPayload(new org.cloudburstmc.protocol.bedrock.data.auth.TokenPayload(
                     "synthetic-rejected-guest-token",org.cloudburstmc.protocol.bedrock.data.auth.AuthType.GUEST));
             login.setClientJwt("invalid");

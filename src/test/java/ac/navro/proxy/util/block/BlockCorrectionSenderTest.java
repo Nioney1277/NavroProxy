@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BlockCorrectionSenderTest {
     private static final Vector3i POS=Vector3i.from(8,64,8);
-    /** Drains the real library FIFO explicitly instead of waiting for its scheduled flush. */
+
     private static final class Peer extends BedrockPeer {
         Peer(EmbeddedChannel channel){super(channel,BedrockServerSession::new);}
         void flushNow(){super.flushPacketQueue();}

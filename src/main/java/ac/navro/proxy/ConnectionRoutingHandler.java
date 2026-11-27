@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-/** Selects detection or native forwarding before installing Bedrock decoding/encryption. */
+
 final class ConnectionRoutingHandler extends ChannelInboundHandlerAdapter {
     private final int raknetVersion;
     private final Consumer<Channel> detection;

@@ -10,10 +10,10 @@ type OpenConnectionRequest2 struct {
 	ServerAddress netip.AddrPort
 	MTU           uint16
 	ClientGUID    int64
-	// ServerHasSecurity specifies if the server has security enabled (and thus
-	// a cookie must be sent in this packet). This field is NOT written in this
-	// packet, so it must be set appropriately even when calling
-	// UnmarshalBinary.
+
+
+
+
 	ServerHasSecurity bool
 	Cookie            uint32
 }
@@ -45,7 +45,7 @@ func (pk *OpenConnectionRequest2) UnmarshalBinary(data []byte) error {
 	if len(data) < 16+cookieOffset || len(data) < 26+cookieOffset+addrSize(data[16+cookieOffset:]) {
 		return io.ErrUnexpectedEOF
 	}
-	// Magic: 16 bytes.
+
 	if pk.ServerHasSecurity {
 		pk.Cookie = binary.BigEndian.Uint32(data[16:])
 	}

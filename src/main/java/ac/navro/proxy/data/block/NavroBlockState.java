@@ -108,6 +108,7 @@ public final class NavroBlockState {
     }
     public float getFriction() {
         if (networkState.declaredSlipperiness() != null) return networkState.declaredSlipperiness();
+        if (networkState.bedrockProperties() != null) return networkState.bedrockProperties().friction();
         int id = nativeId();
         if (id == NativeIds.BlockID.ICE || id == NativeIds.BlockID.PACKED_ICE || id == NativeIds.BlockID.FROSTED_ICE) {
             return 0.98F;

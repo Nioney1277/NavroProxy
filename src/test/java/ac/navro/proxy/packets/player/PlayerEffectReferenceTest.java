@@ -33,8 +33,8 @@ class PlayerEffectReferenceTest {
                     var row=JsonParser.parseString(in.readLine()).getAsJsonObject(); int op=row.get("op").getAsInt();
                     switch (op) {
                         case 0 -> {
-                            // This fixture supplies ACK scheduling outside the effects boundary.
-                            // The encoded closing-marker path is exercised separately.
+
+
                             w.getLatencyUtil().queue(row.get("marker").getAsLong(),true);
                             var packet=packet(row.get("entity").getAsLong(), MobEffectPacket.Event.values()[row.get("event").getAsInt()],
                                     row.get("effect").getAsInt(),row.get("amplifier").getAsInt(),row.get("duration").getAsInt());

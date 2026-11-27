@@ -1,40 +1,45 @@
-# Detection and movement settings.
-# Messages are in messages.yml; violation actions are in punishments.yml.
 
-# How many ticks of history are contained in the client's rolling window for use when receiving corrections.
-# At 20 ticks per second a history size of 40 means that a correction could still be processed with rewind with
-# two seconds of two-way latency
-# NOTE: This is not "that" important on Navro.
+
+
+
+
+command-source: proxy
+
+
+
+
+
 player-rewind-history-size-ticks: 20
 
-# Enable smooth movement setbacks using CorrectPlayerMovePredictionPacket.
-# false uses a MovePlayer teleport, restores validated velocity and waits for target confirmation.
-# Vehicle movement always uses the dedicated vehicle prediction correction.
+
+
+
+
 smooth-setback: false
 
-# This is the tolerance of discrepancies between the Client and Server Player position. This helps prevent sending corrections too frequently
-# NOTE: Again, Navro can handle small offset just fine and does account for lag, however keep in mind that Navro can't handle (that well)
-# any offset smaller than 5.0E-5
+
+
+
 player-position-acceptance-threshold: 1.0E-4
 
-# How many discrepancies between the Client and Server Player position needed to be before the anticheat send alert message
-# NOTE: This is NOT tolerance of discrepancies (that's player-position-acceptance-threshold), this will still do silent
-# correction unless you change player-position-acceptance-threshold.
-# This configuration exists so that some falses or other stuff won't keep spamming the chat/logs.
+
+
+
+
 differ-till-alert: 0.0
 
-# Checks that you want Navro to disable.
-# Check names use "Name-Type" when a type exists, or "Name" otherwise.
-# For example: Sprint-A, Timer, RotationPlace or Elytra-A.
-# BadPacketsC checks respawn requests before acknowledged death.
-# Input tick validation is internal and is not controlled by disabled-checks.
+
+
+
+
+
 disabled-checks: []
 
-# How long do we wait for player to respond to latency confirmation/acknowledgements till we kicked the player for timed out.
-# This value shouldn't be too low to account for lagging player and shouldn't be too high so cheaters won't be able to stop responding to latency for too long.
+
+
 max-latency-wait: 15000
 
-# How much balance advantage (in milliseconds) player can gain before the anticheat forcefully set player back (regardless if the player is lagging or not)
-# This is to prevent lagging player (or cheaters pretend to be one) gain too much advantage by.... lagging.
-# Set this to 0 to disable the balance-advantage limit.
+
+
+
 max-balance-advantage: 8500

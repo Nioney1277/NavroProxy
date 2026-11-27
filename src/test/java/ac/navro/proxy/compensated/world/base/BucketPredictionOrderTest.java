@@ -9,7 +9,7 @@ class BucketPredictionOrderTest {
     private static final int AIR = 100, SNOW = 200, WATER = 300, FLOWING_WATER = 301;
     private static final int X = 136, Y = 66, Z = 52;
 
-    /** Uses real cached sections and the production ACK queue, without a running server palette. */
+
     private static final class World extends CompensatedWorld {
         World() { super(); put(X >> 4, Z >> 4, emptyChunk()); }
 
@@ -35,7 +35,7 @@ class BucketPredictionOrderTest {
         latency.queue(3574, true, () -> world.applyAcknowledgedBlock(X, Y, Z, 0, SNOW, placement));
         world.predictBucketNetworkBlock(X, Y, Z, 0, AIR);
         final long pickup = world.bucketPredictionRevision();
-        // A denied pickup must eventually restore the server's authoritative snow.
+
         latency.queue(3576, true, () -> world.applyAcknowledgedBlock(X, Y, Z, 0, SNOW, pickup));
         assertEquals(AIR, world.state(X, Y, Z, 0));
         assertTrue(latency.onResponse(3574));
@@ -91,7 +91,7 @@ class BucketPredictionOrderTest {
         world.putAcknowledgedChunk(X >> 4, Z >> 4, packetChunk, sent);
         assertEquals(AIR, world.state(X, Y, Z, 0));
         assertEquals(WATER, world.state(X + 1, Y, Z, 0));
-        // A later chunk snapshot is authoritative and can reject the pickup.
+
         final var correction = emptyChunk();
         correction.setFullBlock(X & 15, Y, Z & 15, 0, SNOW);
         world.putAcknowledgedChunk(X >> 4, Z >> 4, correction, world.bucketPredictionRevision());

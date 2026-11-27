@@ -38,7 +38,7 @@ class PredictionStagesReferenceTest {
                 p.inputData=stop?Set.of(PlayerAuthInputData.STOP_SNEAKING):Set.of();
                 Vec3 nativeTrial=read(in),nativeCommit=read(in);
                 Vec3 trial=PlayerTicker.scaleMovementInput(p,raw,false),commit=PlayerTicker.scaleMovementInput(p,raw,true);
-                // Boar consumes the real direction instead of Navro's synthetic forward input.
+
                 boolean nativeForcedForward=sprint&&!swim&&!p.doingInventoryAction&&raw.z<=0;
                 if(!nativeForcedForward){same(nativeTrial,trial);same(nativeCommit,commit);}
                 else {

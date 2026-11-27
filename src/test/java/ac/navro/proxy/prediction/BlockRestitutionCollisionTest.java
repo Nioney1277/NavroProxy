@@ -60,7 +60,7 @@ class BlockRestitutionCollisionTest {
     }
 
     @Test void horizontalContactBesideABedOrSlimeDoesNotCreateBlockRestitutionOrGravityCorrection() {
-        // The SO registers ComputeBlockRestitutionSystem with Include<VerticalCollisionFlagComponent>.
+
         for(int id:new int[]{26,165})for(boolean x:new boolean[]{false,true})for(boolean z:new boolean[]{false,true}){
             var surface=new CollisionShapeEntry(new Box(304,4,252,305,4.5625F,253),block(id));
             var box=new Box(305,4.7967362F,252.23724F,305.59998F,6.596736F,252.83725F);
@@ -74,7 +74,7 @@ class BlockRestitutionCollisionTest {
     }
 
     @Test void realVerticalBedAndSlimeLandingsRetainTheirNativeCoefficients() {
-        // BedBlock getter 0x10A1EE68 returns .75; SlimeBlock getter 0x10FF8A48 returns 1.
+
         for(int id:new int[]{26,165}){
             float coefficient=id==26?.75F:1;
             var surface=new CollisionShapeEntry(new Box(0,0,0,1,.5625F,1),block(id));

@@ -24,8 +24,8 @@ class AlertCommandTest {
         var sender=new NavroCommand.Sender(){public UUID identity(){return ID;}public boolean hasPermission(String n){return false;}public void sendMessage(String m){messages.add(m);}};
         assertTrue(NavroCommand.handle("/navro",sender,manager,null));
         assertTrue(NavroCommand.handle("/navro:navro",sender,manager,null));
-        assertEquals(List.of(PREFIX+"Usage: /navro alert",PREFIX+"Usage: /navro reload",PREFIX+"Usage: /navro debug <player>",PREFIX+"Usage: /navro debug2 [player]",
-                PREFIX+"Usage: /navro alert",PREFIX+"Usage: /navro reload",PREFIX+"Usage: /navro debug <player>",PREFIX+"Usage: /navro debug2 [player]"),messages);
+        assertEquals(List.of(PREFIX+"Usage: /navro alert",PREFIX+"Usage: /navro reload",PREFIX+"Usage: /navro debug <player>",PREFIX+"Usage: /navro debug2 [player]",PREFIX+"Usage: /navro proxyping [player]",
+                PREFIX+"Usage: /navro alert",PREFIX+"Usage: /navro reload",PREFIX+"Usage: /navro debug <player>",PREFIX+"Usage: /navro debug2 [player]",PREFIX+"Usage: /navro proxyping [player]"),messages);
         assertFalse(manager.hasAlert(ID));
     }
     @Test void originalPermissionDenialToggleAndOptInDeliverySurviveReconnectAndPermissionRemoval()throws Exception{
@@ -58,7 +58,7 @@ class AlertCommandTest {
         assertEquals(44,count);assertEquals(Set.of("nukkit","pmmp"),engines);
     }
     @Test void commandAdvertisementIsIdempotentAndEncodesWithTheProtocolCodec(){
-        var packet=new AvailableCommandsPacket();NavroCommand.advertise(packet);NavroCommand.advertise(packet);assertEquals(1,packet.getCommands().size());var command=packet.getCommands().get(0);assertEquals("Navro anticheat management",command.getDescription());assertEquals(Set.of("alert","reload","debug","debug2"),command.getOverloads()[0].getOverloads()[0].getEnumData().getValues().keySet());
+        var packet=new AvailableCommandsPacket();NavroCommand.advertise(packet);NavroCommand.advertise(packet);assertEquals(1,packet.getCommands().size());var command=packet.getCommands().get(0);assertEquals("Navro anticheat management",command.getDescription());assertEquals(Set.of("alert","reload","debug","debug2","proxyping"),command.getOverloads()[0].getOverloads()[0].getEnumData().getValues().keySet());
         for(int protocol:new int[]{924,944,975,1001,2168,2169,2193,2225}){
             var codec=SupportedCodecs.forProtocol(protocol);var buffer=Unpooled.buffer();
             try{

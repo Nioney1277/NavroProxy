@@ -18,12 +18,14 @@ public final class BackendStateSync {
     private static final int MAX_ALERT_BYTES = 4096;
     private final SessionState state;
     private final java.util.function.LongSupplier clock;
-    private String nonce;
+    private volatile String nonce;
     private long sequence=-1, receivedAt;
     private int tick;
     private boolean active;
     private boolean pocketMineAlerts;
     private boolean nukkitAlerts;
+    private volatile boolean commandBridgeReady;
+    private long commandSequence=-1;
     private NetworkBlockStateRegistry.RuntimePalette pendingPalette;
     private StringBuilder paletteParts;
     private int expectedPart, palettePartCount;
@@ -33,6 +35,7 @@ public final class BackendStateSync {
     }
     public void reset() {
         nonce=null;sequence=-1;tick=0;active=false;pocketMineAlerts=false;nukkitAlerts=false;receivedAt=0;
+        commandBridgeReady=false;commandSequence=-1;
         pendingPalette = null;
         paletteParts = null;
         expectedPart = palettePartCount = 0;
@@ -116,7 +119,17 @@ public final class BackendStateSync {
             receivePalette(message);
             return true;
         }
+        if(nonce!=null&&message.startsWith("command|")) {
+            receiveCommand(message);return true;
+        }
         if (nonce == null || message.length() > 256) return true;
+        if(message.equals("commands_ready|"+nonce)) {
+            if(!(pocketMineAlerts||nukkitAlerts))return true;
+            commandBridgeReady=true;
+            var mode=new ScriptMessagePacket();mode.setChannel(CHANNEL);
+            mode.setMessage("commands|"+nonce+"|"+state.commandSource().value());
+            state.sendBackendSync(mode);return true;
+        }
         if (message.equals("pm_ready|" + nonce)) {
             pocketMineAlerts = true;
             return true;
@@ -139,6 +152,27 @@ public final class BackendStateSync {
         return true;
     }
     public boolean available() { return active&&clock.getAsLong()-receivedAt<1_000_000_000L; }
+    private void receiveCommand(String message) {
+        if(!commandBridgeReady||state.proxyCommands()||message.length()>1024)return;
+        String[] parts=message.split("\\|",-1);
+        if(parts.length!=5||!nonce.equals(parts[1])||!java.util.Set.of("debug","debug2","reload","proxyping").contains(parts[3]))return;
+        try {
+            long next=Long.parseLong(parts[2]);
+            if(next<0||next<=commandSequence)return;
+            String target=new String(Base64.getDecoder().decode(parts[4]),StandardCharsets.UTF_8);
+            if(target.length()>64||target.chars().anyMatch(Character::isISOControl)
+                    ||parts[3].equals("reload")&&!target.isEmpty())return;
+            commandSequence=next;
+            String connectionNonce=nonce;
+            state.bridgeCommand(parts[3],target,text->{
+                if(!commandBridgeReady||!connectionNonce.equals(nonce)||state.proxyCommands())return;
+                byte[] bytes=text.getBytes(StandardCharsets.UTF_8);if(bytes.length>4096)return;
+                var reply=new ScriptMessagePacket();reply.setChannel(CHANNEL);
+                reply.setMessage("command_reply|"+connectionNonce+"|"+parts[3]+"|"+Base64.getEncoder().encodeToString(bytes));
+                state.sendBackendSync(reply);
+            });
+        } catch(IllegalArgumentException ignored) { }
+    }
     public boolean isPocketMine() { return pocketMineAlerts; }
     public boolean hasBackendCommands() { return pocketMineAlerts || nukkitAlerts; }
     public boolean hasRuntimePalette() { return pendingPalette != null; }

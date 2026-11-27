@@ -41,7 +41,10 @@ public final class ConfigLoader {
         }
         checks=new CheckConfig(messages.prefix(),checks.rewindHistory(),checks.smoothSetback(),
                 checks.acceptanceThreshold(),checks.alertThreshold(),checks.disabledChecks(),checks.maxLatencyWait(),checks.maxBalanceAdvantage());
-        return new RuntimeConfiguration(checks,messages,punishments);
+        CommandSource source;
+        try { source=CommandSource.parse(legacy.containsKey("command-source")?legacy.get("command-source"):"proxy"); }
+        catch (IllegalArgumentException error) { throw new IOException(error.getMessage(),error); }
+        return new RuntimeConfiguration(checks,messages,punishments,source);
     }
     private static void ensureResource(Path file,String resourceName)throws IOException {
         if(Files.exists(file))return;

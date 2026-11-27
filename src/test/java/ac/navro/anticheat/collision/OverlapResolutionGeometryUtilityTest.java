@@ -6,10 +6,10 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Geometry utility contract: separate overlapping AABBs along their nearest face.
- * Expectations below are exact binary fractions derived from the supplied bounds,
- * independent of the implementation. No gameplay or client-recording claim.
- */
+
+
+
+
 class OverlapResolutionGeometryUtilityTest {
     @Test void nearestSeparatingFaceHandlesAllSixDirectionsAndDifferentOverlapDepths() {
         var solid = new Box(0, 0, 0, 1, 1, 1);

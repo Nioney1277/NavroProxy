@@ -18,10 +18,11 @@ public final class NavroCommand {
     }
     public static Set<String> advertise(AvailableCommandsPacket packet) {
 
-        packet.getCommands().removeIf(c->"navro".equalsIgnoreCase(c.getName()));
+        packet.getCommands().removeIf(c->"navro".equalsIgnoreCase(c.getName())
+                ||c.getName().toLowerCase(Locale.ROOT).endsWith(":navro"));
         var subcommand=new CommandParamData();subcommand.setName("subcommand");subcommand.setOptional(true);
         var values=new LinkedHashMap<String,Set<CommandEnumConstraint>>();
-        for(String name:List.of("alert","reload","debug","debug2"))values.put(name,Set.of());
+        for(String name:List.of("alert","reload","debug","debug2","proxyping"))values.put(name,Set.of());
         subcommand.setEnumData(new CommandEnumData("NavroSubcommand",values,false));
         var player=new CommandParamData();player.setName("player");player.setType(CommandParam.STRING);player.setOptional(true);
         packet.getCommands().add(new CommandData("navro","Navro anticheat management",Set.of(),
@@ -48,8 +49,25 @@ public final class NavroCommand {
         var args=CommandArguments.parseArguments(command.startsWith("/")?command.substring(1):command);
         if(args.isEmpty()||!names.contains(args.get(0).toLowerCase(Locale.ROOT)))return false;
         args.remove(0);
+        return execute(args,sender,manager,runtime);
+    }
+
+    public static boolean execute(List<String> args,Sender sender,AlertManager manager,CommandRuntime runtime) {
         if(args.isEmpty()){usage(sender,manager,runtime);return true;}
         String sub=args.get(0);
+        if("proxyping".equalsIgnoreCase(sub)) {
+            if(!permission(sender,"navro.proxyping",manager,runtime))return true;
+            if(args.size()>2||args.size()<2&&!sender.isPlayer()) {
+                reply(sender,manager,runtime,"usage",Map.of("usage","proxyping [player]"));return true;
+            }
+            var target=runtime.find(args.size()==2?args.get(1):sender.name());
+            if(target==null){reply(sender,manager,runtime,"player-not-found",Map.of());return true;}
+            var state=target.state();long rtt=state.player().getLatencyUtil().lastClientRoundTripNanos();
+            reply(sender,manager,runtime,"proxyping",Map.of("player",state.player().getName(),
+                    "upstream",state.forwardingLatency().sample(false).display(),"downstream",state.forwardingLatency().sample(true).display(),
+                    "rtt",rtt<0?"暂无样本":String.format(Locale.ROOT,"%.2f ms",rtt/1_000_000D)));
+            return true;
+        }
         if("alert".equalsIgnoreCase(sub)) {
             if(!permission(sender,"navro.alert",manager,runtime))return true;
             boolean enabled=!manager.hasAlert(sender.identity());
@@ -82,7 +100,7 @@ public final class NavroCommand {
         reply(sender,manager,runtime,"no-permission",Map.of());return false;
     }
     private static void usage(Sender sender,AlertManager manager,CommandRuntime runtime) {
-        for(String line:List.of("alert","reload","debug <player>","debug2 [player]"))
+        for(String line:List.of("alert","reload","debug <player>","debug2 [player]","proxyping [player]"))
             reply(sender,manager,runtime,"usage",Map.of("usage",line));
     }
     private static void reply(Sender sender,AlertManager manager,CommandRuntime runtime,String key,Map<String,?> values) {

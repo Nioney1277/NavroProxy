@@ -144,7 +144,7 @@ class PlacementPipelineLifecycleTest {
         var alerts = new ArrayList<String>();
         s.player().setAlertSink(alerts::add);
         history(s, 180);
-        // Synthetic miss: both camera endpoints face away, so interpolation cannot hit.
+
         var next = input(3, 180);
         next.setRotation(Vector3f.from(0, 180, 0));
         assertFalse(s.receiveClient(transaction(), 8500));
@@ -234,8 +234,8 @@ class PlacementPipelineLifecycleTest {
         embedded.setBlockPosition(Vector3i.from(8, 65, 10));
         embedded.setBlockFace(2);
         embedded.setHotbarSlot(0);
-        // The compensated slot contains stone; this claimed apple must be
-        // rejected by the real transaction validator before movement is observed.
+
+
         embedded.setItemInHand(
                 ItemData.builder()
                         .definition(new SimpleItemDefinition("minecraft:apple", 260, false))

@@ -17,7 +17,7 @@ func (pk *OpenConnectionReply2) UnmarshalBinary(data []byte) error {
 	if len(data) < 24 || len(data) < 27+addrSize(data[24:]) {
 		return io.ErrUnexpectedEOF
 	}
-	// Magic: 16 bytes.
+
 	pk.ServerGUID = int64(binary.BigEndian.Uint64(data[16:]))
 	pk.ClientAddress, _ = addr(data[24:])
 	offset := addrSize(data[24:])

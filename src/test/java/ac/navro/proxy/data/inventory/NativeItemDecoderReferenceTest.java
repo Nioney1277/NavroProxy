@@ -49,7 +49,7 @@ class NativeItemDecoderReferenceTest {
                 assertSame(decoded,NativeItemDecoder.decode(protocol,decoded,format),label);
                 assertEquals(traits,NativePredictionItems.resolve(protocol,ItemUtil.copy(decoded)),label);
                 assertEquals(tag,raw.getTag(),label);assertEquals(damage,raw.getDamage(),label);assertEquals(name,raw.getDefinition().getIdentifier(),label);
-                // Both implementations consume these exact bytes, with connection definitions installed.
+
                 var codec=SupportedCodecs.forProtocol(protocol);
                 if(format==NativeItemDecoder.Format.INVENTORY&&codec!=null){
                     var definitions=new ProtocolDefinitions();var start=new StartGamePacket();start.getItemDefinitions().add(raw.getDefinition());definitions.observeBackend(start);

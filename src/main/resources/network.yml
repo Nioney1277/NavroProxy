@@ -1,19 +1,19 @@
-# Used by bin/navro-proxy when it is started without command-line options.
-# Choose the client and backend transports independently.
+
+
 frontend: raknet
 listen: 0.0.0.0:19132
 backend-transport: raknet
 backend-address: 127.0.0.1:19133
-# auto selects native for RakNet backends, private for NetherNet backends.
-# A remote NetherNet backend-address must use https://host:port.
+
+
 backend-auth: auto
 backend-type: navro
 adapter-port: 19138
 smooth-setback: false
 backend-encryption: false
-# Required for either backend transport when backend-auth: pmmp-ng.
+
 backend-signing-key: keys/navro-backend.pem
-# Optional when the client frontend is nethernet.
+
 local-ip: ""
 block-palettes: []
 backend-state-sync: false

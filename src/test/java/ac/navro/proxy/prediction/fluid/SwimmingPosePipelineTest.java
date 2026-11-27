@@ -20,11 +20,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Constructed protocol scenarios at SessionState's post-check input boundary.
- * Expected ownership/order comes from Navro AuthInputPackets/PredictionRunner,
- * FluidMovement.prepare and applyClientVisibleMovementMetadata. These are not
- * recordings of legitimate walking or swimming trajectories.
- */
+
+
+
+
+
 class SwimmingPosePipelineTest {
     private static int block(String name, int data) {
         return NetworkBlockStateRegistry.forProtocol(2193, false).states().values().stream()
@@ -140,8 +140,8 @@ class SwimmingPosePipelineTest {
                     List.of(NbtMap.builder().putShort("id", (short)30).putShort("lvl", (short)3).build())).build()).build();
             s.inventory().inventoryContainer.set(0, trident);
             s.inventory().heldItemSlot = 0;
-            // A charged held item is the initial condition; real release validation,
-            // riptide preparation, pose update and travel all execute below.
+
+
             s.authInputPackets().itemUse().sinceTridentUse(12);
             var release = new InventoryTransactionPacket();
             release.setTransactionType(InventoryTransactionType.ITEM_RELEASE);

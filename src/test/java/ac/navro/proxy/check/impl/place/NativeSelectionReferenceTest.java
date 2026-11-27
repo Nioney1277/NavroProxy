@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.io.DataInputStream;
 import java.util.zip.GZIPInputStream;
 
-/** Utility contract: lossless decoding/translation of independently exported native bounds. */
+
 class NativeSelectionReferenceTest {
     @Test
     void selectionTableDecodingUtilityPreservesNativeFactsAndUnsortedBounds() throws Exception {
@@ -72,7 +72,7 @@ class NativeSelectionReferenceTest {
                 };
                 int[] translation = {1, -64, 7, 1, -64, 7};
                 for (int axis = 0; axis < 6; axis++) {
-                    // Translation and double-to-float conversion are the utility contract.
+
                     assertEquals(
                             Float.floatToRawIntBits(
                                     (float) (expectedBounds[axis] + translation[axis])),

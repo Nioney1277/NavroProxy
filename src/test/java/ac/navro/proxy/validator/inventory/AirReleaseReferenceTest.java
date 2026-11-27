@@ -30,7 +30,7 @@ class AirReleaseReferenceTest {
                     public InventoryTransactionPacket releaseItemData(InventoryTransactionPacket p){return b(r,"releaseData")?p:null;}public ItemUseTracker<ItemUseTestModel.Item> tracker(){return tracker;}public ItemUseTestModel.Item nativeItem(ItemData item){assertSame(heldData,item);return held;}
                     public ItemUseTestModel.Item serverHeldItem(){events.add("serverInventory");if(!b(r,"hasInventory"))throw new NullPointerException();events.add("serverHeld");return model.item(i(r,"serverHeld"));}
                     public int riptideLevel(ItemUseTestModel.Item item){return item==null||model.isNull(item)?0:item.profile.get("riptide").getAsInt();}
-                    // Test binding of the separate native PlayerData.setDirtyRiptide boundary.
+
                     public void setDirtyRiptide(int charge,ItemUseTestModel.Item item){if(charge<10||riptideLevel(item)<=0)return;riptide[0]=model.cloneItem(item);dirty.set(true);}
                 };
                 java.util.function.IntSupplier flight=()->{if(!r.get("flightError").getAsString().isEmpty())throw new ClassCastException();return i(r,"flight");};

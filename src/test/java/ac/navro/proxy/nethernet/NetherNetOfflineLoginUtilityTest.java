@@ -12,10 +12,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Utility contract: independently verify the newly signed offline JWTs and
- * their binding to the actual upstream key. Does not substitute for Microsoft
- * login validation or claim a full BDS player login.
- */
+
+
+
+
 class NetherNetOfflineLoginUtilityTest {
     static KeyPair keys()throws Exception{
         var generator=KeyPairGenerator.getInstance("EC");generator.initialize(new ECGenParameterSpec("secp384r1"));return generator.generateKeyPair();

@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Exercises the placement commit boundary, not the unconnected live click dispatcher. */
+
 class DecodedPlacementLifecycleTest {
     record Case(int protocol,NativeItemDecoder.Format format,Integer number,String name,int raw,String shell,int runtime,
                 NativeItemPlacementProperties.Properties properties) {

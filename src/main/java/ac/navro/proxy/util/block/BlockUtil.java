@@ -2,6 +2,7 @@ package ac.navro.proxy.util.block;
 
 import org.cloudburstmc.math.vector.Vector3i;
 import ac.navro.proxy.data.block.NativeBlockProperties;
+import ac.navro.proxy.data.block.BlockBreakState;
 import ac.navro.proxy.data.block.NetworkBlockState;
 import ac.navro.proxy.data.vanilla.GameType;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
@@ -51,7 +52,14 @@ public final class BlockUtil {
     }
 
     public static boolean determineCanBreak(final GameType gameType, final NetworkBlockState state) {
-        return determineCanBreak(gameType, NativeBlockProperties.forState(state));
+        return determineCanBreak(gameType, new BlockBreakState(state, NativeBlockProperties.forState(state)));
+    }
+
+    public static boolean determineCanBreak(final GameType gameType, final BlockBreakState state) {
+        var physical = state.networkState().bedrockProperties();
+        if (physical == null) return determineCanBreak(gameType, state.nativeState());
+        if (state.isAir() || physical.liquid()) return false;
+        return state.hardness() != -1 || gameType == GameType.CREATIVE;
     }
 
     public static Vector3i getBlockPosition(Vector3i blockPos, int face) {

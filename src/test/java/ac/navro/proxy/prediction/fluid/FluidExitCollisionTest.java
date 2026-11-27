@@ -15,12 +15,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Constructed geometry at the production exit-query and travel boundaries.
- * Contract: NavroPlayer.doesNotCollide -> CompensatedWorldImpl.noCollision uses
- * intersecting nearby actors and an ordinary block query, followed by the fluid
- * veto. LivingTicker.travelInFluid sets Y to 0.3F only for a clear exit.
- * These scenarios do not claim to replay legitimate client swimming.
- */
+
+
+
+
+
+
 class FluidExitCollisionTest {
     private static int block(String name) {
         return NetworkBlockStateRegistry.forProtocol(2193, false).states().values().stream()

@@ -29,7 +29,7 @@ public class AuthInputPacketsTest {
             s.player().getLatencyUtil().onResponse(700);
         }
         s.observeClient(new SetLocalPlayerAsInitializedPacket());s.player().inLoadingScreen=false;s.player().sinceLoadingScreen=20;
-        // This established-actor fixture starts immediately before input 10.
+
         s.player().commitInputTick(9);
         s.player().setCollisionResult(false,false,true);s.setDetectionEnabled(true);
         return s;
@@ -68,7 +68,7 @@ public class AuthInputPacketsTest {
         assertTrue(alerts.stream().anyMatch(a->a.contains("Horizonal")),alerts.toString());
         s.observeClient(input(11,80,64,8,Vec3.ZERO));assertSame(reset,s.teleports().getQueuedTeleports().peek());
         var confirmation=input(12,8,64,8,Vec3.ZERO);confirmation.setPosition(moves.get(0).getPosition());confirmation.getInputData().add(PlayerAuthInputData.HANDLE_TELEPORT);
-        // Original correction reset does not require the NSL marker to arrive first.
+
         s.observeClient(confirmation);assertFalse(s.teleports().isTeleporting());assertEquals(8,s.player().position().x);assertEquals(64,s.player().position().y);assertEquals(0,s.player().velocity().y);
     }
     @Test void externalVelocityOnlyBecomesCandidateAfterItsOwnAcknowledgment(){

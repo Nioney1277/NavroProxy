@@ -14,6 +14,14 @@ public final class CorrectionResetData extends TeleportData {
     private volatile boolean motionSent;
     private long externalMotionSequence = -1;
     private ac.navro.proxy.prediction.engine.data.Vector includedExternalImpulse;
+    public record VehicleState(ac.navro.proxy.compensated.cache.entity.EntityCache actor,
+                               Vec3 velocity,float yaw,boolean grounded,Float angularVelocity) { }
+    private VehicleState vehicle;
+    public VehicleState vehicle() { return vehicle; }
+    public void bindVehicle(ac.navro.proxy.compensated.cache.entity.EntityCache actor,Vec3 velocity,
+                            float yaw,boolean grounded,Float angularVelocity) {
+        vehicle=new VehicleState(actor,velocity.clone(),yaw,grounded,angularVelocity);
+    }
 
     public void bindExternalMotion(long sequence, ac.navro.proxy.prediction.engine.data.Vector impulse) {
         externalMotionSequence = sequence;
@@ -48,6 +56,8 @@ public final class CorrectionResetData extends TeleportData {
     public Vec3 nativeTargetFoot() { return physicalTarget.clone(); }
 
     public boolean confirmedBy(final PlayerAuthInputPacket packet) {
+        if(vehicle!=null && (packet.getPredictedVehicle()!=vehicle.actor().runtimeId()
+                ||!packet.getInputData().contains(PlayerAuthInputData.IN_CLIENT_PREDICTED_IN_VEHICLE)))return false;
         return packet.getTick() >= 0 && matchesConfirmation(new Vec3(packet.getPosition()),
                 packet.getInputData().contains(PlayerAuthInputData.HANDLE_TELEPORT));
     }

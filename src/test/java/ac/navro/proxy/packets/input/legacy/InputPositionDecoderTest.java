@@ -8,7 +8,7 @@ class InputPositionDecoderTest {
     private static final float OFFSET = 1.62001F;
 
     @Test void capturedPreSpawnEchoKeepsItsFootY() {
-        // Captured raw echo at Y=65 incorrectly decoded to 63.379997 before.
+
         final boolean movement = InputPositionDecoder.usesMovementCoordinates(false, false);
         final var foot = InputPositionDecoder.decode(Vector3f.from(143.5F, 65.0F, 105.5F), OFFSET, movement);
         assertFalse(movement);

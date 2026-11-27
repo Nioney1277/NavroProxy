@@ -71,7 +71,7 @@ class ServerMovementLifecycleTest {
                 assertEquals(packet.getPosition(), encoded.getPosition());
                 assertTrue(encoded.isOnGround());
 
-                // Even a target echo cannot confirm a move before its batch ACK.
+
                 f.input(1, packet.getPosition(), true);
                 assertSame(queued, f.state.teleports().getQueuedTeleports().peek());
                 vector(8, 64, 8, player.position());

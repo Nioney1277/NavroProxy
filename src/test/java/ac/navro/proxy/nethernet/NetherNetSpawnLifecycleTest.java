@@ -12,11 +12,11 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Real BDS 1.26.63.1 startup frames captured by an independent Gophertunnel
- * connection on 2026-11-15. The fixture supplies a flat floor and input facts;
- * the native packet boundary performs ACK dispatch, prediction and checks.
- * This verifies spawn synchronization, not general BDS movement parity.
- */
+
+
+
+
+
 class NetherNetSpawnLifecycleTest {
     private static byte[] recording(String name)throws Exception{
         try(var in=new GZIPInputStream(NetherNetSpawnLifecycleTest.class.getResourceAsStream(
@@ -44,8 +44,8 @@ class NetherNetSpawnLifecycleTest {
         s.process(false,s.encode(p));
     }
     private static PlayerAuthInputPacket input(long tick){
-        // Position/delta/flags are the user's live tick 86 and subsequent
-        // stationary frames. Only the tick numbering is normalized to 0..N.
+
+
         var p=AuthInputPacketsTest.input(tick,.5F,-60,.5F,
                 tick==0?Vec3.ZERO:new Vec3(0,-.0784F,0));
         p.setPosition(Vector3f.from(.5F,-58.37999F,.5F));
@@ -78,8 +78,8 @@ class NetherNetSpawnLifecycleTest {
                 assertEquals(-60,s.state().player().position().y);
             }
             assertTrue(alerts.isEmpty(),alerts.toString());
-            // Explicitly invalid follow-up: server spawn synchronization must
-            // not become permission to accept arbitrary client positions.
+
+
             var invalid=input(13);invalid.setPosition(Vector3f.from(.5F,-59.0F,.5F));
             s.process(false,s.encode(invalid));
             assertTrue(alerts.stream().anyMatch(a->a.contains("Phase")),alerts.toString());
@@ -166,9 +166,9 @@ class NetherNetSpawnLifecycleTest {
             ack(s);
             s.process(false,s.encode(new SetLocalPlayerAsInitializedPacket()));finishLoading(s);
             s.process(false,s.encode(input(0)));
-            // Explicitly stationary (invalid after an impulse), not a fabricated
-            // legitimate knockback trajectory. The real solver must advance
-            // using the later server motion instead of predicting no movement.
+
+
+
             s.process(false,s.encode(input(1)));
             var prediction=s.state().authInputPackets().lastResult();
             assertNotNull(prediction);assertTrue(prediction.predictedPosition().x>.8F,prediction.toString());

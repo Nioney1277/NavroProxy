@@ -44,8 +44,8 @@ func (h listenerConnectionHandler) close(conn *Conn) {
 	h.l.connections.Delete(resolve(conn.raddr))
 }
 
-// cookie calculates a cookie for the net.Addr passed. It is calculated as a
-// hash of the random cookie salt and the address.
+
+
 func (h listenerConnectionHandler) cookie(addr net.Addr, salt uint64) uint32 {
 	if h.l.conf.DisableCookies {
 		return 0
@@ -55,9 +55,9 @@ func (h listenerConnectionHandler) cookie(addr net.Addr, salt uint64) uint32 {
 	binary.LittleEndian.PutUint64(b, salt)
 	binary.LittleEndian.PutUint16(b[8:], uint16(udp.Port))
 	b = append(b, udp.IP...)
-	// CRC32 isn't cryptographically secure, but we don't really need that here.
-	// A new salt is calculated every time a Listener is created and we don't
-	// have any data that needs to protected. We just need a fast hash.
+
+
+
 	return crc32.ChecksumIEEE(b)
 }
 
@@ -71,17 +71,17 @@ func (h listenerConnectionHandler) handleUnconnected(b []byte, addr net.Addr) er
 		return h.handleOpenConnectionRequest2(b[1:], addr)
 	}
 	if b[0]&bitFlagDatagram != 0 {
-		// In some cases, the client will keep trying to send datagrams
-		// while it has already timed out. In this case, we should not return
-		// an error.
+
+
+
 		h.log().Debug("unexpected datagram", "raddr", addr.String())
 		return nil
 	}
 	return fmt.Errorf("unknown unconnected packet (id=%x, len=%v)", b[0], len(b))
 }
 
-// handleUnconnectedPing handles an unconnected ping packet stored in buffer b,
-// coming from an address.
+
+
 func (h listenerConnectionHandler) handleUnconnectedPing(b []byte, addr net.Addr) error {
 	pk := &message.UnconnectedPing{}
 	if err := pk.UnmarshalBinary(b); err != nil {
@@ -99,8 +99,8 @@ func (h listenerConnectionHandler) handleUnconnectedPing(b []byte, addr net.Addr
 	return err
 }
 
-// handleOpenConnectionRequest1 handles an open connection request 1 packet
-// stored in buffer b, coming from an address.
+
+
 func (h listenerConnectionHandler) handleOpenConnectionRequest1(b []byte, addr net.Addr) error {
 	pk := &message.OpenConnectionRequest1{}
 	if err := pk.UnmarshalBinary(b); err != nil {
@@ -126,8 +126,8 @@ func (h listenerConnectionHandler) handleOpenConnectionRequest1(b []byte, addr n
 	return err
 }
 
-// handleOpenConnectionRequest2 handles an open connection request 2 packet
-// stored in buffer b, coming from an address.
+
+
 func (h listenerConnectionHandler) handleOpenConnectionRequest2(b []byte, addr net.Addr) error {
 	pk := &message.OpenConnectionRequest2{ServerHasSecurity: !h.l.conf.DisableCookies}
 	if err := pk.UnmarshalBinary(b); err != nil {
@@ -138,7 +138,7 @@ func (h listenerConnectionHandler) handleOpenConnectionRequest2(b []byte, addr n
 		return fmt.Errorf("handle OPEN_CONNECTION_REQUEST_2: invalid cookie '%x', expected '%x'", pk.Cookie, expected)
 	}
 
-	// Vanilla clients always provide a negative ClientGUID.
+
 	if pk.ClientGUID >= 0 {
 		return fmt.Errorf("handle OPEN_CONNECTION_REQUEST_2: invalid ClientGUID '%d', expected negative", pk.ClientGUID)
 	}
@@ -158,14 +158,14 @@ func (h listenerConnectionHandler) handleOpenConnectionRequest2(b []byte, addr n
 		defer t.Stop()
 		select {
 		case <-conn.connected:
-			// Add the connection to the incoming channel so that a caller of
-			// Accept() can receive it.
+
+
 			h.l.incoming <- conn
 		case <-h.l.closed:
 			_ = conn.Close()
 		case <-t.C:
-			// It took too long to complete this connection. We close it and go
-			// back to accepting.
+
+
 			_ = conn.Close()
 		}
 	}()
@@ -188,15 +188,15 @@ func (h listenerConnectionHandler) handle(conn *Conn, b []byte) (handled bool, e
 		conn.closeImmediately()
 		return true, nil
 	case message.IDDetectLostConnections:
-		// Let the other end know the connection is still alive.
+
 		return true, conn.send(&message.ConnectedPing{PingTime: timestamp()})
 	default:
 		return false, nil
 	}
 }
 
-// handleConnectionRequest handles a connection request packet inside of buffer
-// b. An error is returned if the packet was invalid.
+
+
 func (h listenerConnectionHandler) handleConnectionRequest(conn *Conn, b []byte) error {
 	pk := &message.ConnectionRequest{}
 	if err := pk.UnmarshalBinary(b); err != nil {
@@ -206,8 +206,8 @@ func (h listenerConnectionHandler) handleConnectionRequest(conn *Conn, b []byte)
 	return conn.send(&message.ConnectionRequestAccepted{ClientAddress: resolve(conn.raddr), PingTime: pk.RequestTime, PongTime: timestamp()})
 }
 
-// handleNewIncomingConnection handles an incoming connection packet from the
-// client, finalising the Conn.
+
+
 func (h listenerConnectionHandler) handleNewIncomingConnection(conn *Conn) error {
 	select {
 	case <-conn.connected:
@@ -254,15 +254,15 @@ func (h dialerConnectionHandler) handle(conn *Conn, b []byte) (handled bool, err
 		conn.closeImmediately()
 		return true, nil
 	case message.IDDetectLostConnections:
-		// Let the other end know the connection is still alive.
+
 		return true, conn.send(&message.ConnectedPing{PingTime: timestamp()})
 	default:
 		return false, nil
 	}
 }
 
-// handleConnectionRequestAccepted handles a serialised connection request
-// accepted packet in b, and returns an error if not successful.
+
+
 func (h dialerConnectionHandler) handleConnectionRequestAccepted(conn *Conn, b []byte) error {
 	pk := &message.ConnectionRequestAccepted{}
 	if err := pk.UnmarshalBinary(b); err != nil {
@@ -272,27 +272,27 @@ func (h dialerConnectionHandler) handleConnectionRequestAccepted(conn *Conn, b [
 	case <-conn.connected:
 		return errUnexpectedAdditionalCRA
 	default:
-		// Make sure to send NewIncomingConnection before closing conn.connected.
+
 		err := conn.send(&message.NewIncomingConnection{ServerAddress: resolve(conn.raddr), PingTime: pk.PongTime, PongTime: timestamp()})
 		close(conn.connected)
 		return err
 	}
 }
 
-// handleConnectedPing handles a connected ping packet inside of buffer b. An
-// error is returned if the packet was invalid.
+
+
 func handleConnectedPing(conn *Conn, b []byte) error {
 	pk := message.ConnectedPing{}
 	if err := pk.UnmarshalBinary(b); err != nil {
 		return fmt.Errorf("read CONNECTED_PING: %w", err)
 	}
-	// Respond with a connected pong that has the ping timestamp found in the
-	// connected ping, and our own timestamp for the pong timestamp.
+
+
 	return conn.sendUnreliable(&message.ConnectedPong{PingTime: pk.PingTime, PongTime: timestamp()})
 }
 
-// handleConnectedPong handles a connected pong packet inside of buffer b. An
-// error is returned if the packet was invalid.
+
+
 func handleConnectedPong(b []byte) error {
 	pk := &message.ConnectedPong{}
 	if err := pk.UnmarshalBinary(b); err != nil {
@@ -301,7 +301,7 @@ func handleConnectedPong(b []byte) error {
 	if pk.PingTime > timestamp() {
 		return fmt.Errorf("handle CONNECTED_PONG: timestamp is in the future")
 	}
-	// We don't actually use the ConnectedPong to measure rtt. It is too
-	// unreliable and doesn't give a good idea of the connection quality.
+
+
 	return nil
 }

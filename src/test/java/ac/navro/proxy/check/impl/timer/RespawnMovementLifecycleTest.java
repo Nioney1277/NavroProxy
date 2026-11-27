@@ -17,11 +17,11 @@ import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Live raw-input facts plus reconstructed protocol lifecycle conditions.
- * Runs SessionState.receiveClient and the actual predictor/checks; ACK transport
- * is outside this boundary. Respawn READY is independently only a handshake:
- * Nukkit RespawnProcessor does not restore health or relocate the player.
- */
+
+
+
+
+
 class RespawnMovementLifecycleTest {
     private static JsonObject recording() throws Exception {
         try (var in = new InputStreamReader(RespawnMovementLifecycleTest.class.getResourceAsStream(
@@ -119,7 +119,7 @@ class RespawnMovementLifecycleTest {
         ack(f, 93);
         assertFalse(s.player().acknowledgedDead, "Keep the existing respawn-check handshake semantics");
 
-        // Exact live first-respawn frame, before any backend relocation/health restore.
+
         var echo = input(rows.get(1).getAsJsonObject());
         var original = echo.getPosition();
         f.clock().addAndGet(1_650_000_000L);
@@ -131,7 +131,7 @@ class RespawnMovementLifecycleTest {
         assertEquals(0, s.player().pendingCorrectionRequests());
         assertFalse(s.teleports().getAuthInputHistory().containsKey(2449L));
 
-        // Constructed follow-up: authoritative relocation and health restoration.
+
         var move = new MovePlayerPacket();
         move.setRuntimeEntityId(7);
         move.setMode(MovePlayerPacket.Mode.TELEPORT);
@@ -161,7 +161,7 @@ class RespawnMovementLifecycleTest {
         assertEquals(2452, s.player().simulationFrame());
         assertTrue(f.alerts().isEmpty(), f.alerts().toString());
 
-        // Explicitly adversarial after revival: the same low wire Y must still flag.
+
         f.clock().addAndGet(50_000_000L);
         var invalid = AuthInputPacketsTest.input(2453, 128.5F, 4, 128.5F, new Vec3(0, -.0784F, 0));
         invalid.setPosition(Vector3f.from(128.5F, 4.00001F, 128.5F));

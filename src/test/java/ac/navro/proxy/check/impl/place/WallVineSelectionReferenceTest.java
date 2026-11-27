@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.io.DataInputStream;
 import java.util.zip.GZIPInputStream;
 
-/** Full production selection component versus native bounding-box and Navro sturdy executions. */
+
 class WallVineSelectionReferenceTest {
     @Test
     void wallAndVineSelectionMatchNavroNativeGettersAcrossMetadataAndNeighbors() throws Exception {
@@ -99,7 +99,7 @@ class WallVineSelectionReferenceTest {
 
     @Test
     void nonzeroVineMetadataDoesNotReadUnavailableUpperBlockOrNormalizeInvalidBounds() {
-        // This deliberately retains fixed-core behavior: metadata bit 4 alone has no side box.
+
         var unsupportedSide =
                 NativeWallVineSelection.selection(
                         106,

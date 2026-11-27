@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Player lifecycle cases from Navro's NegativeTimerTest on protocol player data. */
+
 class TimerLifecycleTest {
     private record Fixture(WirePlayerState player, AtomicLong clock, List<String> flags, NegativeTimer check) {
         static Fixture create() {

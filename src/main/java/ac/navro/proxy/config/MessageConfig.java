@@ -18,6 +18,7 @@ public record MessageConfig(Map<String,String> templates) {
         m.put("player-not-found","%prefix%&cFailed to find player session.");
         m.put("debug-enabled","%prefix%&fEnabled %mode% for %player%.");
         m.put("debug-disabled","%prefix%&fDisabled %mode% for %player%.");
+        m.put("proxyping","%prefix%&f%player% 代理处理耗时\n&7上行：&f%upstream%\n&7下行：&f%downstream%\n&7客户端 RTT：&f%rtt%");
         m.put("unknown-subcommand","%prefix%Unknown subcommand.");
         m.put("usage","%prefix%Usage: /navro %usage%");
         m.put("kick-message","%prefix%&cDisconnected for %check_name% violations.");

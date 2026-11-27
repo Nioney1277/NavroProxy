@@ -37,6 +37,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private final List<Runnable> pending=new ArrayList<>();
     private final List<byte[]> clientQueue=new ArrayList<>(),backendQueue=new ArrayList<>();
     private final java.util.Queue<String> messages=new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private final java.util.Queue<BedrockPacket> backendSyncQueue=new java.util.concurrent.ConcurrentLinkedQueue<>();
     private final PublicKey transportKey;
     private final KeyPair backendKey;
     private final PrivateKey backendProxySigningKey;
@@ -59,7 +60,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private byte[] withheldCommandTable;
     private String backendDisconnect;
     private UUID identity;
-    private final Consumer<String> alertRecipient=this::sendMessage;
+    private final Consumer<String> alertRecipient=this::sendProxyAlert;
     private final Map<String,Long> counts=new TreeMap<>();
     public NetherNetBatchSession(PublicKey transportKey){this(transportKey,null,false);}
     public NetherNetBatchSession(PublicKey transportKey,KeyPair backendKey){this(transportKey,backendKey,false);}
@@ -113,7 +114,8 @@ public final class NetherNetBatchSession implements AutoCloseable {
         state.setSmoothSetback(smoothSetback);
         this.transportKey=transportKey;this.backendKey=backendKey;this.detect=detect;
         state.setDetectionEnabled(detect);
-        if (backendStateSync) state.setBackendSyncTransport(this::queueBackend);
+        if (backendStateSync || detect && NetherNetAlerts.commands().commandSource()==ac.navro.proxy.config.CommandSource.BRIDGE)
+            state.setBackendSyncTransport(backendSyncQueue::add);
         if (backendType == ac.navro.proxy.protocol.BackendType.BDS)
             state.setBdsCorrectionAcknowledgmentDispatcher(correctionAcknowledgments::defer);
         state.player().setTransportAcknowledgment((packet,task)->pending.add(task));
@@ -131,6 +133,24 @@ public final class NetherNetBatchSession implements AutoCloseable {
                 state.onProxyTeleport(packet);queueClient(packet);return true;
             });
             state.setPredictionMotionTransport(packet->{if(!ready())return false;queueClient(packet);return true;});
+            state.setBackendVehicleExitTransport(packet->{
+                if(!ready())return false;
+                backendSyncQueue.add(packet);return true;
+            });
+            state.setVehicleHardCorrectionTransport(packets->{
+                if(!ready())return false;
+                try {
+                    var batch=Unpooled.buffer();
+                    try {
+                        if(compressed)batch.writeByte(255);
+                        for(var packet:packets) {
+                            byte[] frame=encodeFrame(packet);VarInts.writeUnsignedInt(batch,frame.length);batch.writeBytes(frame);
+                        }
+                        byte[] bytes=new byte[batch.readableBytes()];batch.readBytes(bytes);clientQueue.add(bytes);
+                    } finally {batch.release();}
+                } catch(Exception e) {throw new IllegalStateException("Cannot encode NetherNet vehicle hard reset",e);}
+                return true;
+            });
             state.setSoftCorrectionTransport(packet->{
                 if(!ready())return false;
                 state.onProxyPredictionCorrection(packet);queueClient(packet);return true;
@@ -172,6 +192,11 @@ public final class NetherNetBatchSession implements AutoCloseable {
         definitions.configure(clientHelper,false);definitions.configure(backendHelper,true);
     }
     public Result process(boolean backend,byte[] batch)throws Exception{
+        long started=System.nanoTime();
+        try { return processBatch(backend,batch); }
+        finally {state.forwardingLatency().record(backend,System.nanoTime()-started);}
+    }
+    private Result processBatch(boolean backend,byte[] batch)throws Exception{
         if(closed)throw new IOException("Session closed");
         if(state.player().disconnectRequested())throw new IOException("Player disconnected by Navro punishment");
         if (backend && rakNetCipher != null) batch = rakNetCipher.decrypt(batch);
@@ -217,6 +242,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                         queueBackend(new ClientToServerHandshakePacket());
                         keep = false;
                     }else if(backend){
+                        if(state.suppressVehicleMount(packet)){changed=true;continue;}
                         if (rakNetFrontend && !authenticated && !(packet instanceof NetworkSettingsPacket)
                                 && !(packet instanceof DisconnectPacket))
                             throw new IOException("NetherNet backend sent game packets before frontend login completed");
@@ -241,16 +267,18 @@ public final class NetherNetBatchSession implements AutoCloseable {
                         state.observeBackend(packet);state.onBackendPacketQueued(packet);
                         commandTableUpdate = observeCommandPermissions(packet);
                         if (packet instanceof AvailableCommandsPacket commands) {
-                            if (detect) proxyCommandNames = state.hasBackendCommands()
-                                    ? NavroCommand.unclaimedNames(commands) : NavroCommand.advertise(commands);
-                            if (operatorCommandTable && !state.hasBackendCommands()) {
+                            if (detect) proxyCommandNames = state.proxyCommands()
+                                    ? NavroCommand.advertise(commands) : Set.of();
+                            if (operatorCommandTable && state.proxyCommands()) {
                                 keep = permissions.isOperator();
                                 commandTableVisible = keep;
                                 if (!keep) withheldCommandTable = encodeFrame(commands);
                             }
                         }
                         if(keep&&(packet instanceof NetworkStackLatencyPacket||detect&&(
-                                packet instanceof AvailableCommandsPacket && !state.hasBackendCommands()
+                                packet instanceof AvailableCommandsPacket && state.proxyCommands()
+                                ||ac.navro.proxy.prediction.vehicle.BoatParameters.boatPacket(state,packet)
+                                ||state.vehicleHardSetback().guardingMounts()&&(packet instanceof AddEntityPacket||packet instanceof AddPlayerPacket)
                                 ||
                                 packet instanceof MovePlayerPacket move&&move.getRuntimeEntityId()==state.player().runtimeId()
                                 ||packet instanceof SetEntityMotionPacket motion&&motion.getRuntimeEntityId()==state.player().runtimeId()
@@ -276,7 +304,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                         if(packet instanceof ServerboundLoadingScreenPacket loading)ServerChunkPackets.finishLoadingScreen(state.player(),loading);
                         if(detect){
                             keep=state.receiveClient(packet,8500)&&!ownLatency;
-                            if(keep&&packet instanceof CommandRequestPacket command&&identity!=null){
+                            if(keep&&state.proxyCommands()&&packet instanceof CommandRequestPacket command&&identity!=null){
                                 keep=!NavroCommand.handle(command.getCommand(),new NavroCommand.Sender(){
                                     public UUID identity(){return identity;}
                                     public String name(){return state.player().getName();}
@@ -331,10 +359,12 @@ public final class NetherNetBatchSession implements AutoCloseable {
             forwarded = frontendCipher.encrypt(forwarded);
         return flush(forwarded,names,false);
     }
+    private void sendProxyAlert(String message) { if(state.proxyCommands())sendMessage(message); }
+
     private byte[] observeCommandPermissions(BedrockPacket packet) throws Exception {
         boolean wasOperator = permissions.isOperator();
         permissions.observe(state.player(), packet);
-        if (!operatorCommandTable || state.hasBackendCommands()) return null;
+        if (!operatorCommandTable || !state.proxyCommands()) return null;
         if (packet instanceof StartGamePacket) {
             withheldCommandTable = null;
             commandTableVisible = false;
@@ -383,6 +413,9 @@ public final class NetherNetBatchSession implements AutoCloseable {
             state.player().getLatencyUtil().queue(id,true,()->tasks.forEach(Runnable::run));
             var marker=new NetworkStackLatencyPacket();marker.setTimestamp(id);marker.setFromServer(true);extra.add(encode(marker));
         }
+        for(BedrockPacket packet;(packet=backendSyncQueue.poll())!=null;) {
+            if(!closed&&!state.player().disconnectRequested())queueBackend(packet);
+        }
         var upstream=List.copyOf(backendQueue);backendQueue.clear();
         if (rakNetCipher != null) upstream = upstream.stream().map(rakNetCipher::encrypt).toList();
         if (frontendCipher != null) extra.replaceAll(frontendCipher::encrypt);
@@ -401,7 +434,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
         var packet=new DisconnectPacket();
         packet.setReason(org.cloudburstmc.protocol.bedrock.data.DisconnectFailReason.KICKED);
         packet.setMessageSkipped(false);packet.setKickMessage(reason);
-        backendQueue.clear();clientQueue.clear();messages.clear();pending.clear();
+        backendQueue.clear();backendSyncQueue.clear();clientQueue.clear();messages.clear();pending.clear();
         queueClient(packet);
     }
     private LoginPacket verifyLogin(LoginPacket login)throws Exception{
@@ -479,7 +512,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
         }finally{frame.release();}
     }
     @Override public void close(){
-        closed=true;pendingFrontendLogin=null;frontendCipher=null;pendingFrontendCipher=null;withheldCommandTable=null;state.closeBackendWorld();state.player().getLatencyUtil().close();pending.clear();clientQueue.clear();backendQueue.clear();messages.clear();
+        closed=true;pendingFrontendLogin=null;frontendCipher=null;pendingFrontendCipher=null;withheldCommandTable=null;state.closeBackendWorld();state.player().getLatencyUtil().close();pending.clear();clientQueue.clear();backendQueue.clear();backendSyncQueue.clear();messages.clear();
         if(identity!=null&&detect){NetherNetAlerts.remove(identity,alertRecipient);NetherNetAlerts.commands().detach(identity,state);}
     }
 }

@@ -48,7 +48,7 @@ class ShulkerCollisionStateTest {
         assertEquals(1, first.shape().maxX);
         actor.setOpenCount(0); actor.tick(); actor.tick();
         assertEquals(0, actor.snapshot().openness());
-        // Default is up; an out-of-range facing is down; a missing field retains the last facing.
+
         var defaults = new ShulkerCollisionState(Vector3i.ZERO, NbtMap.EMPTY);
         assertEquals(1, defaults.snapshot().facing());
         defaults.load(NbtMap.builder().putByte("facing", (byte) 7).build());

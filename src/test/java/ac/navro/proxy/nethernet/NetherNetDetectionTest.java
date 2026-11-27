@@ -15,11 +15,73 @@ import java.io.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Native packet boundary drives the actual checks and correction pipeline.
- * The fixture supplies an established actor/world (authentication has separate
- * tests), never a predicted velocity or a preset check/collision outcome.
- */
+
+
+
+
 class NetherNetDetectionTest {
+    @Test void nativeVehiclePacketsReachPredictionAndEmitVehicleCorrection() throws Exception {
+        try (var s = session()) {
+            var spawn = new AddEntityPacket(); spawn.setRuntimeEntityId(42); spawn.setUniqueEntityId(420);
+            spawn.setIdentifier("minecraft:boat"); spawn.setPosition(Vector3f.from(8,64.375F,8));
+            spawn.setMotion(Vector3f.ZERO); spawn.setRotation(Vector2f.from(0,90));
+            s.process(true,s.encode(spawn));
+            var link = new SetEntityLinkPacket(); link.setEntityLink(new org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData(
+                    420,70,org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData.Type.RIDER,false,false,0));
+            s.process(true,s.encode(link)); assertNull(s.state().player().vehicleData); var mounted=ack(s);
+            assertEquals(42,s.state().player().vehicleData.vehicleRuntimeId);
+            assertTrue(mounted.clientbound().stream().map(bytes->{try{return decode(bytes);}catch(Exception e){throw new RuntimeException(e);}})
+                    .noneMatch(MovePlayerPacket.class::isInstance));
+            ack(s);
+            var confirmation=input(0);confirmation.setPosition(Vector3f.from(8,64.375F,8));confirmation.setPredictedVehicle(42);
+            confirmation.setVehicleRotation(Vector2f.from(0,90));confirmation.getInputData().add(PlayerAuthInputData.IN_CLIENT_PREDICTED_IN_VEHICLE);
+            assertFalse(confirmation.getInputData().contains(PlayerAuthInputData.HANDLE_TELEPORT));
+            assertFalse(s.process(false,s.encode(confirmation)).backendbound().isEmpty());
+            var input = input(1); input.setPosition(Vector3f.from(800,64.375F,8)); input.setPredictedVehicle(42);
+            input.setVehicleRotation(Vector2f.from(0,90)); input.getInputData().add(PlayerAuthInputData.IN_CLIENT_PREDICTED_IN_VEHICLE);
+            var result = s.process(false,s.encode(input));
+            assertEquals(8,s.state().player().position().x);
+            assertEquals("offset",s.state().authInputPackets().vehicles().status());
+            assertFalse(result.backendbound().isEmpty(), "Validated vehicle coordinates continue while hard reset is acknowledged");
+            var batch=decodeBatch(result.clientbound().getFirst());
+            assertEquals(3,batch.size());
+            var unlink=assertInstanceOf(SetEntityLinkPacket.class,batch.getFirst()).getEntityLink();
+            assertEquals(org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData.Type.REMOVE,unlink.getType());
+            var correction=assertInstanceOf(MoveEntityAbsolutePacket.class,batch.get(1));
+            assertTrue(correction.isTeleported());assertTrue(correction.isForceMove());assertEquals(42,correction.getRuntimeEntityId());
+            var backendPackets=new java.util.ArrayList<BedrockPacket>();
+            for(byte[] bytes:result.backendbound())backendPackets.addAll(decodeBatch(bytes));
+            var exit=assertInstanceOf(InteractPacket.class,backendPackets.getLast());
+            assertEquals(InteractPacket.Action.LEAVE_VEHICLE,exit.getAction());assertEquals(42,exit.getRuntimeEntityId());
+            assertTrue(backendPackets.stream().anyMatch(PlayerAuthInputPacket.class::isInstance));
+            ack(s);assertNotNull(s.state().player().vehicleData);
+            var removed=new SetEntityLinkPacket();removed.setEntityLink(new org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData(
+                    420,70,org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData.Type.REMOVE,false,false,0));
+            s.process(true,s.encode(removed));var placed=ack(s);
+            assertNull(s.state().player().vehicleData);
+            var move=placed.clientbound().stream().map(bytes->{try{return decode(bytes);}catch(Exception e){throw new RuntimeException(e);}})
+                    .filter(MovePlayerPacket.class::isInstance).map(MovePlayerPacket.class::cast).findFirst().orElseThrow();
+            assertEquals(MovePlayerPacket.Mode.TELEPORT,move.getMode());assertEquals(Vector3f.from(8,65.62001F,8),move.getPosition());
+            ack(s);var confirmed=input(2);confirmed.setPosition(move.getPosition());confirmed.getInputData().add(PlayerAuthInputData.HANDLE_TELEPORT);
+            s.process(false,s.encode(confirmed));
+            assertFalse(s.state().teleports().isHardTeleporting());assertFalse(s.state().vehicleHardSetback().pending());
+            assertNull(s.state().player().vehicleData);
+
+        }
+    }
+    @Test void boatComponentNormalizationReachesTheEncodedClientPacket() throws Exception {
+        try(var s=session()) {
+            var spawn=new AddEntityPacket();spawn.setRuntimeEntityId(42);spawn.setUniqueEntityId(420);spawn.setIdentifier("minecraft:boat");
+            spawn.setPosition(Vector3f.from(8,64.375F,8));spawn.setMotion(Vector3f.ZERO);spawn.setRotation(Vector2f.ZERO);
+            spawn.getMetadata().put(org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes.BUOYANCY_DATA,"{\"apply_gravity\":true,\"simulate_waves\":true,\"base_buoyancy\":1}");
+            var result=s.process(true,s.encode(spawn));var decoded=assertInstanceOf(AddEntityPacket.class,decode(result.forwarded()));
+            var component=com.google.gson.JsonParser.parseString(decoded.getMetadata().get(org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes.BUOYANCY_DATA)).getAsJsonObject();
+            assertFalse(component.get("simulate_waves").getAsBoolean());assertEquals("none",component.get("movement_type").getAsString());
+            var update=new SetEntityDataPacket();update.setRuntimeEntityId(42);update.getMetadata().put(org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes.BUOYANCY_DATA,"{\"simulate_waves\":true}");
+            var changed=assertInstanceOf(SetEntityDataPacket.class,decode(s.process(true,s.encode(update)).forwarded()));
+            assertTrue(changed.getMetadata().get(org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes.BUOYANCY_DATA).contains("\"simulate_waves\":false"));
+        }
+    }
     @Test void realBdsCommandsGainNavroWithoutLosingOptionalChainedValues()throws Exception{
         try(var s=session();var recorded=new java.util.zip.GZIPInputStream(
                 getClass().getResourceAsStream("/nethernet-bds-2225-commands.batch.gz"))){
@@ -149,10 +211,10 @@ class NetherNetDetectionTest {
             return codec.tryDecode(helper,frame,header&1023);
         }finally{bytes.release();}
     }
-    private static void ack(NetherNetBatchSession s)throws Exception{
+    private static NetherNetBatchSession.Result ack(NetherNetBatchSession s)throws Exception{
         long id=s.state().player().getLatencyUtil().sentQueue().peekLast().id();
         var response=new NetworkStackLatencyPacket();response.setTimestamp(id*1_000_000L);
-        s.process(false,s.encode(response));
+        return s.process(false,s.encode(response));
     }
     @Test void duplicateTickIsRemovedFromNativeBatchWhileUnrelatedActionStillForwards()throws Exception{
         try(var s=session()){
@@ -257,8 +319,8 @@ class NetherNetDetectionTest {
             sprint.setRawMoveVector(Vector2f.from(0,1));
             sprint.getInputData().add(PlayerAuthInputData.START_SPRINTING);
             s.state().player().apply(sprint, null, null);
-            // Original Navro recomputes the modifier from default .1; BDS's
-            // server-selected .2 speed must survive. These are distinct contracts.
+
+
             assertEquals(type == ac.navro.proxy.protocol.BackendType.BDS ? .26F : .13F,
                     s.state().player().attributes().get("minecraft:movement").getValue());
         }
@@ -302,8 +364,8 @@ class NetherNetDetectionTest {
             for(var item:cases)try(var session=session()){
                 var row=item.getAsJsonObject();long start=row.get("startTick").getAsLong();
                 var previous=capturedInput(row.getAsJsonObject("precedingInput"));
-                // Supply the observed world and preceding input, without running
-                // an invented movement from the fixture's unrelated spawn point.
+
+
                 int stone=NetworkBlockStateRegistry.forProtocol(2225,false).states().values().stream()
                         .filter(b->b.is("minecraft:stone")&&b.blockData()==0).findFirst().orElseThrow().networkId();
                 session.state().world().put(-1,0,CompensatedWorld.CachedChunk.network(-64,320,24,session.state().world().airNetworkId()));

@@ -19,8 +19,8 @@ import java.util.*;
 import java.nio.file.*;
 import com.google.gson.Gson;
 
-/** Native bridge + actual Nukkit transactions, inventory writes, item identity and slot encoders.
- * Only server event dispatch, connection state and network delivery are supplied by the fixture. */
+
+
 public final class NativeStateSyncIntegration {
     static final Unsafe U;
     static {try{var f=Unsafe.class.getDeclaredField("theUnsafe");f.setAccessible(true);U=(Unsafe)f.get(null);}catch(Exception e){throw new ExceptionInInitializerError(e);}}
@@ -84,9 +84,9 @@ public final class NativeStateSyncIntegration {
         inv.setItem(0,stone(4),false);peer.delivered.clear();tick(server,10);
         sync.onReceive(new DataPacketReceiveEvent(peer,new InventoryTransactionPacket()));tick(server,11);sync.tick();check(peer.delivered.isEmpty(),"Unnegotiated players get no sync traffic");
         tick(server,100);String nonce="12345678-1234-1234-1234-123456789012";hello(peer,nonce);
-        check(peer.delivered.size()==2&&peer.delivered.get(0) instanceof ScriptMessagePacket,"Handshake sends readiness and native clock, no inventory snapshots");
+        check(peer.delivered.size()==3&&peer.delivered.get(0) instanceof ScriptMessagePacket,"Handshake sends readiness and native clock, no inventory snapshots");
         check(((ScriptMessagePacket)peer.delivered.get(1)).message.equals("tick|"+nonce+"|0|100"),"Exact Server.getTick sample");
-        sync.tick();check(peer.delivered.size()==2,"No repeated sample in the same tick");tick(server,107);sync.tick();check(((ScriptMessagePacket)peer.delivered.get(2)).message.endsWith("|107"),"Native tick advance, not an artificial +1 clock");
+        sync.tick();check(peer.delivered.size()==3,"No repeated sample in the same tick");tick(server,107);sync.tick();check(((ScriptMessagePacket)peer.delivered.get(3)).message.endsWith("|107"),"Native tick advance, not an artificial +1 clock");
         peer.delivered.clear();
         var transaction=new Transaction(peer,List.of(new SlotChangeAction(inv,0,inv.getItem(0),stone(3)),new SlotChangeAction(inv,1,inv.getItem(1),stone(1))));
         check(transaction.execute()&&transaction.hasExecuted(),"Real Nukkit transaction executes");

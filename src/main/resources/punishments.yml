@@ -1,163 +1,169 @@
-# Each section below belongs to one implemented check; its VL is counted separately.
-# Format: "threshold:interval action". 100:0 runs once at 100 recent VL;
-# 100:50 runs at 100, 150, 200... A completely expired window resets actions.
-# Available actions: [alert], [log], kick %player% [optional message].
-# Kick runs directly in the proxy; arbitrary backend commands are not supported.
-# Reload or reconnect resets punishment counters. remove-violations-after is seconds.
-# Name matching is case-insensitive; * matches any characters, ! excludes a name.
-# Keep one exact selector per section for independent per-check thresholds.
-# All checks below alert by default; uncomment a kick line to enable it for that check.
+
+
+
+
+
+
+
+
+
 Punishments:
   Timer:
     remove-violations-after: 300
     checks: ["Timer"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   NegativeTimer:
     remove-violations-after: 300
     checks: ["NegativeTimer"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   BadPacketsA:
     remove-violations-after: 300
     checks: ["BadPacketsA"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   BadPacketsB:
     remove-violations-after: 300
     checks: ["BadPacketsB"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   BadPacketsC:
     remove-violations-after: 300
     checks: ["BadPacketsC"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Sprint-A:
     remove-violations-after: 300
     checks: ["Sprint-A"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Sprint-B:
     remove-violations-after: 300
     checks: ["Sprint-B"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Sprint-C:
     remove-violations-after: 300
     checks: ["Sprint-C"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Sprint-D:
     remove-violations-after: 300
     checks: ["Sprint-D"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   MultiActions-A:
     remove-violations-after: 300
     checks: ["MultiActions-A"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   MultiActions-B:
     remove-violations-after: 300
     checks: ["MultiActions-B"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Elytra-A:
     remove-violations-after: 300
     checks: ["Elytra-A"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   RotationPlace:
     remove-violations-after: 300
     checks: ["RotationPlace"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   FarPlace:
     remove-violations-after: 300
     checks: ["FarPlace"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   AirLiquidPlace:
     remove-violations-after: 300
     checks: ["AirLiquidPlace"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Phase:
     remove-violations-after: 300
     checks: ["Phase"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   GroundSpoof:
     remove-violations-after: 300
     checks: ["GroundSpoof"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   NoSlow:
     remove-violations-after: 300
     checks: ["NoSlow"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   AntiKB:
     remove-violations-after: 300
     checks: ["AntiKB"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Collisions:
     remove-violations-after: 300
     checks: ["Collisions"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Horizonal:
     remove-violations-after: 300
     checks: ["Horizonal"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
 
   Vertical:
     remove-violations-after: 300
     checks: ["Vertical"]
     commands:
       - "1:1 [alert]"
-      # - "100:0 kick %player%"
+
+
+  VehiclePrediction:
+    remove-violations-after: 300
+    checks: ["VehiclePrediction"]
+    commands:
+      - "1:1 [alert]"

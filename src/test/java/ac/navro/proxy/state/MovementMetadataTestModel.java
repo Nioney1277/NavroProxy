@@ -8,7 +8,7 @@ import ac.navro.proxy.player.data.tracker.FlagTracker;
 import com.google.gson.*;
 import java.util.*;
 
-/** Native item facts plus the existing proxy's physical AABB implementation. */
+
 class MovementMetadataTestModel extends ItemUseTestModel implements MovementMetadata.Context<ItemUseTestModel.Item> {
     final FlagTracker<Item> trackedFlags=new FlagTracker<>();
     final ItemUseTracker<Item> tracker=new ItemUseTracker<>(this);

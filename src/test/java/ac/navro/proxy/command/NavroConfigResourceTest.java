@@ -27,7 +27,7 @@ class NavroConfigResourceTest {
         java.util.Map<?,?> values=yaml.load(Files.readString(file));
         assertEquals(java.util.Set.of("player-rewind-history-size-ticks","smooth-setback",
                 "player-position-acceptance-threshold","differ-till-alert","disabled-checks",
-                "max-latency-wait","max-balance-advantage"),values.keySet());
+                "max-latency-wait","max-balance-advantage","command-source"),values.keySet());
         assertFalse(values.keySet().stream().anyMatch(key->key.toString().contains("debug")||key.toString().contains("sampling")));
     }
 

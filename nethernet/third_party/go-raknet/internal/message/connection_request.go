@@ -7,7 +7,7 @@ import (
 
 type ConnectionRequest struct {
 	ClientGUID int64
-	// RequestTime is a timestamp from the moment the packet is sent.
+
 	RequestTime int64
 	Secure      bool
 }

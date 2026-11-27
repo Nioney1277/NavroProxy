@@ -3,7 +3,7 @@ package ac.navro.proxy;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 
-/** Runtime configuration for the standalone Bedrock proxy. */
+
 public record ProxyConfig(
         String listenHost,
         int listenPort,

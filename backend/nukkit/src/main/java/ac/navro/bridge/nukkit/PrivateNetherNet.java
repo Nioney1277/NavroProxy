@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** A separately authenticated listener; decoding and session budgets stay in Nukkit-MOT. */
+
 public final class PrivateNetherNet implements AdvancedSourceInterface {
     private final Server server;
     private final NetherNetInterface nativeInterface;

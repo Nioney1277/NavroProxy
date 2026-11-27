@@ -5,8 +5,8 @@ import (
 	"log/slog"
 )
 
-// DiscardHandler implements a slog.Handler that is always disabled. Each of its
-// methods return immediately without any code running.
+
+
 type DiscardHandler struct{}
 
 func (d DiscardHandler) Enabled(context.Context, slog.Level) bool  { return false }

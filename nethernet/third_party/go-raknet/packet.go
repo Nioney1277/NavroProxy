@@ -8,71 +8,71 @@ import (
 )
 
 const (
-	// bitFlagDatagram is set for every valid datagram. It is used to identify
-	// packets that are datagrams.
+
+
 	bitFlagDatagram = 0x80
-	// bitFlagACK is set for every ACK packet.
+
 	bitFlagACK = 0x40
-	// bitFlagNACK is set for every NACK packet.
+
 	bitFlagNACK = 0x20
-	// bitFlagNeedsBAndAS is set for every datagram with packet data, but is not
-	// actually used.
+
+
 	bitFlagNeedsBAndAS = 0x04
 )
 
 const (
-	// reliabilityUnreliable means that the packet sent could arrive out of
-	// order, be duplicated, or just not arrive at all. It is usually used for
-	// high frequency packets of which the order does not matter.
-	//lint:ignore U1000 While this constant is unused, it is here for the sake
-	// of having all reliabilities documented.
+
+
+
+
+
 	reliabilityUnreliable reliability = iota
-	// reliabilityUnreliableSequenced means that the packet sent could be
-	// duplicated or not arrive at all, but ensures that it is always handled in
-	// the right order.
+
+
+
 	reliabilityUnreliableSequenced
-	// reliabilityReliable means that the packet sent could not arrive, or
-	// arrive out of order, but ensures that the packet is not duplicated.
+
+
 	reliabilityReliable
-	// reliabilityReliableOrdered means that every packet sent arrives, arrives
-	// in the right order and is not duplicated.
+
+
 	reliabilityReliableOrdered
-	// reliabilityReliableSequenced means that the packet sent could not arrive,
-	// but ensures that the packet will be in the right order and not be
-	// duplicated.
+
+
+
 	reliabilityReliableSequenced
 
-	// splitFlag is set in the header if the packet was split. If so, the
-	// encapsulation contains additional data about the fragment.
+
+
 	splitFlag = 0x10
 )
 
 type reliability byte
 
-// reliable checks packets with this reliability require a message index,
-// therefore meaning that packets are never received twice.
+
+
 func (r reliability) reliable() bool {
 	return r == reliabilityReliable ||
 		r == reliabilityReliableOrdered ||
 		r == reliabilityReliableSequenced
 }
 
-// sequenced checks whether packets with this reliability require a sequence
-// index, implying that unreceived older packets can be dropped if a newer one
-// has been received.
+
+
+
 func (r reliability) sequenced() bool {
 	return r == reliabilityUnreliableSequenced ||
 		r == reliabilityReliableSequenced
 }
 
-// sequencedOrOrdered checks whether packets with this reliability require an
-// order index, meaning packets are always received in correct order.
+
+
 func (r reliability) sequencedOrOrdered() bool {
 	return r.sequenced() || r == reliabilityReliableOrdered
 }
 
-// packet is an encapsulation around every packet sent after the connection is
-// established.
+
+
 type packet struct {
 	reliability reliability
 
@@ -88,7 +88,7 @@ type packet struct {
 	splitID    uint16
 }
 
-// write writes the packet and its content to the buffer passed.
+
 func (pk *packet) write(buf *bytes.Buffer) {
 	header := pk.reliability << 5
 	if pk.split {
@@ -105,7 +105,7 @@ func (pk *packet) write(buf *bytes.Buffer) {
 	}
 	if pk.reliability.sequencedOrOrdered() {
 		writeUint24(buf, pk.orderIndex)
-		// Order channel, we don't care about this.
+
 		buf.WriteByte(0)
 	}
 	if pk.split {
@@ -116,7 +116,7 @@ func (pk *packet) write(buf *bytes.Buffer) {
 	buf.Write(pk.content)
 }
 
-// read reads a packet and its content from the buffer passed.
+
 func (pk *packet) read(b []byte) (int, error) {
 	if len(b) < 3 {
 		return 0, io.ErrUnexpectedEOF
@@ -152,7 +152,7 @@ func (pk *packet) read(b []byte) (int, error) {
 			return 0, io.ErrUnexpectedEOF
 		}
 		pk.orderIndex = loadUint24(b[offset:])
-		// Order channel (byte)
+
 		offset += 4
 	}
 
@@ -174,34 +174,34 @@ func (pk *packet) read(b []byte) (int, error) {
 }
 
 const (
-	// Datagram header +
-	// Datagram sequence number +
-	// Packet header +
-	// Packet content length +
-	// Packet message index +
-	// Packet order index +
-	// Packet order channel
+
+
+
+
+
+
+
 	packetAdditionalSize = 1 + 3 + 1 + 2 + 3 + 3 + 1
-	// Packet split count +
-	// Packet split ID +
-	// Packet split index
+
+
+
 	splitAdditionalSize = 4 + 2 + 4
 )
 
-// split splits a content buffer in smaller buffers so that they do not exceed
-// the MTU size that the connection holds.
+
+
 func split(b []byte, mtu uint16) [][]byte {
 	n := len(b)
 	maxSize := int(mtu - packetAdditionalSize)
 
 	if n > maxSize {
-		// If the content size is bigger than the maximum size here, it means
-		// the packet will get split. This means that the packet will get even
-		// bigger because a split packet uses 4 + 2 + 4 more bytes.
+
+
+
 		maxSize -= splitAdditionalSize
 	}
-	// If the content length can't be divided by maxSize perfectly, we need
-	// to reserve another fragment for the last bit of the packet.
+
+
 	fragmentCount := n/maxSize + min(n%maxSize, 1)
 	fragments := make([][]byte, fragmentCount)
 	for i := range fragmentCount - 1 {

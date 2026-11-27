@@ -52,7 +52,7 @@ class GameTypePacketLifecycleTest {
     }
     private static StartGamePacket start(org.cloudburstmc.protocol.bedrock.data.GameType mode)throws Exception {
         var packet=new StartGamePacket();
-        // Valid dummy level settings for a real codec round-trip; no production state is inferred from these values.
+
         for(var field:StartGamePacket.class.getDeclaredFields()) {
             if(java.lang.reflect.Modifier.isStatic(field.getModifiers())||java.lang.reflect.Modifier.isFinal(field.getModifiers()))continue;
             field.setAccessible(true);if(field.get(packet)!=null)continue;Class<?> type=field.getType();

@@ -8,7 +8,7 @@ public record PunishmentConfig(List<Group> groups) {
     public static PunishmentConfig defaults() {
         return new PunishmentConfig(List.of("Timer","NegativeTimer","BadPacketsA","BadPacketsB","BadPacketsC",
                 "Sprint-A","Sprint-B","Sprint-C","Sprint-D","MultiActions-A","MultiActions-B","Elytra-A",
-                "RotationPlace","FarPlace","AirLiquidPlace","Phase","GroundSpoof","NoSlow","AntiKB","Collisions","Horizonal","Vertical")
+                "RotationPlace","FarPlace","AirLiquidPlace","Phase","GroundSpoof","NoSlow","AntiKB","Collisions","Horizonal","Vertical","VehiclePrediction")
                 .stream().map(name->new Group(name,300000,List.of(name),List.of(Command.parse("1:1 [alert]")))).toList());
     }
     public enum Action { ALERT, LOG, KICK }

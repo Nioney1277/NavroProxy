@@ -14,6 +14,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 
+
 public final class ServerEntityPackets {
     private final WirePlayerState player;
     private final CompensatedWorld world;
@@ -44,6 +45,7 @@ public final class ServerEntityPackets {
             entity.interpolate(position, false);
             entity.metadata(add.getMetadata());
             entity.motion(WireVec3.of(add.getMotion()));
+            if (add.getRotation() != null) entity.yaw(add.getRotation().getY());
             entity.properties(add.getProperties());
             entity.attributes(add.getAttributes());
         }
@@ -65,16 +67,37 @@ public final class ServerEntityPackets {
             boolean hasX = move.getFlags().contains(MoveEntityDeltaPacket.Flag.HAS_X);
             boolean hasY = move.getFlags().contains(MoveEntityDeltaPacket.Flag.HAS_Y);
             boolean hasZ = move.getFlags().contains(MoveEntityDeltaPacket.Flag.HAS_Z);
+            if (move.getFlags().contains(MoveEntityDeltaPacket.Flag.HAS_YAW)) {
+                float yaw = move.getYaw();
+                boolean controlledAtSend = locallyControlled(entity);
+                boolean force = move.getFlags().contains(MoveEntityDeltaPacket.Flag.TELEPORTING)
+                        || move.getFlags().contains(MoveEntityDeltaPacket.Flag.FORCE_MOVE_LOCAL_ENTITY);
+                player.queueAcknowledgment(packet, () -> { if (entities.get(entity.runtimeId()) == entity
+                        && (!controlledAtSend && !locallyControlled(entity) || force)) entity.yaw(yaw); });
+            }
             if (!hasX && !hasY && !hasZ) return;
             float x = hasX ? move.getX() : entity.getServerPosition().x;
             float y = hasY ? move.getY() - entity.getYOffset() : entity.getServerPosition().y;
             float z = hasZ ? move.getZ() : entity.getServerPosition().z;
-            queuePositionUpdate(packet, entity, new Vec3(x, y, z), true, false);
+            boolean force = move.getFlags().contains(MoveEntityDeltaPacket.Flag.TELEPORTING)
+                    || move.getFlags().contains(MoveEntityDeltaPacket.Flag.FORCE_MOVE_LOCAL_ENTITY);
+            if (force) player.queueAcknowledgment(packet, () -> { if (entities.get(entity.runtimeId()) == entity) entity.forcePosition(); });
+            queuePositionUpdate(packet, entity, new Vec3(x, y, z), !force, false, force);
             entity.lastWireTick(move.getTicks());
         }
         if (packet instanceof MoveEntityAbsolutePacket move) {
             EntityCache entity = entities.get(move.getRuntimeEntityId());
-            if (entity != null) queuePositionUpdate(packet, entity, new Vec3(move.getPosition()), false);
+            if (entity != null) {
+                if (move.getRotation() != null) {
+                    float yaw = move.getRotation().getY(); boolean force = move.isTeleported() || move.isForceMove();
+                    boolean controlledAtSend = locallyControlled(entity);
+                    player.queueAcknowledgment(packet, () -> { if (entities.get(entity.runtimeId()) == entity
+                            && (!controlledAtSend && !locallyControlled(entity) || force)) entity.yaw(yaw); });
+                }
+                if (move.isTeleported() || move.isForceMove())
+                    player.queueAcknowledgment(packet, () -> { if (entities.get(entity.runtimeId()) == entity) entity.forcePosition(); });
+                queuePositionUpdate(packet, entity, new Vec3(move.getPosition()), false, true, move.isTeleported() || move.isForceMove());
+            }
         }
         if (packet instanceof MovePlayerPacket move && move.getRuntimeEntityId() != player.runtimeId()
                 && move.getMode() != MovePlayerPacket.Mode.HEAD_ROTATION) {
@@ -88,12 +111,17 @@ public final class ServerEntityPackets {
             player.queueAcknowledgment(packet, () -> {
 
 
-                if (player.vehicleData != null && player.vehicleData.vehicleRuntimeId == remove.getUniqueEntityId())
-                    player.vehicleData = null;
                 Long key = uniqueIdToRuntimeId.remove(remove.getUniqueEntityId());
-                if (key != null) entities.remove(key);
+                if (key != null) {
+                    if (player.vehicleData != null && player.vehicleData.vehicleRuntimeId == key) player.vehicleData = null;
+                    entities.remove(key);
+                }
             });
         }
+    }
+
+    private boolean locallyControlled(EntityCache entity) {
+        return player.vehicleData != null && player.vehicleData.driver && player.vehicleData.vehicleRuntimeId == entity.runtimeId();
     }
 
     private EntityCache addToCache(long runtimeId, long uniqueId, int type, String identifier,
@@ -106,9 +134,10 @@ public final class ServerEntityPackets {
         Float width = EntityMetadataUtil.getFloat(metadata, EntityDataTypes.WIDTH);
         Float height = EntityMetadataUtil.getFloat(metadata, EntityDataTypes.HEIGHT);
         boolean boat = "minecraft:boat".equalsIgnoreCase(identifier) || "minecraft:chest_boat".equalsIgnoreCase(identifier);
-        if (!playerEntity && !boat && (width == null || height == null)) return null;
-        float definitionWidth = playerEntity ? 0.6F : boat ? 1.4F : width;
-        float definitionHeight = playerEntity ? 1.8F : boat ? 0.455F : height;
+        boolean horse = EntityCache.equine(identifier);
+        if (!playerEntity && !boat && !horse && (width == null || height == null)) return null;
+        float definitionWidth = playerEntity ? 0.6F : boat ? 1.4F : width != null ? width : 1.3964844F;
+        float definitionHeight = playerEntity ? 1.8F : boat ? 0.455F : height != null ? height : 1.6F;
         float definitionOffset = playerEntity ? 1.62001F : boat ? 0.375F : 0F;
         EntityCache entity = new EntityCache(player, runtimeId, uniqueId, type, identifier, definitionWidth,
                 definitionHeight, definitionOffset, playerEntity || boat, world.dimension());
@@ -122,12 +151,19 @@ public final class ServerEntityPackets {
     }
 
     private void queuePositionUpdate(BedrockPacket packet, EntityCache entity, Vec3 raw, boolean lerp, boolean applyYOffset) {
+        queuePositionUpdate(packet, entity, raw, lerp, applyYOffset, false);
+    }
+
+    private void queuePositionUpdate(BedrockPacket packet, EntityCache entity, Vec3 raw, boolean lerp,
+                                     boolean applyYOffset, boolean forced) {
+        boolean controlledAtSend = locallyControlled(entity);
         Vec3 position = applyYOffset ? raw.add(0, -entity.getYOffset(), 0) : raw;
         float distance = entity.getServerPosition().squaredDistanceTo(position);
         if (distance < 1.0E-15F) return;
         long[] sequence = {0};
         player.queueAcknowledgment(packet, () -> {
             if (entities.get(entity.runtimeId()) != entity) return;
+            if (!forced && (controlledAtSend || locallyControlled(entity))) return;
             entity.interpolate(position, lerp && distance < 4096, sequence[0]);
         });
         queuedCallbacks.put(packet, () -> {

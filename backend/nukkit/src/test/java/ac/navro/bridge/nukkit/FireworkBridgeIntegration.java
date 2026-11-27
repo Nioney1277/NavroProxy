@@ -15,9 +15,9 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Proxy;
 import java.util.*;
 
-/** Real bridge listener + native EntityElytraFirework.onUpdate + Player.setMotion.
- * World lookup, collision/damage trigger and packet transport are external facts.
- */
+
+
+
 public final class FireworkBridgeIntegration {
     private static final Unsafe UNSAFE;
     static {
@@ -67,8 +67,8 @@ public final class FireworkBridgeIntegration {
         @Override protected boolean hasExplosions(){return false;}
         @Override protected Entity findCollisionEntity(Vector3 movement){return damage?getFollowingPlayer():null;}
         @Override protected void explode(){
-            // External damage operation occurs under the REAL native onUpdate.
-            // It must not be mistaken for its earlier direct propulsion call.
+
+
             getFollowingPlayer().setMotion(new Vector3(.75,.45,-.25));
         }
     }

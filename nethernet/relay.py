@@ -1,8 +1,8 @@
+"""Independent NetherNet HTTP/UDP relay. DTLS stays between client and backend.
 
-
-
-
-
+No RakNet listener, conversion or shared socket is used. This forwards transport
+only: Navro packet checks are not applied to the encrypted NetherNet media.
+"""
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import argparse
@@ -38,7 +38,7 @@ def candidates(sdp):
 
 
 def rewrite_candidates(sdp, ip, port):
-
+    """Only ICE addresses change; identity/fingerprint and ICE credentials stay intact."""
     lines = []
     inserted = False
     for line in sdp.splitlines():

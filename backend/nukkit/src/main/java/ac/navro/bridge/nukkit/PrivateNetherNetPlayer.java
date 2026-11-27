@@ -24,7 +24,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.UUID;
 
-/** Only constructed by the RSA-authenticated listener. Public listeners retain normal Player. */
+
 public class PrivateNetherNetPlayer extends Player {
     private final PrivateNetherNet source;
     private UUID forwardedUuid;
@@ -93,8 +93,8 @@ public class PrivateNetherNetPlayer extends Player {
 
     void applyForwardedIdentity() {
         if (identityApplied || forwardedUuid==null || loginChainData==null) return;
-        // The core verified the self-signed chain; keep the forwarded account UUID/XUID
-        // instead of the offline-name UUID. Do not label it a Microsoft signature.
+
+
         LoginChainData original=loginChainData;
         loginChainData=(LoginChainData)Proxy.newProxyInstance(LoginChainData.class.getClassLoader(),new Class<?>[]{LoginChainData.class},(proxy,method,args) -> {
             if (method.getName().equals("getClientUUID")) return forwardedUuid;

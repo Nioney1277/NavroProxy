@@ -42,7 +42,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** End-to-end inventory cache writes across the real packet/batch/compression ACK boundary. */
+
 class InventoryPacketLifecycleTest {
     private static final ItemDefinition STONE = new SimpleItemDefinition("minecraft:stone", 1, false);
     private static final ItemDefinition BUNDLE = new SimpleItemDefinition("minecraft:bundle", 2, false);
