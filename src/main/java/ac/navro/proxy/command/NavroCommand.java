@@ -8,6 +8,9 @@ import java.util.*;
 
 public final class NavroCommand {
     public static final Set<String> NAMES = Set.of("navro", "navro:navro");
+    public static final Routing DEFAULT_ROUTING = new Routing(NAMES, false);
+    private static final String BRIDGE_DESCRIPTION = "Manage NavroProxy alerts and diagnostics";
+    public record Routing(Set<String> proxyNames, boolean bridgeAlerts) { }
     private NavroCommand() { }
     public interface Sender {
         UUID identity();
@@ -39,18 +42,29 @@ public final class NavroCommand {
         }
         return Set.copyOf(proxyNames);
     }
+
+    public static Routing routing(AvailableCommandsPacket packet, boolean backendCommands) {
+        if (!backendCommands) return new Routing(advertise(packet), false);
+        boolean bridgeAlerts = packet.getCommands().stream().anyMatch(command ->
+                "navro".equalsIgnoreCase(command.getName()) && BRIDGE_DESCRIPTION.equals(command.getDescription()));
+        return new Routing(unclaimedNames(packet), bridgeAlerts);
+    }
     public static boolean handle(String command,Sender sender,AlertManager manager,CommandRuntime runtime) {
-        return handle(command, sender, manager, runtime, NAMES);
+        return handle(command, sender, manager, runtime, DEFAULT_ROUTING);
     }
 
-    public static boolean handle(String command,Sender sender,AlertManager manager,CommandRuntime runtime,Set<String> names) {
+    public static boolean handle(String command,Sender sender,AlertManager manager,CommandRuntime runtime,Routing routing) {
         if(command==null)return false;
         var args=CommandArguments.parseArguments(command.startsWith("/")?command.substring(1):command);
-        if(args.isEmpty()||!names.contains(args.get(0).toLowerCase(Locale.ROOT)))return false;
-        args.remove(0);
+        if (args.isEmpty()) return false;
+        String commandName = args.removeFirst().toLowerCase(Locale.ROOT);
+        boolean bridgeCommand = routing.bridgeAlerts() && commandName.equals("navro");
+        if (!bridgeCommand && !routing.proxyNames().contains(commandName)) return false;
+        if (bridgeCommand && (args.isEmpty() || "alert".equalsIgnoreCase(args.getFirst()))) return false;
         if(args.isEmpty()){usage(sender,manager,runtime);return true;}
         String sub=args.get(0);
         if("alert".equalsIgnoreCase(sub)) {
+            if (routing.bridgeAlerts()) return false;
             if(!permission(sender,"navro.alert",manager,runtime))return true;
             boolean enabled=!manager.hasAlert(sender.identity());
             if(!manager.setAlert(sender.identity(),enabled))reply(sender,manager,runtime,"alerts-save-failed",Map.of());

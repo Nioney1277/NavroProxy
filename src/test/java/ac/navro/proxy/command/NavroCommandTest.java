@@ -99,6 +99,30 @@ class NavroCommandTest {
         Files.writeString(directory.resolve("config.yml"),"smooth-setback: [broken\n");command("/navro reload",sender,f);
         assertTrue(messages.get(0).startsWith(PREFIX+"§cCould not reload config:"));assertSame(before,f.runtime().config());
     }
+    @Test void pocketMineBridgeOwnsAlertsWhileProxyKeepsManagementSubcommands() {
+        var f = fixture();
+        var sender = new Sender();
+        var packet = new org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket();
+        var permission = org.cloudburstmc.protocol.bedrock.data.command.CommandPermission.ANY;
+        var overloads = new org.cloudburstmc.protocol.bedrock.data.command.CommandOverloadData[0];
+        packet.getCommands().add(new org.cloudburstmc.protocol.bedrock.data.command.CommandData(
+                "navro", "Unrelated backend command", Set.of(), permission, null, List.of(), overloads));
+        var unrelated = NavroCommand.routing(packet, true);
+        assertFalse(NavroCommand.handle("/navro reload", sender, f.alerts(), f.runtime(), unrelated));
+
+        packet.getCommands().clear();
+        packet.getCommands().add(new org.cloudburstmc.protocol.bedrock.data.command.CommandData(
+                "navro", "Manage NavroProxy alerts and diagnostics", Set.of(), permission, null, List.of(), overloads));
+        var bridge = NavroCommand.routing(packet, true);
+        assertTrue(bridge.bridgeAlerts());
+        assertFalse(NavroCommand.handle("/navro alert", sender, f.alerts(), f.runtime(), bridge));
+        assertFalse(f.alerts().hasAlert(OBSERVER));
+        assertTrue(NavroCommand.handle("/navro reload", sender, f.alerts(), f.runtime(), bridge));
+        assertTrue(NavroCommand.handle("/navro debug Target", sender, f.alerts(), f.runtime(), bridge));
+        assertTrue(f.target().hasDebugSubscribers());
+        assertTrue(NavroCommand.handle("/navro debug2", sender, f.alerts(), f.runtime(), bridge));
+        assertTrue(f.observer().hasDebugSubscribers());
+    }
     @Test void disconnectRemovesObserverFromAllTargetsAndReconnectDoesNotInheritOldSubscriptions() {
         var f=fixture();var sender=new Sender();command("/navro debug2 Target",sender,f);messages.clear();
         f.runtime().detach(OBSERVER,f.observer());move(f.target(),10);assertTrue(messages.isEmpty());

@@ -55,11 +55,13 @@ public final class NetherNetBatchSession implements AutoCloseable {
     private boolean compressed,authenticated,closed;
     private boolean operatorCommandTable;
     private boolean commandTableVisible;
-    private Set<String> proxyCommandNames = NavroCommand.NAMES;
+    private volatile NavroCommand.Routing commandRouting = NavroCommand.DEFAULT_ROUTING;
     private byte[] withheldCommandTable;
     private String backendDisconnect;
     private UUID identity;
-    private final Consumer<String> alertRecipient=this::sendMessage;
+    private final Consumer<String> alertRecipient = message -> {
+        if (!commandRouting.bridgeAlerts()) sendMessage(message);
+    };
     private final Map<String,Long> counts=new TreeMap<>();
     public NetherNetBatchSession(PublicKey transportKey){this(transportKey,null,false);}
     public NetherNetBatchSession(PublicKey transportKey,KeyPair backendKey){this(transportKey,backendKey,false);}
@@ -241,8 +243,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                         state.observeBackend(packet);state.onBackendPacketQueued(packet);
                         commandTableUpdate = observeCommandPermissions(packet);
                         if (packet instanceof AvailableCommandsPacket commands) {
-                            if (detect) proxyCommandNames = state.hasBackendCommands()
-                                    ? NavroCommand.unclaimedNames(commands) : NavroCommand.advertise(commands);
+                            if (detect) commandRouting = NavroCommand.routing(commands, state.hasBackendCommands());
                             if (operatorCommandTable && !state.hasBackendCommands()) {
                                 keep = permissions.isOperator();
                                 commandTableVisible = keep;
@@ -282,7 +283,7 @@ public final class NetherNetBatchSession implements AutoCloseable {
                                     public String name(){return state.player().getName();}
                                     public boolean hasPermission(String node){return NetherNetAlerts.PERMISSIONS.hasPermission(identity,node,permissions.isOperator());}
                                     public void sendMessage(String message){NetherNetBatchSession.this.sendMessage(message);}
-                                },NetherNetAlerts.ALERTS,NetherNetAlerts.commands(),proxyCommandNames);
+                                },NetherNetAlerts.ALERTS,NetherNetAlerts.commands(),commandRouting);
                             }
                             if(state.player().disconnectRequested())keep=false;
                             if(keep){

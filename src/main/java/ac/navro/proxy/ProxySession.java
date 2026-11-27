@@ -66,8 +66,10 @@ public final class ProxySession {
     private io.netty.util.concurrent.ScheduledFuture<?> backendEncryptionTimeout;
     private io.netty.util.concurrent.ScheduledFuture<?> serverTickTask;
     private java.util.UUID identity;
-    private java.util.Set<String> proxyCommandNames = ac.navro.proxy.command.NavroCommand.NAMES;
-    private final java.util.function.Consumer<String> alertRecipient = this::sendAlertMessage;
+    private volatile ac.navro.proxy.command.NavroCommand.Routing commandRouting = ac.navro.proxy.command.NavroCommand.DEFAULT_ROUTING;
+    private final java.util.function.Consumer<String> alertRecipient = message -> {
+        if (!commandRouting.bridgeAlerts()) sendAlertMessage(message);
+    };
 
     public ProxySession(NavroProxy proxy, BedrockServerSession client) {
         this.proxy = proxy;
@@ -214,7 +216,7 @@ public final class ProxySession {
                     public String name(){return state.player().getName();}
                     public boolean hasPermission(String node){return proxy.permissions().hasPermission(identity,node,permissions.isOperator());}
                     public void sendMessage(String message){sendAlertMessage(message);}
-                },proxy.getAlertManager(),proxy.commands(),proxyCommandNames))return;
+                },proxy.getAlertManager(),proxy.commands(),commandRouting))return;
         forwardToBackend(packet);
     }
 
@@ -379,9 +381,7 @@ public final class ProxySession {
         PacketListener.onPacketSent(state.player(), packet);
         state.observeBackend(packet);
         if(packet instanceof org.cloudburstmc.protocol.bedrock.packet.AvailableCommandsPacket commands)
-            proxyCommandNames = state.hasBackendCommands()
-                    ? ac.navro.proxy.command.NavroCommand.unclaimedNames(commands)
-                    : ac.navro.proxy.command.NavroCommand.advertise(commands);
+            commandRouting = ac.navro.proxy.command.NavroCommand.routing(commands, state.hasBackendCommands());
         if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.StartGamePacket && serverTickTask == null) {
             serverTickTask = client.getPeer().getChannel().eventLoop().scheduleAtFixedRate(this::serverTick,
                     50, 50, java.util.concurrent.TimeUnit.MILLISECONDS);

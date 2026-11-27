@@ -115,7 +115,8 @@ public final class NavroProxy {
         String javaCommand = Path.of(System.getProperty("java.home"), "bin",
                 System.getProperty("os.name").toLowerCase().contains("windows") ? "java.exe" : "java").toString();
         String adapter = "127.0.0.1:" + config.adapterPort();
-        var adapterCommand = new ArrayList<>(List.of(javaCommand, "-cp", root.resolve("lib/*").toString(),
+        String adapterClasspath = root.resolve("lib") + java.io.File.separator + "*";
+        var adapterCommand = new ArrayList<>(List.of(javaCommand, "-cp", adapterClasspath,
                 "ac.navro.proxy.nethernet.NetherNetAdapter", Integer.toString(config.adapterPort()),
                 "--backend-type", config.backendType()));
         if (config.backendAuth().equals("pmmp-ng")) {

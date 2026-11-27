@@ -121,6 +121,8 @@ Keep the backend on a private network or restrict it to connections from the pro
 - `/navro reload` reloads configuration.
 - `/navro debug` and `/navro debug2` control diagnostic output.
 
+With the PocketMine-MP bridge installed, `/navro alert` toggles the player's persistent bridge chat alerts. `/navroalerts` is also available. When run through NavroProxy, `/navro reload` reloads the proxy's detection settings and `/navro debug <player>` and `/navro debug2 [player]` control proxy diagnostics. From the PocketMine console, `navro reload` reloads the bridge's alert and trusted proxy settings.
+
 ## NetherNet and backend adapters
 
 The distribution includes the Go transport and Java packet adapter. Configure `frontend`, `backend-transport`, `backend-address`, and `backend-auth` in `network.yml`; `bin/navro-proxy` starts the required components together. The transport source is in `nethernet/`.

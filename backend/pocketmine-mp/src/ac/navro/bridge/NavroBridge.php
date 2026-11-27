@@ -27,10 +27,7 @@ final class NavroBridge extends PluginBase{
     protected function onEnable() : void{
         $this->saveDefaultConfig();
         $config = $this->getConfig();
-        $trusted = $config->get("trusted-proxy-addresses", ["127.0.0.1", "::1"]);
-        $this->trustedProxies = is_array($trusted) ? array_values(array_filter($trusted, "is_string")) : [];
-        $this->consoleAlerts = $config->get("console-alerts", true) === true;
-        $this->staffChatAlerts = $config->get("staff-chat-alerts", true) === true;
+        $this->loadAlertSettings($config);
         $this->mutedPlayers = new Config($this->getDataFolder() . "muted-alerts.json", Config::JSON);
         $stateSync = new NativeStateSync($this);
         $stateSync->register();
@@ -73,20 +70,59 @@ final class NavroBridge extends PluginBase{
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-        if($command->getName() !== "navroalerts" || $args !== []){
+        if($command->getName() !== "navro"){
             return false;
         }
+        if($args === [] && ($label === "navroalerts" || str_ends_with($label, ":navroalerts"))){
+            $args = ["alert"];
+        }
+        switch(strtolower($args[0] ?? "")){
+            case "alert":
+                if(count($args) !== 1){ return false; }
+                $this->toggleAlerts($sender);
+                return true;
+            case "reload":
+                if(count($args) !== 1){ return false; }
+                if(!$sender->hasPermission("navrobridge.reload")){
+                    $sender->sendMessage("You do not have permission to reload Navro bridge settings.");
+                    return true;
+                }
+                try{
+                    $this->reloadConfig();
+                    $this->loadAlertSettings($this->getConfig());
+                    $sender->sendMessage("Reloaded Navro bridge alert and trusted proxy settings.");
+                }catch(\Exception $error){
+                    $sender->sendMessage("Could not reload Navro bridge settings: " . $error->getMessage());
+                }
+                return true;
+            case "debug":
+            case "debug2":
+                $sender->sendMessage("Run this command through NavroProxy or in the NavroProxy console.");
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private function loadAlertSettings(Config $config) : void{
+        $trusted = $config->get("trusted-proxy-addresses", ["127.0.0.1", "::1"]);
+        $this->trustedProxies = is_array($trusted) ? array_values(array_filter($trusted, "is_string")) : [];
+        $this->consoleAlerts = $config->get("console-alerts", true) === true;
+        $this->staffChatAlerts = $config->get("staff-chat-alerts", true) === true;
+    }
+
+    private function toggleAlerts(CommandSender $sender) : void{
         if(!$sender instanceof Player){
             $sender->sendMessage("Run this command in game to toggle your chat alerts.");
-            return true;
+            return;
         }
         if(!$sender->hasPermission("navrobridge.alerts")){
             $sender->sendMessage("You do not have permission to receive Navro chat alerts.");
-            return true;
+            return;
         }
         if(!$this->staffChatAlerts){
             $sender->sendMessage("Navro chat alerts are disabled in the server configuration.");
-            return true;
+            return;
         }
 
         $uuid = $sender->getUniqueId()->toString();
@@ -98,7 +134,6 @@ final class NavroBridge extends PluginBase{
         }
         $this->mutedPlayers->save();
         $sender->sendMessage($enabled ? "Navro chat alerts enabled." : "Navro chat alerts disabled.");
-        return true;
     }
 
     public function trusts(NetworkSession $session) : bool{
