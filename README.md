@@ -1,7 +1,5 @@
 # NavroProxy
 
-载具预测支持船/运输船及马类，按独立公式接入共享检测链路；版本门槛、检测范围与已知限制见 [载具物理说明](docs/vehicle-physics.md)。
-
 An anti-cheat proxy for Minecraft Bedrock Edition. NavroProxy runs between players and a backend server, tracks the world and player state, and checks movement and gameplay packets.
 
 It runs on Windows and Linux with Java 21. Clients can connect over RakNet or through the separate NetherNet frontend.
